@@ -14,15 +14,15 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -631,7 +631,7 @@ public abstract class ChromeFeatureList {
-             new CachedFlag(SHOW_NTP_AT_STARTUP_ANDROID, false);
-     public static final CachedFlag sSpareTab = new CachedFlag(SPARE_TAB, false);
+@@ -622,7 +622,7 @@ public abstract class ChromeFeatureList {
+     public static final CachedFlag sSmallerTabStripTitleLimit =
+             newCachedFlag(SMALLER_TAB_STRIP_TITLE_LIMIT, false);
      public static final CachedFlag sStartSurfaceAndroid =
--            new CachedFlag(START_SURFACE_ANDROID, true);
-+            new CachedFlag(START_SURFACE_ANDROID, false);
-     public static final CachedFlag sStartSurfaceDisabledFeedImprovement =
-             new CachedFlag(START_SURFACE_DISABLED_FEED_IMPROVEMENT, false);
+-            newCachedFlag(START_SURFACE_ANDROID, true);
++            newCachedFlag(START_SURFACE_ANDROID, false);
      public static final CachedFlag sStartSurfaceOnTablet =
+             newCachedFlag(START_SURFACE_ON_TABLET, true);
+     public static final CachedFlag sStartSurfaceRefactor =
 diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Disable-StartSurface-feature.inc b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Disable-StartSurface-feature.inc
 new file mode 100644
 --- /dev/null

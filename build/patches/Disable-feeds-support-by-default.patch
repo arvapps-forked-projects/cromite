@@ -13,7 +13,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -1840,10 +1840,10 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
+@@ -1797,10 +1797,10 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry,
    supervised_user::RegisterProfilePrefs(registry);
  #endif
  
@@ -64,7 +64,7 @@ diff --git a/components/feed/core/shared_prefs/pref_names.cc b/components/feed/c
 diff --git a/components/feed/feed_feature_list.cc b/components/feed/feed_feature_list.cc
 --- a/components/feed/feed_feature_list.cc
 +++ b/components/feed/feed_feature_list.cc
-@@ -169,4 +169,6 @@ BASE_FEATURE(kRefreshFeedOnRestart,
+@@ -164,4 +164,6 @@ BASE_FEATURE(kRefreshFeedOnRestart,
               "RefreshFeedOnRestart",
               base::FEATURE_DISABLED_BY_DEFAULT);
  

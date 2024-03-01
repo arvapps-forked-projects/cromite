@@ -4,12 +4,12 @@ Subject: Add flag to disable IPv6 probes
 
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
- .../add-flag-to-disable-IPv6-probes.inc               |  8 ++++++++
- .../features_cc/add-flag-to-disable-IPv6-probes.inc   |  3 +++
- .../features_h/add-flag-to-disable-IPv6-probes.inc    |  2 ++
- net/BUILD.gn                                          |  1 +
- net/dns/host_resolver_manager.cc                      | 11 +++++++++++
- 5 files changed, 25 insertions(+)
+ .../about_flags_cc/add-flag-to-disable-IPv6-probes.inc    | 8 ++++++++
+ .../base/features_cc/add-flag-to-disable-IPv6-probes.inc  | 3 +++
+ .../base/features_h/add-flag-to-disable-IPv6-probes.inc   | 2 ++
+ net/BUILD.gn                                              | 1 +
+ net/dns/host_resolver_manager.cc                          | 8 ++++++++
+ 5 files changed, 22 insertions(+)
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/add-flag-to-disable-IPv6-probes.inc
  create mode 100644 cromite_flags/net/base/features_cc/add-flag-to-disable-IPv6-probes.inc
  create mode 100644 cromite_flags/net/base/features_h/add-flag-to-disable-IPv6-probes.inc
@@ -45,7 +45,7 @@ new file mode 100644
 diff --git a/net/BUILD.gn b/net/BUILD.gn
 --- a/net/BUILD.gn
 +++ b/net/BUILD.gn
-@@ -1033,6 +1033,7 @@ component("net") {
+@@ -1028,6 +1028,7 @@ component("net") {
      "//build:chromeos_buildflags",
      "//components/miracle_parameter/common",
      "//net/http:transport_security_state_generated_files",
@@ -56,7 +56,7 @@ diff --git a/net/BUILD.gn b/net/BUILD.gn
 diff --git a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc
 --- a/net/dns/host_resolver_manager.cc
 +++ b/net/dns/host_resolver_manager.cc
-@@ -109,6 +109,7 @@
+@@ -113,6 +113,7 @@
  #include "net/log/net_log_event_type.h"
  #include "net/log/net_log_source.h"
  #include "net/log/net_log_source_type.h"
@@ -64,17 +64,7 @@ diff --git a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc
  #include "net/log/net_log_with_source.h"
  #include "net/socket/client_socket_factory.h"
  #include "net/url_request/url_request_context.h"
-@@ -681,6 +682,9 @@ class HostResolverManager::RequestImpl
-     // request source is LOCAL_ONLY. This is due to LOCAL_ONLY requiring a
-     // synchronous response, so it cannot wait on an async probe result and
-     // cannot make assumptions about reachability.
-+    if (!base::FeatureList::IsEnabled(features::kIPv6Probing)) {
-+      return OK;
-+    }
-     if (parameters_.source == HostResolverSource::LOCAL_ONLY) {
-       int rv = resolver_->StartIPv6ReachabilityCheck(
-           source_net_log_, GetClientSocketFactory(),
-@@ -3899,6 +3903,13 @@ int HostResolverManager::StartIPv6ReachabilityCheck(
+@@ -1373,6 +1374,13 @@ int HostResolverManager::StartIPv6ReachabilityCheck(
      return OK;
    }
  

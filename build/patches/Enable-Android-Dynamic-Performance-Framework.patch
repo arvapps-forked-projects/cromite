@@ -11,7 +11,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/chrome/version.gni b/chrome/version.gni
 --- a/chrome/version.gni
 +++ b/chrome/version.gni
-@@ -75,7 +75,7 @@ if (is_mac) {
+@@ -76,7 +76,7 @@ if (is_mac) {
          "trichrome_64_version_code = \"@TRICHROME_64_VERSION_CODE@\" "
      _version_dictionary_template +=
          "trichrome_auto_64_version_code = \"@TRICHROME_AUTO_64_VERSION_CODE@\" "
@@ -23,7 +23,7 @@ diff --git a/chrome/version.gni b/chrome/version.gni
 diff --git a/components/viz/common/features.cc b/components/viz/common/features.cc
 --- a/components/viz/common/features.cc
 +++ b/components/viz/common/features.cc
-@@ -303,9 +303,10 @@ BASE_FEATURE(kDelegateTransforms,
+@@ -295,9 +295,10 @@ BASE_FEATURE(kDelegateTransforms,
  
  // If enabled, Chrome includes the Renderer Main thread(s) into the
  // ADPF(Android Dynamic Performance Framework) hint session.

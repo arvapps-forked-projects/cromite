@@ -4,6 +4,10 @@
 .githubusercontent.com
 .ubuntu.com
 
+# Needed for uploading/downloading job summaries, logs, workflow artifacts, and caches:
+results-receiver.actions.githubusercontent.com
+.blob.core.windows.net
+
 # for .net
 .dot.net
 dotnet.microsoft.com

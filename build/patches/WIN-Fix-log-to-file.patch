@@ -89,7 +89,7 @@ diff --git a/chrome/common/logging_chrome.h b/chrome/common/logging_chrome.h
 diff --git a/content/app/content_main.cc b/content/app/content_main.cc
 --- a/content/app/content_main.cc
 +++ b/content/app/content_main.cc
-@@ -311,7 +311,11 @@ RunContentProcess(ContentMainParams params,
+@@ -312,7 +312,11 @@ RunContentProcess(ContentMainParams params,
      // Route stdio to parent console (if any) or create one.
      if (base::CommandLine::ForCurrentProcess()->HasSwitch(
              switches::kEnableLogging)) {

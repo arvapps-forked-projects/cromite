@@ -5,16 +5,16 @@ Subject: Do not compile QR code sharing
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
  chrome/android/BUILD.gn                       |  1 -
- .../chrome/browser/ui/RootUiCoordinator.java  |  5 ----
+ .../chrome/browser/ui/RootUiCoordinator.java  |  5 -----
  chrome/browser/share/BUILD.gn                 |  2 --
- ...omeProvidedSharingOptionsProviderBase.java | 23 -------------------
- chrome/browser/share/android/java_sources.gni | 11 ---------
- 5 files changed, 42 deletions(-)
+ ...omeProvidedSharingOptionsProviderBase.java | 22 -------------------
+ chrome/browser/share/android/java_sources.gni | 11 ----------
+ 5 files changed, 41 deletions(-)
 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -3471,7 +3471,6 @@ generate_jni("chrome_jni_headers") {
+@@ -3503,7 +3503,6 @@ generate_jni("chrome_jni_headers") {
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/link_to_text/LinkToTextBridge.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabService.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabServiceFactory.java",
@@ -25,7 +25,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
-@@ -112,7 +112,6 @@ import org.chromium.chrome.browser.share.ShareButtonController;
+@@ -114,7 +114,6 @@ import org.chromium.chrome.browser.share.ShareButtonController;
  import org.chromium.chrome.browser.share.ShareDelegate;
  import org.chromium.chrome.browser.share.ShareDelegate.ShareOrigin;
  import org.chromium.chrome.browser.share.ShareUtils;
@@ -33,7 +33,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordi
  import org.chromium.chrome.browser.share.scroll_capture.ScrollCaptureManager;
  import org.chromium.chrome.browser.tab.AccessibilityVisibilityHandler;
  import org.chromium.chrome.browser.tab.AutofillSessionLifetimeController;
-@@ -574,10 +573,6 @@ public class RootUiCoordinator
+@@ -587,10 +586,6 @@ public class RootUiCoordinator
      }
  
      public void onAttachFragment(Fragment fragment) {
@@ -59,7 +59,7 @@ diff --git a/chrome/browser/share/BUILD.gn b/chrome/browser/share/BUILD.gn
 diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/ChromeProvidedSharingOptionsProviderBase.java b/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/ChromeProvidedSharingOptionsProviderBase.java
 --- a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/ChromeProvidedSharingOptionsProviderBase.java
 +++ b/chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/ChromeProvidedSharingOptionsProviderBase.java
-@@ -24,7 +24,6 @@ import org.chromium.chrome.browser.preferences.Pref;
+@@ -19,7 +19,6 @@ import org.chromium.chrome.browser.preferences.Pref;
  import org.chromium.chrome.browser.profiles.Profile;
  import org.chromium.chrome.browser.share.ChromeShareExtras.DetailedContentType;
  import org.chromium.chrome.browser.share.ShareContentTypeHelper.ContentType;
@@ -67,7 +67,7 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
  import org.chromium.chrome.browser.share.send_tab_to_self.SendTabToSelfAndroidBridge;
  import org.chromium.chrome.browser.share.send_tab_to_self.SendTabToSelfCoordinator;
  import org.chromium.chrome.browser.share.share_sheet.ChromeOptionShareCallback;
-@@ -303,9 +302,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
+@@ -268,9 +267,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
      }
  
      private void maybeAddQrCodeFirstPartyOption() {
@@ -76,8 +76,8 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
 -        }
      }
  
-     private void maybeAddScreenshotFirstPartyOption() {
-@@ -486,25 +482,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
+     private void maybeAddLongScreenshotFirstPartyOption() {
+@@ -386,24 +382,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
                  .build();
      }
  
@@ -86,8 +86,7 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
 -                        ContentType.LINK_PAGE_VISIBLE,
 -                        ContentType.LINK_PAGE_NOT_VISIBLE,
 -                        ContentType.IMAGE)
--                .setDetailedContentTypesToDisableFor(
--                        DetailedContentType.WEB_NOTES, DetailedContentType.SCREENSHOT)
+-                .setDetailedContentTypesToDisableFor(DetailedContentType.SCREENSHOT)
 -                .setIcon(R.drawable.qr_code, R.string.qr_code_share_icon_label)
 -                .setFeatureNameForMetrics(USER_ACTION_QR_CODE_SELECTED)
 -                .setOnClickCallback(

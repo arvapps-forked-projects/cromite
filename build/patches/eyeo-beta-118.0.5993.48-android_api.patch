@@ -97,7 +97,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
  
  import("//build/android/resource_sizes.gni")
  import("//build/config/android/config.gni")
-@@ -457,6 +461,7 @@ if (current_toolchain == default_toolchain) {
+@@ -461,6 +465,7 @@ if (current_toolchain == default_toolchain) {
        "//chrome/browser/xsurface:java",
        "//chrome/browser/xsurface_provider:dependency_provider_impl_java",
        "//chrome/browser/xsurface_provider:java",
@@ -105,7 +105,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
        "//components/autofill/android:autofill_java",
        "//components/background_task_scheduler:background_task_scheduler_java",
        "//components/background_task_scheduler:background_task_scheduler_task_ids_java",
-@@ -676,6 +681,7 @@ if (current_toolchain == default_toolchain) {
+@@ -678,6 +683,7 @@ if (current_toolchain == default_toolchain) {
        "//url/mojom:url_mojom_gurl_java",
      ]
  
@@ -113,7 +113,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
      deps += feed_deps
  
      srcjar_deps = [
-@@ -1572,6 +1578,7 @@ if (current_toolchain == default_toolchain) {
+@@ -1568,6 +1574,7 @@ if (current_toolchain == default_toolchain) {
        "//chrome/android/webapk/libs/client:client_java",
        "//chrome/android/webapk/libs/common:common_java",
        "//chrome/android/webapk/libs/runtime_library:webapk_service_aidl_java",
@@ -121,7 +121,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
        "//chrome/browser/android/browserservices/intents:java",
        "//chrome/browser/android/browserservices/verification:java",
        "//chrome/browser/android/browserservices/verification:javatests",
-@@ -1916,6 +1923,7 @@ if (current_toolchain == default_toolchain) {
+@@ -1913,6 +1920,7 @@ if (current_toolchain == default_toolchain) {
      srcjar_deps = [ "//chrome/browser:tos_dialog_behavior_generated_enum" ]
  
      data = [
@@ -129,7 +129,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
        "//chrome/test/data/android/",
        "//chrome/test/data/autofill/",
        "//chrome/test/data/background_sync/",
-@@ -3749,6 +3757,7 @@ group("jni_headers") {
+@@ -3778,6 +3786,7 @@ group("jni_headers") {
      "//chrome/browser/util:jni_headers",
      "//chrome/browser/webauthn/android:jni_headers",
      "//components/browser_ui/device_lock/android:device_lock_bridge_jni_headers",
@@ -140,7 +140,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -3460,6 +3460,17 @@ static_library("browser") {
+@@ -3433,6 +3433,17 @@ static_library("browser") {
        "webauthn/android/webauthn_request_delegate_android.h",
      ]
  
@@ -158,7 +158,7 @@ diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
  
      public_deps += [
        "//chrome/android/features/dev_ui:buildflags",
-@@ -3653,6 +3664,9 @@ static_library("browser") {
+@@ -3621,6 +3632,9 @@ static_library("browser") {
        "//url",
      ]
  
@@ -660,7 +660,7 @@ new file mode 100644
 diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 --- a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 +++ b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
-@@ -267,6 +267,11 @@
+@@ -269,6 +269,11 @@
  #include "components/commerce/core/commerce_feature_list.h"
  #include "components/commerce/core/proto/merchant_signal_db_content.pb.h"
  
@@ -672,7 +672,7 @@ diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
  
  #else
  #include "chrome/browser/accessibility/live_caption/live_caption_controller_factory.h"
-@@ -829,6 +834,11 @@ void ChromeBrowserMainExtraPartsProfiles::
+@@ -830,6 +835,11 @@ void ChromeBrowserMainExtraPartsProfiles::
  #if BUILDFLAG(IS_ANDROID)
    FastCheckoutCapabilitiesFetcherFactory::GetInstance();
  
@@ -1282,7 +1282,7 @@ new file mode 100644
 +    const base::android::JavaParamRef<jstring>& allowed_domain) {
 +  auto* configuration = GetConfigurationWithName(env, configuration_name);
 +  if (configuration) {
-+    configuration->RemoveAllowedDomain(ConvertJavaStringToUTF8(allowed_domain));
++    configuration->RemoveAllowedDomain(base::android::ConvertJavaStringToUTF8(allowed_domain));
 +  }
 +}
 +
@@ -1302,7 +1302,7 @@ new file mode 100644
 +    const base::android::JavaParamRef<jstring>& custom_filter) {
 +  auto* configuration = GetConfigurationWithName(env, configuration_name);
 +  if (configuration) {
-+    configuration->AddCustomFilter(ConvertJavaStringToUTF8(custom_filter));
++    configuration->AddCustomFilter(base::android::ConvertJavaStringToUTF8(custom_filter));
 +  }
 +}
 +

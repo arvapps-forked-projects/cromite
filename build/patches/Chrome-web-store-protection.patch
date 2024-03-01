@@ -16,7 +16,8 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
  chrome/app/extensions_strings.grdp            |  6 +++
  .../developer_private_api.cc                  | 37 ++++++++++++-
  .../developer_private/developer_private_api.h |  3 ++
- .../webstore_private/webstore_private_api.cc  | 12 ++++-
+ .../webstore_private/webstore_private_api.cc  | 15 +++++-
+ chrome/browser/extensions/cws_info_service.cc |  1 +
  .../extensions/extension_system_impl.cc       |  2 +
  .../chrome_extension_downloader_factory.cc    |  1 -
  .../extensions/updater/extension_updater.cc   | 40 ++++++++------
@@ -42,7 +43,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
  extensions/common/extension_features.cc       | 15 ++++++
  extensions/common/extension_features.h        |  4 ++
  .../definitions/developer_private.d.ts        |  4 +-
- 29 files changed, 249 insertions(+), 92 deletions(-)
+ 30 files changed, 252 insertions(+), 93 deletions(-)
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Webstore-protection.inc
 
 diff --git a/chrome/app/extensions_strings.grdp b/chrome/app/extensions_strings.grdp
@@ -64,7 +65,7 @@ diff --git a/chrome/app/extensions_strings.grdp b/chrome/app/extensions_strings.
 diff --git a/chrome/browser/extensions/api/developer_private/developer_private_api.cc b/chrome/browser/extensions/api/developer_private/developer_private_api.cc
 --- a/chrome/browser/extensions/api/developer_private/developer_private_api.cc
 +++ b/chrome/browser/extensions/api/developer_private/developer_private_api.cc
-@@ -125,6 +125,12 @@
+@@ -126,6 +126,12 @@
  #include "url/gurl.h"
  #include "url/origin.h"
  
@@ -77,7 +78,7 @@ diff --git a/chrome/browser/extensions/api/developer_private/developer_private_a
  #if BUILDFLAG(ENABLE_SUPERVISED_USERS)
  #include "components/supervised_user/core/browser/supervised_user_preferences.h"
  #endif  // BUILDFLAG(ENABLE_SUPERVISED_USERS)
-@@ -520,9 +526,32 @@ std::unique_ptr<developer::ProfileInfo> DeveloperPrivateAPI::CreateProfileInfo(
+@@ -521,9 +527,32 @@ std::unique_ptr<developer::ProfileInfo> DeveloperPrivateAPI::CreateProfileInfo(
    info->can_load_unpacked =
        ExtensionManagementFactory::GetForBrowserContext(profile)
            ->HasAllowlistedExtension();
@@ -110,7 +111,7 @@ diff --git a/chrome/browser/extensions/api/developer_private/developer_private_a
  template <>
  void BrowserContextKeyedAPIFactory<
      DeveloperPrivateAPI>::DeclareFactoryDependencies() {
-@@ -951,6 +980,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateAutoUpdateFunction::Run() {
+@@ -952,6 +981,7 @@ ExtensionFunction::ResponseAction DeveloperPrivateAutoUpdateFunction::Run() {
      ExtensionUpdater::CheckParams params;
      params.fetch_priority = DownloadFetchPriority::kForeground;
      params.install_immediately = true;
@@ -118,7 +119,7 @@ diff --git a/chrome/browser/extensions/api/developer_private/developer_private_a
      params.callback =
          base::BindOnce(&DeveloperPrivateAutoUpdateFunction::OnComplete, this);
      updater->CheckNow(std::move(params));
-@@ -1090,7 +1120,7 @@ DeveloperPrivateUpdateProfileConfigurationFunction::Run() {
+@@ -1092,7 +1122,7 @@ DeveloperPrivateUpdateProfileConfigurationFunction::Run() {
  
    const developer::ProfileConfigurationUpdate& update = params->update;
  
@@ -127,7 +128,7 @@ diff --git a/chrome/browser/extensions/api/developer_private/developer_private_a
      Profile* profile = Profile::FromBrowserContext(browser_context());
      CHECK(profile);
  #if BUILDFLAG(ENABLE_SUPERVISED_USERS)
-@@ -1102,6 +1132,11 @@ DeveloperPrivateUpdateProfileConfigurationFunction::Run() {
+@@ -1104,6 +1134,11 @@ DeveloperPrivateUpdateProfileConfigurationFunction::Run() {
      util::SetDeveloperModeForProfile(profile, *update.in_developer_mode);
    }
  
@@ -199,15 +200,33 @@ diff --git a/chrome/browser/extensions/api/webstore_private/webstore_private_api
  }
  
  WebstorePrivateIsPendingCustodianApprovalFunction::
-@@ -1263,6 +1271,8 @@ WebstorePrivateGetReferrerChainFunction::Run() {
+@@ -1262,11 +1270,14 @@ WebstorePrivateGetReferrerChainFunction::Run() {
+   request.mutable_referrer_chain_options()->set_recent_navigations_to_collect(
        recent_navigations_to_collect);
  
-   std::string serialized_referrer_proto = request.SerializeAsString();
++  std::string serialized_referrer_proto = request.SerializeAsString();
 +  if (!base::FeatureList::IsEnabled(extensions_features::kEnableExtensionManagementToChromeStore))
 +    serialized_referrer_proto = "";
-   // Base64 encode the proto to avoid issues with base::Value rejecting strings
-   // which are not valid UTF8.
-   base::Base64Encode(serialized_referrer_proto, &serialized_referrer_proto);
+   // Base64 encode the request to avoid issues with base::Value rejecting
+   // strings which are not valid UTF8.
+   return RespondNow(
+       ArgumentList(api::webstore_private::GetReferrerChain::Results::Create(
+-          base::Base64Encode(request.SerializeAsString()))));
++          base::Base64Encode(serialized_referrer_proto))));
+ }
+ 
+ WebstorePrivateGetExtensionStatusFunction::
+diff --git a/chrome/browser/extensions/cws_info_service.cc b/chrome/browser/extensions/cws_info_service.cc
+--- a/chrome/browser/extensions/cws_info_service.cc
++++ b/chrome/browser/extensions/cws_info_service.cc
+@@ -156,6 +156,7 @@ namespace extensions {
+ BASE_FEATURE(kCWSInfoService,
+              "CWSInfoService",
+              base::FEATURE_ENABLED_BY_DEFAULT);
++SET_CROMITE_FEATURE_DISABLED(kCWSInfoService);
+ 
+ // Increase the frequency of periodic retrieval of extensions metadata from
+ // CWS. This feature is used only for testing purposes.
 diff --git a/chrome/browser/extensions/extension_system_impl.cc b/chrome/browser/extensions/extension_system_impl.cc
 --- a/chrome/browser/extensions/extension_system_impl.cc
 +++ b/chrome/browser/extensions/extension_system_impl.cc
@@ -445,7 +464,7 @@ diff --git a/chrome/browser/resources/extensions/manager.html b/chrome/browser/r
 diff --git a/chrome/browser/resources/extensions/manager.ts b/chrome/browser/resources/extensions/manager.ts
 --- a/chrome/browser/resources/extensions/manager.ts
 +++ b/chrome/browser/resources/extensions/manager.ts
-@@ -121,6 +121,11 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
+@@ -122,6 +122,11 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
          value: () => loadTimeData.getBoolean('inDevMode'),
        },
  
@@ -457,7 +476,7 @@ diff --git a/chrome/browser/resources/extensions/manager.ts b/chrome/browser/res
        showActivityLog: {
          type: Boolean,
          value: () => loadTimeData.getBoolean('showActivityLog'),
-@@ -222,6 +227,7 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
+@@ -223,6 +228,7 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
    canLoadUnpacked: boolean;
    delegate: Service;
    inDevMode: boolean;
@@ -465,7 +484,7 @@ diff --git a/chrome/browser/resources/extensions/manager.ts b/chrome/browser/res
    showActivityLog: boolean;
    enableEnhancedSiteControls: boolean;
    devModeControlledByPolicy: boolean;
-@@ -292,6 +298,7 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
+@@ -293,6 +299,7 @@ export class ExtensionsManagerElement extends ExtensionsManagerElementBase {
                profileInfo.isDeveloperModeControlledByPolicy;
            this.inDevMode = profileInfo.inDeveloperMode;
            this.canLoadUnpacked = profileInfo.canLoadUnpacked;
@@ -503,7 +522,7 @@ diff --git a/chrome/browser/resources/extensions/toolbar.html b/chrome/browser/r
    cr-toolbar {
      --cr-toolbar-center-basis: 680px;
      --cr-toolbar-field-max-width: var(--cr-toolbar-center-basis);
-@@ -87,6 +92,13 @@
+@@ -88,6 +93,13 @@
          checked="[[inDevMode]]" aria-labelledby="devModeLabel">
      </cr-toggle>
    </div>
@@ -729,7 +748,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
  #include "extensions/common/extension_icon_set.h"
  #include "extensions/common/extension_urls.h"
  #include "extensions/common/manifest.h"
-@@ -88,6 +92,27 @@ std::vector<std::string> CreateWarningsList(const Extension* extension) {
+@@ -89,6 +93,27 @@ std::vector<std::string> CreateWarningsList(const Extension* extension) {
    return warnings_list;
  }
  
@@ -757,7 +776,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
  std::vector<management::LaunchType> GetAvailableLaunchTypes(
      const Extension& extension,
      const ManagementAPIDelegate* delegate) {
-@@ -261,6 +286,8 @@ void AddExtensionInfo(const Extension* source_extension,
+@@ -262,6 +287,8 @@ void AddExtensionInfo(const Extension* source_extension,
                        const ExtensionSet& extensions,
                        ExtensionInfoList* extension_list,
                        content::BrowserContext* context) {
@@ -766,7 +785,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    for (ExtensionSet::const_iterator iter = extensions.begin();
         iter != extensions.end(); ++iter) {
      const Extension& extension = **iter;
-@@ -306,10 +333,9 @@ ExtensionFunction::ResponseAction ManagementGetFunction::Run() {
+@@ -307,10 +334,9 @@ ExtensionFunction::ResponseAction ManagementGetFunction::Run() {
    std::optional<management::Get::Params> params =
        management::Get::Params::Create(args());
    EXTENSION_FUNCTION_VALIDATE(params);
@@ -778,7 +797,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    if (!target_extension)
      return RespondNow(Error(keys::kNoExtensionError, params->id));
  
-@@ -329,8 +355,7 @@ ManagementGetPermissionWarningsByIdFunction::Run() {
+@@ -330,8 +356,7 @@ ManagementGetPermissionWarningsByIdFunction::Run() {
    EXTENSION_FUNCTION_VALIDATE(params);
  
    const Extension* extension =
@@ -788,7 +807,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    if (!extension)
      return RespondNow(Error(keys::kNoExtensionError, params->id));
  
-@@ -396,8 +421,7 @@ ExtensionFunction::ResponseAction ManagementLaunchAppFunction::Run() {
+@@ -397,8 +422,7 @@ ExtensionFunction::ResponseAction ManagementLaunchAppFunction::Run() {
      return RespondNow(Error(keys::kNotAllowedInKioskError));
  
    const Extension* extension =
@@ -798,7 +817,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    if (!extension)
      return RespondNow(Error(keys::kNoExtensionError, params->id));
    if (!extension->is_app())
-@@ -432,7 +456,7 @@ ExtensionFunction::ResponseAction ManagementSetEnabledFunction::Run() {
+@@ -433,7 +457,7 @@ ExtensionFunction::ResponseAction ManagementSetEnabledFunction::Run() {
                                                ->GetDelegate();
  
    const Extension* target_extension =
@@ -807,7 +826,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    if (!target_extension || !ShouldExposeViaManagementAPI(*target_extension)) {
      return RespondNow(Error(keys::kNoExtensionError, extension_id_));
    }
-@@ -627,8 +651,7 @@ ExtensionFunction::ResponseAction ManagementUninstallFunctionBase::Uninstall(
+@@ -628,8 +652,7 @@ ExtensionFunction::ResponseAction ManagementUninstallFunctionBase::Uninstall(
                                                ->GetDelegate();
    target_extension_id_ = target_extension_id;
    const Extension* target_extension =
@@ -817,7 +836,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
                               ExtensionRegistry::EVERYTHING);
    if (!target_extension || !ShouldExposeViaManagementAPI(*target_extension)) {
      return RespondNow(Error(keys::kNoExtensionError, target_extension_id_));
-@@ -692,8 +715,7 @@ void ManagementUninstallFunctionBase::UninstallExtension() {
+@@ -693,8 +716,7 @@ void ManagementUninstallFunctionBase::UninstallExtension() {
    // The extension can be uninstalled in another window while the UI was
    // showing. Do nothing in that case.
    const Extension* target_extension =
@@ -827,7 +846,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
                               ExtensionRegistry::EVERYTHING);
    std::string error;
    bool success = false;
-@@ -774,8 +796,7 @@ ExtensionFunction::ResponseAction ManagementCreateAppShortcutFunction::Run() {
+@@ -775,8 +797,7 @@ ExtensionFunction::ResponseAction ManagementCreateAppShortcutFunction::Run() {
        management::CreateAppShortcut::Params::Create(args());
    EXTENSION_FUNCTION_VALIDATE(params);
    const Extension* extension =
@@ -837,7 +856,7 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
    if (!extension) {
      return RespondNow(Error(
          ErrorUtils::FormatErrorMessage(keys::kNoExtensionError, params->id)));
-@@ -825,8 +846,7 @@ ExtensionFunction::ResponseAction ManagementSetLaunchTypeFunction::Run() {
+@@ -826,8 +847,7 @@ ExtensionFunction::ResponseAction ManagementSetLaunchTypeFunction::Run() {
        management::SetLaunchType::Params::Create(args());
    EXTENSION_FUNCTION_VALIDATE(params);
    const Extension* extension =
@@ -850,9 +869,9 @@ diff --git a/extensions/browser/api/management/management_api.cc b/extensions/br
 diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/browser/updater/extension_downloader.cc
 --- a/extensions/browser/updater/extension_downloader.cc
 +++ b/extensions/browser/updater/extension_downloader.cc
-@@ -491,8 +491,8 @@ void ExtensionDownloader::CreateManifestLoader() {
-   std::vector<base::StringPiece> id_vector(extension_ids.begin(),
-                                            extension_ids.end());
+@@ -493,8 +493,8 @@ void ExtensionDownloader::CreateManifestLoader() {
+   std::vector<std::string_view> id_vector(extension_ids.begin(),
+                                           extension_ids.end());
    std::string id_list = base::JoinString(id_vector, ",");
 -  VLOG(2) << "Fetching " << active_request->full_url() << " for " << id_list;
 -  VLOG(2) << "Update interactivity: "
@@ -861,7 +880,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
            << (active_request->foreground_check()
                    ? kUpdateInteractivityForeground
                    : kUpdateInteractivityBackground);
-@@ -517,7 +517,7 @@ void ExtensionDownloader::CreateManifestLoader() {
+@@ -519,7 +519,7 @@ void ExtensionDownloader::CreateManifestLoader() {
            destination: WEBSITE
          }
          policy {
@@ -870,7 +889,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
            cookies_store: "user"
            setting:
              "This feature cannot be disabled. It is only enabled when the user "
-@@ -534,6 +534,7 @@ void ExtensionDownloader::CreateManifestLoader() {
+@@ -536,6 +536,7 @@ void ExtensionDownloader::CreateManifestLoader() {
    auto resource_request = std::make_unique<network::ResourceRequest>();
    resource_request->url = active_request->full_url(),
    resource_request->load_flags = net::LOAD_DISABLE_CACHE;
@@ -878,7 +897,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
  
    if (active_request->fetch_priority() == DownloadFetchPriority::kForeground) {
      resource_request->priority = net::MEDIUM;
-@@ -542,10 +543,6 @@ void ExtensionDownloader::CreateManifestLoader() {
+@@ -544,10 +545,6 @@ void ExtensionDownloader::CreateManifestLoader() {
    // Send traffic-management headers to the webstore, and omit credentials.
    // https://bugs.chromium.org/p/chromium/issues/detail?id=647516
    if (extension_urls::IsWebstoreUpdateUrl(active_request->full_url())) {
@@ -889,7 +908,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
      resource_request->headers.SetHeader(kUpdateAppIdHeader, id_list);
      resource_request->headers.SetHeader(
          kUpdateUpdaterHeader,
-@@ -830,20 +827,6 @@ void ExtensionDownloader::HandleManifestResults(
+@@ -832,20 +829,6 @@ void ExtensionDownloader::HandleManifestResults(
          update.second->info);
    }
  
@@ -910,7 +929,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
    ExtensionIdSet extension_ids_with_errors;
    for (const auto& failure : failures)
      extension_ids_with_errors.insert(failure.first.id);
-@@ -865,7 +848,7 @@ ExtensionDownloader::GetUpdateAvailability(
+@@ -867,7 +850,7 @@ ExtensionDownloader::GetUpdateAvailability(
      // extensions that have already existed in the system.
      if (!delegate_->GetExtensionExistingVersion(extension_id,
                                                  &extension_version)) {
@@ -919,7 +938,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
        return UpdateAvailability::kBadUpdateSpecification;
      }
      VLOG(2) << extension_id << " is at '" << extension_version << "'";
-@@ -876,11 +859,11 @@ ExtensionDownloader::GetUpdateAvailability(
+@@ -878,11 +861,11 @@ ExtensionDownloader::GetUpdateAvailability(
      const std::string& update_version_str = update->version;
      if (VLOG_IS_ON(2)) {
        if (update_version_str.empty())
@@ -933,7 +952,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
                  << " latest version is '" << update_version_str << "'";
      }
  
-@@ -890,21 +873,21 @@ ExtensionDownloader::GetUpdateAvailability(
+@@ -892,21 +875,21 @@ ExtensionDownloader::GetUpdateAvailability(
        // we don't want it.
        if (update_version_str.empty()) {
          // If update manifest doesn't have version number => no update.
@@ -956,9 +975,9 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
 -        VLOG(2) << extension_id << " version is not older than '"
 +        LOG(INFO) << extension_id << " version is not older than '"
                  << update_version_str << "'";
-         has_noupdate = true;
-         continue;
-@@ -925,7 +908,9 @@ ExtensionDownloader::GetUpdateAvailability(
+         bool can_rollback =
+             update_version.CompareTo(existing_version) < 0 &&
+@@ -933,7 +916,9 @@ ExtensionDownloader::GetUpdateAvailability(
      }
  
      // Stop checking as soon as an update for |extension_id| is found.
@@ -969,7 +988,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
      *update_result_out = const_cast<UpdateManifestResult*>(update);
      return UpdateAvailability::kAvailable;
    }
-@@ -1170,7 +1155,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
+@@ -1178,7 +1163,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
    int load_flags = net::LOAD_DISABLE_CACHE;
    bool is_secure = fetch->url.SchemeIsCryptographic();
    extension_loader_resource_request_->load_flags = load_flags;
@@ -978,7 +997,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
      extension_loader_resource_request_->credentials_mode =
          network::mojom::CredentialsMode::kOmit;
    } else {
-@@ -1178,7 +1163,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
+@@ -1186,7 +1171,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
          net::SiteForCookies::FromUrl(fetch->url);
    }
  
@@ -987,7 +1006,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
        is_secure) {
      if (access_token_.empty()) {
        // We should try OAuth2, but we have no token cached. This
-@@ -1203,7 +1188,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
+@@ -1211,7 +1196,7 @@ void ExtensionDownloader::CreateExtensionLoader() {
          base::StringPrintf("Bearer %s", access_token_.c_str()));
    }
  
@@ -996,7 +1015,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
  
    StartExtensionLoader();
  }
-@@ -1225,7 +1210,7 @@ void ExtensionDownloader::StartExtensionLoader() {
+@@ -1233,7 +1218,7 @@ void ExtensionDownloader::StartExtensionLoader() {
            destination: WEBSITE
          }
          policy {
@@ -1005,7 +1024,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
            cookies_store: "user"
            setting:
              "This feature cannot be disabled. It is only enabled when the user "
-@@ -1296,6 +1281,7 @@ void ExtensionDownloader::OnExtensionLoadComplete(base::FilePath crx_path) {
+@@ -1304,6 +1289,7 @@ void ExtensionDownloader::OnExtensionLoadComplete(base::FilePath crx_path) {
      RETRY_HISTOGRAM("CrxFetchSuccess",
                      extensions_queue_.active_request_failure_count(),
                      url);
@@ -1013,7 +1032,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
      std::unique_ptr<ExtensionFetch> fetch_data =
          std::move(extensions_queue_.reset_active_request().fetch);
      delegate_->OnExtensionDownloadStageChanged(
-@@ -1316,7 +1302,7 @@ void ExtensionDownloader::OnExtensionLoadComplete(base::FilePath crx_path) {
+@@ -1324,7 +1310,7 @@ void ExtensionDownloader::OnExtensionLoadComplete(base::FilePath crx_path) {
    } else {
      const std::set<int> request_ids = active_request.GetRequestIds();
      const ExtensionDownloaderDelegate::PingResult& ping = ping_results_[id];
@@ -1022,7 +1041,7 @@ diff --git a/extensions/browser/updater/extension_downloader.cc b/extensions/bro
              << "' response code:" << response_code;
      if (ShouldRetryRequest(extension_loader_.get()) &&
          extensions_queue_.active_request_failure_count() < kMaxRetries) {
-@@ -1410,6 +1396,7 @@ void ExtensionDownloader::NotifyExtensionsDownloadFailedWithList(
+@@ -1418,6 +1404,7 @@ void ExtensionDownloader::NotifyExtensionsDownloadFailedWithList(
  bool ExtensionDownloader::IterateFetchCredentialsAfterFailure(
      ExtensionFetch* fetch,
      int response_code) {
@@ -1086,7 +1105,7 @@ diff --git a/extensions/browser/updater/safe_manifest_parser.cc b/extensions/bro
 diff --git a/extensions/common/extension_features.cc b/extensions/common/extension_features.cc
 --- a/extensions/common/extension_features.cc
 +++ b/extensions/common/extension_features.cc
-@@ -154,4 +154,19 @@ BASE_FEATURE(kDeclarativeNetRequestResponseHeaderMatching,
+@@ -158,4 +158,19 @@ BASE_FEATURE(kDeclarativeNetRequestResponseHeaderMatching,
               "DeclarativeNetRequestResponseHeaderMatching",
               base::FEATURE_DISABLED_BY_DEFAULT);
  
@@ -1109,7 +1128,7 @@ diff --git a/extensions/common/extension_features.cc b/extensions/common/extensi
 diff --git a/extensions/common/extension_features.h b/extensions/common/extension_features.h
 --- a/extensions/common/extension_features.h
 +++ b/extensions/common/extension_features.h
-@@ -193,6 +193,10 @@ BASE_DECLARE_FEATURE(kDeclarativeNetRequestSafeRuleLimits);
+@@ -200,6 +200,10 @@ BASE_DECLARE_FEATURE(kDeclarativeNetRequestSafeRuleLimits);
  // matching condition.
  BASE_DECLARE_FEATURE(kDeclarativeNetRequestResponseHeaderMatching);
  

@@ -205,7 +205,7 @@ new file mode 100644
 +
 +    @Override
 +    public int getCategoryDescription() {
-+        return R.string.settings_site_settings_javascript_jit_description;
++        return R.string.settings_site_settings_javascript_jit_description_cromite;
 +    }
 +
 +    @Override
@@ -238,7 +238,7 @@ new file mode 100644
 +  <message name="IDS_JAVASCRIPT_JIT_PERMISSION_TITLE" desc="Title of the permission to run javascript [CHAR_LIMIT=32]" formatter_data="android_java">
 +    JavaScript JIT
 +  </message>
-+  <message name="IDS_SETTINGS_SITE_SETTINGS_JAVASCRIPT_JIT_DESCRIPTION" desc="Description of the Javascript JIT content setting." formatter_data="android_java">
++  <message name="IDS_SETTINGS_SITE_SETTINGS_JAVASCRIPT_JIT_DESCRIPTION_CROMITE" desc="Description of the Javascript JIT content setting." formatter_data="android_java">
 +    Enable the JIT compiler and WebAssembly support in V8
 +  </message>
 +  <message name="IDS_WEBSITE_SETTINGS_CATEGORY_JAVASCRIPT_JIT_ENABLED" desc="Summary text explaining that sites are allowed to compile JavaScript in JIT mode." formatter_data="android_java">
@@ -265,7 +265,7 @@ new file mode 100644
 +    .set_desktop_ui()
 +    .set_is_renderer_content_setting()
 +    .set_title_ui(IDS_JAVASCRIPT_JIT_PERMISSION_TITLE)
-+    .set_description_ui(IDS_SETTINGS_SITE_SETTINGS_JAVASCRIPT_JIT_DESCRIPTION)
++    .set_description_ui(IDS_SETTINGS_SITE_SETTINGS_JAVASCRIPT_JIT_DESCRIPTION_CROMITE)
 +    .set_allowed_ui(IDS_WEBSITE_SETTINGS_CATEGORY_JAVASCRIPT_JIT_ENABLED)
 +    .set_blocked_ui(IDS_WEBSITE_SETTINGS_CATEGORY_JAVASCRIPT_JIT_DISABLED)
 +    .set_allowed_exceptions_ui(IDS_WEBSITE_SETTINGS_ADD_SITE_DESCRIPTION_JAVASCRIPT_JIT_ALLOW)
@@ -274,7 +274,7 @@ new file mode 100644
 diff --git a/components/content_settings/core/browser/content_settings_registry.cc b/components/content_settings/core/browser/content_settings_registry.cc
 --- a/components/content_settings/core/browser/content_settings_registry.cc
 +++ b/components/content_settings/core/browser/content_settings_registry.cc
-@@ -562,7 +562,7 @@ void ContentSettingsRegistry::Init() {
+@@ -582,7 +582,7 @@ void ContentSettingsRegistry::Init() {
             ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
  
    Register(ContentSettingsType::JAVASCRIPT_JIT, "javascript-jit",

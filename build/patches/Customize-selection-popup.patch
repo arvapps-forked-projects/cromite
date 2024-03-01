@@ -20,7 +20,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -693,10 +693,17 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+@@ -723,10 +723,17 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
                                  @TabLaunchType int type,
                                  @TabCreationState int creationState,
                                  boolean markedForSelection) {
@@ -78,7 +78,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordi
  import org.chromium.base.TraceEvent;
  import org.chromium.base.metrics.RecordUserAction;
  import org.chromium.base.supplier.ObservableSupplier;
-@@ -785,11 +786,16 @@ public class RootUiCoordinator
+@@ -805,11 +806,16 @@ public class RootUiCoordinator
                              TrackerFactory.getTrackerForProfile(tab.getProfile())
                                      .notifyEvent(EventConstants.WEB_SEARCH_PERFORMED);
  
@@ -138,7 +138,7 @@ new file mode 100644
 diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml b/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
 --- a/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
 +++ b/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
-@@ -58,4 +58,28 @@ found in the LICENSE file.
+@@ -63,4 +63,28 @@ found in the LICENSE file.
          android:key="move_toolbar_bottom"
          android:summary="@string/move_toolbar_bottom_summary"
          android:title="@string/move_toolbar_bottom_title" />
@@ -170,15 +170,15 @@ diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibil
 diff --git a/content/public/android/java/src/org/chromium/content/browser/selection/SelectActionMenuHelper.java b/content/public/android/java/src/org/chromium/content/browser/selection/SelectActionMenuHelper.java
 --- a/content/public/android/java/src/org/chromium/content/browser/selection/SelectActionMenuHelper.java
 +++ b/content/public/android/java/src/org/chromium/content/browser/selection/SelectActionMenuHelper.java
-@@ -25,6 +25,7 @@ import androidx.annotation.VisibleForTesting;
- import androidx.core.content.ContextCompat;
+@@ -26,6 +26,7 @@ import androidx.core.content.ContextCompat;
  
+ import org.chromium.base.ContextUtils;
  import org.chromium.base.Log;
 +import org.chromium.base.ContextUtils;
  import org.chromium.base.PackageManagerUtils;
  import org.chromium.base.StrictModeContext;
  import org.chromium.content.R;
-@@ -50,38 +51,84 @@ import java.util.TreeSet;
+@@ -51,38 +52,84 @@ import java.util.TreeSet;
  public class SelectActionMenuHelper {
      private static final String TAG = "SelectActionMenu"; // 20 char limit.
  
@@ -293,7 +293,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
      }
  
      @Retention(RetentionPolicy.SOURCE)
-@@ -158,7 +205,7 @@ public class SelectActionMenuHelper {
+@@ -159,7 +206,7 @@ public class SelectActionMenuHelper {
              if (!additionalMenuItems.isEmpty()) {
                  // Additional menu item group which comes after default menu items.
                  SelectionMenuGroup additionalItemGroup =
@@ -302,7 +302,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  additionalItemGroup.addItems(additionalMenuItems);
                  pasteMenuItems.add(additionalItemGroup);
              }
-@@ -224,7 +271,7 @@ public class SelectActionMenuHelper {
+@@ -225,7 +272,7 @@ public class SelectActionMenuHelper {
          }
          SelectionMenuGroup primaryAssistGroup =
                  new SelectionMenuGroup(
@@ -311,7 +311,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
          View.OnClickListener clickListener = null;
          if (classificationResult.onClickListener != null) {
              clickListener = classificationResult.onClickListener;
-@@ -250,7 +297,7 @@ public class SelectActionMenuHelper {
+@@ -251,7 +298,7 @@ public class SelectActionMenuHelper {
              String selectedText) {
          SelectionMenuGroup defaultGroup =
                  new SelectionMenuGroup(
@@ -320,7 +320,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
          List<SelectionMenuItem.Builder> menuItemBuilders = new ArrayList<>();
          menuItemBuilders.add(cut(delegate.canCut()));
          menuItemBuilders.add(copy(delegate.canCopy()));
-@@ -301,7 +348,7 @@ public class SelectActionMenuHelper {
+@@ -302,7 +349,7 @@ public class SelectActionMenuHelper {
          // these menu items.
          SelectionMenuGroup secondaryAssistItems =
                  new SelectionMenuGroup(
@@ -329,7 +329,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
  
          // First action is reserved for primary action so start at index 1.
          final int startIndex = 1;
-@@ -334,7 +381,7 @@ public class SelectActionMenuHelper {
+@@ -335,7 +382,7 @@ public class SelectActionMenuHelper {
          SelectionMenuGroup textProcessingItems =
                  new SelectionMenuGroup(
                          R.id.select_action_menu_text_processing_items,
@@ -338,7 +338,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
          if (isSelectionPassword || intentHandler == null) {
              addAdditionalTextProcessingItems(textProcessingItems, selectionActionMenuDelegate);
              return textProcessingItems;
-@@ -430,7 +477,7 @@ public class SelectActionMenuHelper {
+@@ -431,7 +478,7 @@ public class SelectActionMenuHelper {
                  .setId(R.id.select_action_menu_cut)
                  .setIconAttr(android.R.attr.actionModeCutDrawable)
                  .setAlphabeticShortcut(ItemKeyShortcuts.CUT)
@@ -347,7 +347,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  .setShowAsActionFlags(
                          MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                  .setIsEnabled(isEnabled)
-@@ -442,7 +489,7 @@ public class SelectActionMenuHelper {
+@@ -443,7 +490,7 @@ public class SelectActionMenuHelper {
                  .setId(R.id.select_action_menu_copy)
                  .setIconAttr(android.R.attr.actionModeCopyDrawable)
                  .setAlphabeticShortcut(ItemKeyShortcuts.COPY)
@@ -356,7 +356,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  .setShowAsActionFlags(
                          MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                  .setIsEnabled(isEnabled)
-@@ -454,7 +501,7 @@ public class SelectActionMenuHelper {
+@@ -455,7 +502,7 @@ public class SelectActionMenuHelper {
                  .setId(R.id.select_action_menu_paste)
                  .setIconAttr(android.R.attr.actionModePasteDrawable)
                  .setAlphabeticShortcut(ItemKeyShortcuts.PASTE)
@@ -365,8 +365,8 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  .setShowAsActionFlags(
                          MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                  .setIsEnabled(isEnabled)
-@@ -465,7 +512,7 @@ public class SelectActionMenuHelper {
-         return new SelectionMenuItem.Builder(R.string.actionbar_share)
+@@ -469,7 +516,7 @@ public class SelectActionMenuHelper {
+         return new SelectionMenuItem.Builder(context.getString(R.string.actionbar_share))
                  .setId(R.id.select_action_menu_share)
                  .setIconAttr(android.R.attr.actionModeShareDrawable)
 -                .setOrderInCategory(DefaultItemOrder.SHARE)
@@ -374,7 +374,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  .setShowAsActionFlags(
                          MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                  .setIsEnabled(isEnabled)
-@@ -477,7 +524,7 @@ public class SelectActionMenuHelper {
+@@ -481,7 +528,7 @@ public class SelectActionMenuHelper {
                  .setId(R.id.select_action_menu_select_all)
                  .setIconAttr(android.R.attr.actionModeSelectAllDrawable)
                  .setAlphabeticShortcut(ItemKeyShortcuts.SELECT_ALL)
@@ -383,7 +383,7 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                  .setShowAsActionFlags(
                          MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                  .setIsEnabled(isEnabled)
-@@ -490,7 +537,7 @@ public class SelectActionMenuHelper {
+@@ -494,7 +541,7 @@ public class SelectActionMenuHelper {
          SelectionMenuItem.Builder builder =
                  new SelectionMenuItem.Builder(android.R.string.paste_as_plain_text)
                          .setId(R.id.select_action_menu_paste_as_plain_text)
@@ -392,8 +392,8 @@ diff --git a/content/public/android/java/src/org/chromium/content/browser/select
                          .setShowAsActionFlags(
                                  MenuItem.SHOW_AS_ACTION_ALWAYS | MenuItem.SHOW_AS_ACTION_WITH_TEXT)
                          .setIsEnabled(isEnabled);
-@@ -506,7 +553,7 @@ public class SelectActionMenuHelper {
-         return new SelectionMenuItem.Builder(R.string.actionbar_web_search)
+@@ -514,7 +561,7 @@ public class SelectActionMenuHelper {
+         return new SelectionMenuItem.Builder(context.getString(R.string.actionbar_web_search))
                  .setId(R.id.select_action_menu_web_search)
                  .setIconAttr(android.R.attr.actionModeWebSearchDrawable)
 -                .setOrderInCategory(DefaultItemOrder.WEB_SEARCH)

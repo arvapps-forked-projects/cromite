@@ -36,7 +36,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedAct
  import org.chromium.base.IntentUtils;
  import org.chromium.base.Log;
  import org.chromium.base.MemoryPressureListener;
-@@ -1484,8 +1485,10 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+@@ -1582,8 +1583,10 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
              boolean hadCipherData =
                      CipherFactory.getInstance().restoreFromBundle(getSavedInstanceState());
  
@@ -77,7 +77,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
      private ManagedPreferenceDelegate mManagedPreferenceDelegate;
      private IncognitoLockSettings mIncognitoLockSettings;
  
-@@ -273,7 +278,11 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -271,7 +276,11 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
      @Override
      public boolean onPreferenceChange(Preference preference, Object newValue) {
          String key = preference.getKey();
@@ -90,7 +90,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
              UserPrefs.get(getProfile())
                      .setBoolean(Pref.CAN_MAKE_PAYMENT_ENABLED, (boolean) newValue);
          } else if (PREF_HTTPS_FIRST_MODE.equals(key)) {
-@@ -318,6 +327,11 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -316,6 +325,11 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
                      PreloadPagesSettingsFragment.getPreloadPagesSummaryString(getContext()));
          }
  
@@ -105,7 +105,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -4697,6 +4697,12 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -4724,6 +4724,12 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_CONTEXTMENU_IMAGE_TITLE" desc="The title of a context menu tab when the item pressed contains more than one type. This indicates that all the actions are related to the image.">
          IMAGE
        </message>

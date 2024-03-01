@@ -5,12 +5,12 @@ Subject: Disable Android AppRestrictions
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
  chrome/browser/flags/BUILD.gn                 |  1 +
- .../cromite/sEnableAndroidAppRestriction.java | 38 +++++++++++++++++++
+ .../cromite/sEnableAndroidAppRestriction.java | 39 +++++++++++++++++++
  .../policy/AppRestrictionsProvider.java       |  8 ++++
  .../DisableAndroidAppRestriction.inc          | 13 +++++++
  .../disable-android-app-restriction.inc       |  3 ++
  .../disable-android-app-restriction.inc       |  1 +
- 6 files changed, 64 insertions(+)
+ 6 files changed, 65 insertions(+)
  create mode 100644 chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sEnableAndroidAppRestriction.java
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/DisableAndroidAppRestriction.inc
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/disable-android-app-restriction.inc
@@ -19,19 +19,19 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/chrome/browser/flags/BUILD.gn b/chrome/browser/flags/BUILD.gn
 --- a/chrome/browser/flags/BUILD.gn
 +++ b/chrome/browser/flags/BUILD.gn
-@@ -34,6 +34,7 @@ android_library("java") {
+@@ -25,6 +25,7 @@ android_library("java") {
      "//build:chromeos_buildflags",
      "//build/android:build_java",
      "//chrome/browser/preferences:java",
 +    "//components/policy/android:policy_java",
-     "//components/version_info/android:version_constants_java",
      "//third_party/android_deps:guava_android_java",
      "//third_party/androidx:androidx_annotation_annotation_java",
+     "//third_party/jni_zero:jni_zero_java",
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sEnableAndroidAppRestriction.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sEnableAndroidAppRestriction.java
 new file mode 100644
 --- /dev/null
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/cromite/sEnableAndroidAppRestriction.java
-@@ -0,0 +1,38 @@
+@@ -0,0 +1,39 @@
 +/*
 +    This file is part of Cromite.
 +
@@ -51,14 +51,15 @@ new file mode 100644
 +
 +package org.chromium.chrome.browser.flags.cromite;
 +
-+import org.chromium.chrome.browser.flags.CachedFlag;
++import org.chromium.base.cached_flags.CachedFlag;
++import org.chromium.chrome.browser.flags.ChromeFeatureMap;
 +import org.chromium.components.policy.AppRestrictionsProvider;
 +
 +public class sEnableAndroidAppRestriction {
 +    private static boolean initialized_ = false;
 +
 +    private static final CachedFlag sInstance =
-+        new CachedFlag("EnableAndroidAppRestriction", false);
++        new CachedFlag(ChromeFeatureMap.getInstance(), "EnableAndroidAppRestriction", false);
 +
 +    private sEnableAndroidAppRestriction() {}
 +

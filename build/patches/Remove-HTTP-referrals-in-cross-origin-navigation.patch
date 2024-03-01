@@ -44,7 +44,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_java_resources.gni
 --- a/chrome/android/chrome_java_resources.gni
 +++ b/chrome/android/chrome_java_resources.gni
-@@ -656,6 +656,8 @@ chrome_java_resources = [
+@@ -649,6 +649,8 @@ chrome_java_resources = [
    "java/res/xml/phone_as_a_security_key_accessory_filter.xml",
    "java/res/xml/incognito_preferences.xml",
    "java/res/xml/privacy_preferences.xml",
@@ -56,7 +56,7 @@ diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_ja
 diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
 --- a/chrome/android/chrome_java_sources.gni
 +++ b/chrome/android/chrome_java_sources.gni
-@@ -979,6 +979,8 @@ chrome_java_sources = [
+@@ -982,6 +982,8 @@ chrome_java_sources = [
    "java/src/org/chromium/chrome/browser/privacy_sandbox/ChromeTrackingProtectionDelegate.java",
    "java/src/org/chromium/chrome/browser/privacy_sandbox/TrackingProtectionNoticeController.java",
    "java/src/org/chromium/chrome/browser/privacy/settings/IncognitoSettings.java",
@@ -120,7 +120,7 @@ new file mode 100644
 diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
 --- a/chrome/android/java/res/xml/privacy_preferences.xml
 +++ b/chrome/android/java/res/xml/privacy_preferences.xml
-@@ -90,6 +90,10 @@ found in the LICENSE file.
+@@ -91,6 +91,10 @@ found in the LICENSE file.
          android:title="@string/close_tabs_on_exit_title"
          android:summary="@string/close_tabs_on_exit_summary"
          android:defaultValue="false" />
@@ -186,7 +186,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
      private static final String PREF_PRIVACY_SANDBOX = "privacy_sandbox";
      private static final String PREF_PROXY_OPTIONS = "proxy";
      private static final String PREF_PRIVACY_GUIDE = "privacy_guide";
-@@ -386,6 +388,10 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -384,6 +386,10 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
                              : R.string.text_off);
          }
  
@@ -393,7 +393,7 @@ diff --git a/chrome/browser/extensions/api/settings_private/prefs_util.cc b/chro
 diff --git a/chrome/browser/net/system_network_context_manager.cc b/chrome/browser/net/system_network_context_manager.cc
 --- a/chrome/browser/net/system_network_context_manager.cc
 +++ b/chrome/browser/net/system_network_context_manager.cc
-@@ -556,6 +556,9 @@ SystemNetworkContextManager::SystemNetworkContextManager(
+@@ -592,6 +592,9 @@ SystemNetworkContextManager::SystemNetworkContextManager(
        base::BindRepeating(&SystemNetworkContextManager::UpdateReferrersEnabled,
                            base::Unretained(this)));
  
@@ -403,7 +403,7 @@ diff --git a/chrome/browser/net/system_network_context_manager.cc b/chrome/brows
    pref_change_registrar_.Add(
        prefs::kExplicitlyAllowedNetworkPorts,
        base::BindRepeating(
-@@ -651,6 +654,7 @@ void SystemNetworkContextManager::RegisterPrefs(PrefRegistrySimple* registry) {
+@@ -687,6 +690,7 @@ void SystemNetworkContextManager::RegisterPrefs(PrefRegistrySimple* registry) {
    // the system NetworkContext, and the per-profile pref values are used for
    // the profile NetworkContexts.
    registry->RegisterBooleanPref(prefs::kEnableReferrers, true);
@@ -463,7 +463,7 @@ diff --git a/chrome/browser/resources/settings/privacy_page/privacy_page.ts b/ch
        /**
         * Preferences state.
         */
-@@ -459,6 +470,12 @@ export class SettingsPrivacyPageElement extends SettingsPrivacyPageElementBase {
+@@ -466,6 +477,12 @@ export class SettingsPrivacyPageElement extends SettingsPrivacyPageElementBase {
      Router.getInstance().navigateTo(routes.TRACKING_PROTECTION);
    }
  
@@ -479,7 +479,7 @@ diff --git a/chrome/browser/resources/settings/privacy_page/privacy_page.ts b/ch
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -1008,6 +1008,30 @@ CHAR_LIMIT guidelines:
+@@ -1011,6 +1011,30 @@ CHAR_LIMIT guidelines:
  
  For example, some websites may respond to this request by showing you ads that aren’t based on other websites you’ve visited. Many websites will still collect and use your browsing data — for example to improve security, to provide content, ads and recommendations, and to generate reporting statistics.
        </message>
@@ -537,7 +537,7 @@ diff --git a/chrome/browser/ui/prefs/prefs_tab_helper.cc b/chrome/browser/ui/pre
 diff --git a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
 --- a/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
 +++ b/chrome/browser/ui/webui/settings/settings_localized_strings_provider.cc
-@@ -1708,6 +1708,10 @@ void AddPrivacyStrings(content::WebUIDataSource* html_source,
+@@ -1709,6 +1709,10 @@ void AddPrivacyStrings(content::WebUIDataSource* html_source,
      {"dayHistory", IDS_SETTINGS_DAY_HISTORY_DESCRIPTION},
      {"daysHistory", IDS_SETTINGS_DAYS_HISTORY_DESCRIPTION},
      {"foreverHistory", IDS_SETTINGS_FOREVER_HISTORY_DESCRIPTION},
@@ -551,7 +551,7 @@ diff --git a/chrome/browser/ui/webui/settings/settings_localized_strings_provide
 diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
 --- a/chrome/common/pref_names.h
 +++ b/chrome/common/pref_names.h
-@@ -1497,6 +1497,9 @@ inline constexpr char kEnableReferrers[] = "enable_referrers";
+@@ -1490,6 +1490,9 @@ inline constexpr char kEnableReferrers[] = "enable_referrers";
  inline constexpr char kEnableEncryptedMedia[] =
      "webkit.webprefs.encrypted_media_enabled";
  
@@ -614,7 +614,7 @@ diff --git a/components/download/content/internal/context_menu_download.cc b/com
 diff --git a/content/browser/renderer_host/navigation_request.cc b/content/browser/renderer_host/navigation_request.cc
 --- a/content/browser/renderer_host/navigation_request.cc
 +++ b/content/browser/renderer_host/navigation_request.cc
-@@ -398,6 +398,15 @@ void AddAdditionalRequestHeaders(
+@@ -400,6 +400,15 @@ void AddAdditionalRequestHeaders(
          blink::mojom::Referrer(GURL(), network::mojom::ReferrerPolicy::kNever);
    }
  

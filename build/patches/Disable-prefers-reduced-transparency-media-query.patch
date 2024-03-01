@@ -4,21 +4,68 @@ Subject: Disable prefers-reduced-transparency media query
 
 This feature can be used for fingerprinting as it exposes a user preference
 ---
- .../blink/renderer/platform/runtime_enabled_features.json5    | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ third_party/blink/renderer/core/css/media_query_exp.cc    | 3 ++-
+ .../blink/renderer/core/css/parser/media_query_parser.cc  | 4 ++--
+ .../renderer/core/preferences/preference_manager.idl      | 2 +-
+ .../renderer/platform/runtime_enabled_features.json5      | 8 ++++++--
+ 4 files changed, 11 insertions(+), 6 deletions(-)
 
+diff --git a/third_party/blink/renderer/core/css/media_query_exp.cc b/third_party/blink/renderer/core/css/media_query_exp.cc
+--- a/third_party/blink/renderer/core/css/media_query_exp.cc
++++ b/third_party/blink/renderer/core/css/media_query_exp.cc
+@@ -112,7 +112,8 @@ static inline bool FeatureWithValidIdent(const String& media_feature,
+            ident == CSSValueID::kLess || ident == CSSValueID::kCustom;
+   }
+ 
+-  if (media_feature == media_feature_names::kPrefersReducedMotionMediaFeature) {
++  if (RuntimeEnabledFeatures::PrefersReducedTransparencyEnabled() &&
++      media_feature == media_feature_names::kPrefersReducedMotionMediaFeature) {
+     return ident == CSSValueID::kNoPreference || ident == CSSValueID::kReduce;
+   }
+ 
+diff --git a/third_party/blink/renderer/core/css/parser/media_query_parser.cc b/third_party/blink/renderer/core/css/parser/media_query_parser.cc
+--- a/third_party/blink/renderer/core/css/parser/media_query_parser.cc
++++ b/third_party/blink/renderer/core/css/parser/media_query_parser.cc
+@@ -79,8 +79,8 @@ class MediaQueryFeatureSet : public MediaQueryParser::FeatureSet {
+             RuntimeEnabledFeatures::CSSUpdateMediaFeatureEnabled()) ||
+            (feature == media_feature_names::kPrefersReducedDataMediaFeature &&
+             RuntimeEnabledFeatures::PrefersReducedDataEnabled()) ||
+-           feature ==
+-               media_feature_names::kPrefersReducedTransparencyMediaFeature ||
++           (feature == media_feature_names::kPrefersReducedTransparencyMediaFeature &&
++            RuntimeEnabledFeatures::PrefersReducedTransparencyEnabled()) ||
+            (feature == media_feature_names::kForcedColorsMediaFeature &&
+             RuntimeEnabledFeatures::ForcedColorsEnabled()) ||
+            (feature == media_feature_names::kNavigationControlsMediaFeature &&
+diff --git a/third_party/blink/renderer/core/preferences/preference_manager.idl b/third_party/blink/renderer/core/preferences/preference_manager.idl
+--- a/third_party/blink/renderer/core/preferences/preference_manager.idl
++++ b/third_party/blink/renderer/core/preferences/preference_manager.idl
+@@ -12,6 +12,6 @@ interface PreferenceManager {
+   readonly attribute PreferenceObject colorScheme;
+   readonly attribute PreferenceObject contrast;
+   readonly attribute PreferenceObject reducedMotion;
+-  readonly attribute PreferenceObject reducedTransparency;
++  [RuntimeEnabled=PrefersReducedTransparency] readonly attribute PreferenceObject reducedTransparency;
+   [RuntimeEnabled=PrefersReducedData] readonly attribute PreferenceObject reducedData;
+ };
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2957,8 +2957,8 @@
-       base_feature: "none",
+@@ -3013,10 +3013,14 @@
+       settable_from_internals: true,
      },
      {
--      name: "PrefersReducedTransparency",
--      status: "stable",
-+      name: "PrefersReducedTransparency",  // disabled by default
-+      status: "experimental",              // see https://bugs.chromium.org/p/chromium/issues/detail?id=1424879
+-      name: "PrefersReducedData",
+-      status: "experimental",
++      name: "PrefersReducedData", // must be
++      status: "experimental",     // disabled
+       base_feature: "none",
      },
++    {
++      name: "PrefersReducedTransparency",
++      status: "experimental",
++    },
      // This feature is deprecated and we are evangelizing affected sites.
      // See https://crbug.com/346236 for current status.
+     {
 --

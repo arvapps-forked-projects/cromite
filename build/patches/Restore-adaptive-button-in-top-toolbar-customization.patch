@@ -11,16 +11,18 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../browser/share/ShareButtonController.java  | 37 +++++++++++
  chrome/browser/about_flags.cc                 |  6 --
  chrome/browser/flag-metadata.json             |  3 +-
+ .../flags/android/chrome_feature_list.cc      |  5 ++
+ .../browser/flags/ChromeFeatureList.java      |  1 +
  .../AdaptiveToolbarButtonController.java      |  6 +-
  .../adaptive/AdaptiveToolbarFeatures.java     | 65 ++++++++++++++++++-
  .../AdaptiveToolbarStatePredictor.java        |  9 ++-
  .../AdaptiveToolbarStatePredictorTest.java    | 15 +++++
- 8 files changed, 132 insertions(+), 12 deletions(-)
+ 10 files changed, 138 insertions(+), 12 deletions(-)
 
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
-@@ -43,6 +43,7 @@ import org.chromium.chrome.browser.sync.settings.ManageSyncSettings;
+@@ -46,6 +46,7 @@ import org.chromium.chrome.browser.sync.settings.ManageSyncSettings;
  import org.chromium.chrome.browser.sync.settings.SignInPreference;
  import org.chromium.chrome.browser.sync.settings.SyncPromoPreference;
  import org.chromium.chrome.browser.sync.settings.SyncSettingsUtils;
@@ -28,7 +30,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSe
  import org.chromium.chrome.browser.toolbar.adaptive.AdaptiveToolbarStatePredictor;
  import org.chromium.chrome.browser.tracing.settings.DeveloperSettings;
  import org.chromium.chrome.browser.ui.signin.SyncPromoController;
-@@ -241,7 +242,7 @@ public class MainSettings extends ChromeBaseSettingsFragment
+@@ -247,7 +248,7 @@ public class MainSettings extends ChromeBaseSettingsFragment
                          uiState -> {
                              // We don't show the toolbar shortcut settings page if disabled from
                              // finch.
@@ -87,7 +89,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/share/ShareButt
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -707,18 +707,12 @@ const FeatureEntry::FeatureParam kAdaptiveButtonCustomization_Share[] = {
+@@ -653,18 +653,12 @@ const FeatureEntry::FeatureParam kAdaptiveButtonCustomization_Share[] = {
      {"default_segment", "share"},
      {"show_ui_only_after_ready", "false"},
      {"ignore_segmentation_results", "true"}};
@@ -121,6 +123,39 @@ diff --git a/chrome/browser/flag-metadata.json b/chrome/browser/flag-metadata.js
    },
    {
      "name": "adaptive-button-in-top-toolbar-translate",
+diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
+--- a/chrome/browser/flags/android/chrome_feature_list.cc
++++ b/chrome/browser/flags/android/chrome_feature_list.cc
+@@ -150,6 +150,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+     &history_clusters::internal::kJourneys,
+     &history_clusters::internal::kOmniboxAction,
+     &history_clusters::internal::kOmniboxHistoryClusterProvider,
++    &kAdaptiveButtonInTopToolbar,
+     &kAdaptiveButtonInTopToolbarTranslate,
+     &kAdaptiveButtonInTopToolbarAddToBookmarks,
+     &kAdaptiveButtonInTopToolbarCustomizationV2,
+@@ -392,6 +393,10 @@ static jlong JNI_ChromeFeatureMap_GetNativeMap(JNIEnv* env) {
+ 
+ // Alphabetical:
+ 
++CROMITE_FEATURE(kAdaptiveButtonInTopToolbar,
++                "AdaptiveButtonInTopToolbar",
++                base::FEATURE_DISABLED_BY_DEFAULT);
++
+ BASE_FEATURE(kAdaptiveButtonInTopToolbarTranslate,
+              "AdaptiveButtonInTopToolbarTranslate",
+              base::FEATURE_DISABLED_BY_DEFAULT);
+diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+--- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
++++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
+@@ -142,6 +142,7 @@ public abstract class ChromeFeatureList {
+     }
+ 
+     public static final String ALLOW_USER_CERTIFICATES = "AllowUserCertificates";
++    public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR = "AdaptiveButtonInTopToolbar";
+     public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_TRANSLATE =
+             "AdaptiveButtonInTopToolbarTranslate";
+     public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_ADD_TO_BOOKMARKS =
 diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarButtonController.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarButtonController.java
 --- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarButtonController.java
 +++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarButtonController.java
@@ -140,9 +175,9 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
 diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
 --- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
 +++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
-@@ -14,8 +14,18 @@ import org.chromium.chrome.browser.flags.ChromeFeatureList;
- import org.chromium.chrome.browser.profiles.Profile;
- import org.chromium.chrome.browser.readaloud.ReadAloudFeatures;
+@@ -16,8 +16,18 @@ import org.chromium.chrome.browser.readaloud.ReadAloudFeatures;
+ 
+ import java.util.HashMap;
  
 -/** A utility class for handling feature flags used by {@link AdaptiveToolbarButtonController}. */
 +/** A utility class for handling feature flags used by {@link AdaptiveToolbarButtonController}. *
@@ -160,7 +195,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      /** Finch default group for new tab variation. */
      static final String NEW_TAB = "new-tab";
  
-@@ -31,6 +41,7 @@ public class AdaptiveToolbarFeatures {
+@@ -33,6 +43,7 @@ public class AdaptiveToolbarFeatures {
      private static final String VARIATION_PARAM_DISABLE_UI = "disable_ui";
      private static final String VARIATION_PARAM_IGNORE_SEGMENTATION_RESULTS =
              "ignore_segmentation_results";
@@ -168,7 +203,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      private static final String VARIATION_PARAM_SHOW_UI_ONLY_AFTER_READY =
              "show_ui_only_after_ready";
      @VisibleForTesting static final String VARIATION_PARAM_MIN_VERSION = "min_version_adaptive";
-@@ -94,6 +105,21 @@ public class AdaptiveToolbarFeatures {
+@@ -101,6 +112,21 @@ public class AdaptiveToolbarFeatures {
          }
      }
  
@@ -190,7 +225,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      /**
       * Returns whether the adaptive toolbar is enabled with segmentation and customization.
       *
-@@ -219,11 +245,48 @@ public class AdaptiveToolbarFeatures {
+@@ -241,11 +267,48 @@ public class AdaptiveToolbarFeatures {
                          ChromeFeatureList.CONTEXTUAL_PAGE_ACTIONS, "enable_ui", true);
      }
  
@@ -263,7 +298,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
 diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarStatePredictorTest.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarStatePredictorTest.java
 --- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarStatePredictorTest.java
 +++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarStatePredictorTest.java
-@@ -76,6 +76,21 @@ public class AdaptiveToolbarStatePredictorTest {
+@@ -72,6 +72,21 @@ public class AdaptiveToolbarStatePredictorTest {
          statePredictor.recomputeUiState(verifyResultCallback(expected));
      }
  

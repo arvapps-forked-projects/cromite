@@ -3,9 +3,9 @@ Date: Thu, 28 Sep 2023 08:11:00 +0000
 Subject: Keep disabled FetchLaterAPI
 
 ---
- .../blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc  | 4 ++++
- .../blink/renderer/platform/runtime_enabled_features.json5    | 4 ++--
- 2 files changed, 6 insertions(+), 2 deletions(-)
+ .../blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc | 4 ++++
+ .../blink/renderer/platform/runtime_enabled_features.json5   | 5 ++---
+ 2 files changed, 6 insertions(+), 3 deletions(-)
  create mode 100644 cromite_flags/third_party/blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc
 
 diff --git a/cromite_flags/third_party/blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc b/cromite_flags/third_party/blink/common/features_cc/Keep-disabled-FetchLaterAPI.inc
@@ -20,7 +20,7 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -1686,8 +1686,8 @@
+@@ -1713,10 +1713,9 @@
      },
      {
        // The Blink runtime-enabled feature name for the API's IDL.
@@ -29,6 +29,8 @@ diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 
 +      name: "FetchLaterAPI",   // disable
 +      status: "experimental",  // by default
        origin_trial_feature_name: "FetchLaterAPI",
+-      origin_trial_allows_third_party: true,
        base_feature: "FetchLaterAPI",
        // base_feature is meant as kill-switch. This runtime-enabled feature
+       // should follow the Origin Trial unless explicitly overriden by Finch or
 --

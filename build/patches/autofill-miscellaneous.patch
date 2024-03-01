@@ -10,38 +10,32 @@ Do not skip google.com domains for password generation (csagan5)
 
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
- chrome/browser/prefs/browser_prefs.cc         |  6 +-
+ chrome/browser/prefs/browser_prefs.cc         |  2 +-
  .../ui/autofill/chrome_autofill_client.cc     |  7 +-
  .../core/browser/browser_autofill_manager.h   |  4 +-
- .../autofill_crowdsourcing_manager.cc         | 66 ++-----------------
+ .../autofill_crowdsourcing_manager.cc         | 69 ++-----------------
  .../autofill_crowdsourcing_manager.h          |  2 -
  .../autofill/core/common/autofill_features.cc |  1 +
  .../autofill/core/common/autofill_prefs.cc    | 10 +--
  .../password_generation_frame_helper.cc       |  4 --
- 8 files changed, 17 insertions(+), 83 deletions(-)
+ 8 files changed, 15 insertions(+), 84 deletions(-)
 
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -1150,11 +1150,11 @@ void RegisterProfilePrefsForMigration(
-                                    PrefRegistry::LOSSY_PREF);
+@@ -1338,7 +1338,7 @@ void RegisterProfilePrefsForMigration(
+ #endif
  
-   // Deprecated 11/2022.
--  registry->RegisterBooleanPref(kAutofillAssistantEnabled, true);
-+  registry->RegisterBooleanPref(kAutofillAssistantEnabled, false);
-   registry->RegisterBooleanPref(kAutofillAssistantConsent, false);
--  registry->RegisterBooleanPref(kAutofillAssistantTriggerScriptsEnabled, true);
-+  registry->RegisterBooleanPref(kAutofillAssistantTriggerScriptsEnabled, false);
-   registry->RegisterBooleanPref(kAutofillAssistantTriggerScriptsIsFirstTimeUser,
--                                true);
-+                                false);
+   // Deprecated 12/2023.
+-  registry->RegisterBooleanPref(kDownloadDuplicateFilePromptEnabled, true);
++  registry->RegisterBooleanPref(kDownloadDuplicateFilePromptEnabled, false);
  
-   // Deprecated 12/2022.
-   registry->RegisterBooleanPref(kAutofillWalletImportStorageCheckboxState,
+   // Deprecated 12/2023.
+   registry->RegisterInt64Pref(kModelQualityLoggingClientId, true);
 diff --git a/chrome/browser/ui/autofill/chrome_autofill_client.cc b/chrome/browser/ui/autofill/chrome_autofill_client.cc
 --- a/chrome/browser/ui/autofill/chrome_autofill_client.cc
 +++ b/chrome/browser/ui/autofill/chrome_autofill_client.cc
-@@ -218,12 +218,7 @@ ChromeAutofillClient::GetURLLoaderFactory() {
+@@ -225,12 +225,7 @@ ChromeAutofillClient::GetURLLoaderFactory() {
  }
  
  AutofillCrowdsourcingManager* ChromeAutofillClient::GetCrowdsourcingManager() {
@@ -58,7 +52,7 @@ diff --git a/chrome/browser/ui/autofill/chrome_autofill_client.cc b/chrome/brows
 diff --git a/components/autofill/core/browser/browser_autofill_manager.h b/components/autofill/core/browser/browser_autofill_manager.h
 --- a/components/autofill/core/browser/browser_autofill_manager.h
 +++ b/components/autofill/core/browser/browser_autofill_manager.h
-@@ -710,9 +710,9 @@ class BrowserAutofillManager : public AutofillManager {
+@@ -777,9 +777,9 @@ class BrowserAutofillManager : public AutofillManager {
        autocomplete_unrecognized_fallback_logger_;
  
    // Have we logged whether Autofill is enabled for this page load?
@@ -73,24 +67,27 @@ diff --git a/components/autofill/core/browser/browser_autofill_manager.h b/compo
 diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
 --- a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
 +++ b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
-@@ -465,30 +465,6 @@ std::optional<std::string> GetUploadPayloadForApi(
+@@ -473,33 +473,6 @@ std::optional<std::string> GetUploadPayloadForApi(
    return std::move(payload);
  }
  
 -// Gets an API method URL given its type (query or upload), an optional
 -// resource ID, and the HTTP method to be used.
 -// Example usage:
--// * GetAPIMethodUrl(REQUEST_QUERY, "1234", "GET") will return "/v1/pages/1234".
--// * GetAPIMethodUrl(REQUEST_QUERY, "1234", "POST") will return "/v1/pages:get".
--// * GetAPIMethodUrl(REQUEST_UPLOAD, "", "POST") will return "/v1/forms:vote".
--std::string GetAPIMethodUrl(AutofillCrowdsourcingManager::RequestType type,
--                            base::StringPiece resource_id,
--                            base::StringPiece method) {
+-// * GetAPIMethodUrl(RequestType::kRequestQuery, "1234", "GET") will return
+-//   "/v1/pages/1234".
+-// * GetAPIMethodUrl(RequestType::kRequestQuery, "1234", "POST") will return
+-//   "/v1/pages:get".
+-// * GetAPIMethodUrl(RequestType::kRequestUpload, "", "POST") will return
+-//   "/v1/forms:vote".
+-std::string GetAPIMethodUrl(RequestType type,
+-                            std::string_view resource_id,
+-                            std::string_view method) {
 -  const char* api_method_url = [&] {
 -    switch (type) {
--      case AutofillCrowdsourcingManager::REQUEST_QUERY:
+-      case RequestType::kRequestQuery:
 -        return method == "POST" ? "/v1/pages:get" : "/v1/pages";
--      case AutofillCrowdsourcingManager::REQUEST_UPLOAD:
+-      case RequestType::kRequestUpload:
 -        return "/v1/forms:vote";
 -    }
 -    NOTREACHED_NORETURN();
@@ -102,9 +99,9 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
 -}
 -
  // Gets HTTP body payload for API POST request.
- std::optional<std::string> GetAPIBodyPayload(
-     std::string payload,
-@@ -521,18 +497,7 @@ std::optional<std::string> GetAPIQueryPayload(
+ std::optional<std::string> GetAPIBodyPayload(std::string payload,
+                                              RequestType type) {
+@@ -531,18 +504,7 @@ std::optional<std::string> GetAPIQueryPayload(
  }
  
  std::string GetAPIKeyForUrl(version_info::Channel channel) {
@@ -123,8 +120,8 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
 +  return std::string();
  }
  
- }  // namespace
-@@ -732,34 +697,13 @@ size_t AutofillCrowdsourcingManager::GetPayloadLength(
+ std::optional<std::vector<variations::VariationID>>& GetActiveExperiments() {
+@@ -772,34 +734,13 @@ size_t AutofillCrowdsourcingManager::GetPayloadLength(
  
  std::tuple<GURL, std::string> AutofillCrowdsourcingManager::GetRequestURLAndMethod(
      const FormRequestData& request_data) const {
@@ -133,7 +130,7 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
 -  std::string resource_id;
 -  std::string method = "POST";
 -
--  if (request_data.request_type == AutofillCrowdsourcingManager::REQUEST_QUERY) {
+-  if (request_data.request_type == RequestType::kRequestQuery) {
 -    if (GetPayloadLength(request_data.payload) <= kMaxQueryGetSize) {
 -      resource_id = request_data.payload;
 -      method = "GET";
@@ -160,13 +157,13 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
  
  bool AutofillCrowdsourcingManager::StartRequest(FormRequestData request_data) {
 +  if ((true)) return false;
-   // REQUEST_UPLOADs take no IsolationInfo because Password Manager uploads when
+   // kRequestUploads take no IsolationInfo because Password Manager uploads when
    // RenderFrameHostImpl::DidCommitNavigation() is called, in which case
    // AutofillDriver::IsolationInfo() may crash because there is no committing
 diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.h b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.h
 --- a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.h
 +++ b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.h
-@@ -36,8 +36,6 @@ namespace autofill {
+@@ -33,8 +33,6 @@ namespace autofill {
  class AutofillClient;
  class LogManager;
  
@@ -178,7 +175,7 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
 diff --git a/components/autofill/core/common/autofill_features.cc b/components/autofill/core/common/autofill_features.cc
 --- a/components/autofill/core/common/autofill_features.cc
 +++ b/components/autofill/core/common/autofill_features.cc
-@@ -861,6 +861,7 @@ BASE_FEATURE(kAutofillUploadThrottling,
+@@ -791,6 +791,7 @@ BASE_FEATURE(kAutofillUploadThrottling,
               "AutofillUploadThrottling",
               base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -189,7 +186,7 @@ diff --git a/components/autofill/core/common/autofill_features.cc b/components/a
 diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/autofill/core/common/autofill_prefs.cc
 --- a/components/autofill/core/common/autofill_prefs.cc
 +++ b/components/autofill/core/common/autofill_prefs.cc
-@@ -144,7 +144,7 @@ const char kAutofillUsingVirtualViewStructure[] =
+@@ -39,7 +39,7 @@ int GetSyncTransportOptInBitFieldForAccount(const PrefService* prefs,
  void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
    // Synced prefs. Used for cross-device choices, e.g., credit card Autofill.
    registry->RegisterBooleanPref(
@@ -198,7 +195,7 @@ diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/auto
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
    registry->RegisterIntegerPref(
        prefs::kAutofillLastVersionDeduped, 0,
-@@ -153,10 +153,10 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+@@ -48,10 +48,10 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
        prefs::kAutofillHasSeenIban, false,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
    registry->RegisterBooleanPref(
@@ -211,7 +208,7 @@ diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/auto
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
  
    // Non-synced prefs. Used for per-device choices, e.g., signin promo.
-@@ -196,9 +196,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+@@ -91,9 +91,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
  #endif
  
    // Deprecated prefs registered for migration.

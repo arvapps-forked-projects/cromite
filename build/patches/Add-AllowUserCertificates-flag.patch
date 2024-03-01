@@ -20,7 +20,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
-@@ -228,6 +228,7 @@ import org.chromium.content_public.browser.ScreenOrientationProvider;
+@@ -227,6 +227,7 @@ import org.chromium.content_public.browser.ScreenOrientationProvider;
  import org.chromium.content_public.browser.SelectionPopupController;
  import org.chromium.content_public.browser.WebContents;
  import org.chromium.content_public.common.ContentSwitches;
@@ -28,7 +28,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActiv
  import org.chromium.printing.PrintManagerDelegateImpl;
  import org.chromium.printing.PrintingController;
  import org.chromium.printing.PrintingControllerImpl;
-@@ -1097,6 +1098,8 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -1105,6 +1106,8 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
          super.onStartWithNative();
          ChromeActivitySessionTracker.getInstance().onStartWithNative();
          ChromeCachedFlags.getInstance().cacheNativeFlags();
@@ -40,42 +40,42 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActiv
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -144,6 +144,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -136,6 +136,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &feed::kFeedShowSignInCommand,
      &feed::kFeedSignedOutViewDemotion,
      &feed::kFeedUserInteractionReliabilityReport,
 +    &kAllowUserCertificates,
      &feed::kInterestFeedV2,
-     &feed::kInterestFeedV2Autoplay,
      &feed::kInterestFeedV2Hearts,
+     &feed::kWebFeed,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -103,6 +103,7 @@ public abstract class ChromeFeatureList {
+@@ -141,6 +141,7 @@ public abstract class ChromeFeatureList {
+         return ChromeFeatureMap.getInstance().mutableFlagWithSafeDefault(featureName, defaultValue);
      }
  
-     /* Alphabetical: */
 +    public static final String ALLOW_USER_CERTIFICATES = "AllowUserCertificates";
-     public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR = "AdaptiveButtonInTopToolbar";
      public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_TRANSLATE =
              "AdaptiveButtonInTopToolbarTranslate";
-@@ -522,6 +523,8 @@ public abstract class ChromeFeatureList {
-     public static final CachedFlag sAndroidAppIntegration =
-             new CachedFlag(ANDROID_APP_INTEGRATION, false);
-     public static final CachedFlag sAndroidHub = new CachedFlag(ANDROID_HUB, false);
+     public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_ADD_TO_BOOKMARKS =
+@@ -523,6 +524,8 @@ public abstract class ChromeFeatureList {
+             newCachedFlag(ANDROID_ELEGANT_TEXT_HEIGHT, false);
+ 
+     public static final CachedFlag sAndroidHub = newCachedFlag(ANDROID_HUB, false);
 +    public static final CachedFlag sAllowUserCertificates =
-+            new CachedFlag(ALLOW_USER_CERTIFICATES, false);
-     public static final CachedFlag sAppMenuMobileSiteOption =
-             new CachedFlag(APP_MENU_MOBILE_SITE_OPTION, false);
-     public static final CachedFlag sArchiveTabService = new CachedFlag(ARCHIVE_TAB_SERVICE, false);
-@@ -662,6 +665,7 @@ public abstract class ChromeFeatureList {
++            newCachedFlag(ALLOW_USER_CERTIFICATES, false);
+     public static final CachedFlag sArchiveTabService = newCachedFlag(ARCHIVE_TAB_SERVICE, false);
+     public static final CachedFlag sBackGestureActivityTabProvider =
+             newCachedFlag(BACK_GESTURE_ACTIVITY_TAB_PROVIDER, false);
+@@ -657,6 +660,7 @@ public abstract class ChromeFeatureList {
  
      public static final List<CachedFlag> sFlagsCachedFullBrowser =
              List.of(
 +                    sAllowUserCertificates,
                      sAndroidAppIntegration,
+                     sAndroidElegantTextHeight,
                      sAndroidHub,
-                     sAppMenuMobileSiteOption,
 diff --git a/cromite_flags/chrome/browser/about_flags_cc/Add-AllowUserCertificates-flag.inc b/cromite_flags/chrome/browser/about_flags_cc/Add-AllowUserCertificates-flag.inc
 new file mode 100644
 --- /dev/null

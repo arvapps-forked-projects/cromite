@@ -4,22 +4,14 @@ Subject: WIN Disable TabHoverCard images
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- chrome/browser/ui/ui_features.cc | 4 ----
- 1 file changed, 4 deletions(-)
+ .../ui/ui_features_cc/WIN-Disable-TabHoverCard-images.inc        | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100755 cromite_flags/chrome/browser/ui/ui_features_cc/WIN-Disable-TabHoverCard-images.inc
 
-diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
---- a/chrome/browser/ui/ui_features.cc
-+++ b/chrome/browser/ui/ui_features.cc
-@@ -232,11 +232,7 @@ BASE_FEATURE(kTabHoverCardImageSettings,
- // https://crbug.com/928954
- BASE_FEATURE(kTabHoverCardImages,
-              "TabHoverCardImages",
--#if BUILDFLAG(IS_MAC)
-              base::FEATURE_DISABLED_BY_DEFAULT
--#else
--             base::FEATURE_ENABLED_BY_DEFAULT
--#endif
- );
- 
- const char kTabHoverCardImagesNotReadyDelayParameterName[] =
+diff --git a/cromite_flags/chrome/browser/ui/ui_features_cc/WIN-Disable-TabHoverCard-images.inc b/cromite_flags/chrome/browser/ui/ui_features_cc/WIN-Disable-TabHoverCard-images.inc
+new file mode 100755
+--- /dev/null
++++ b/cromite_flags/chrome/browser/ui/ui_features_cc/WIN-Disable-TabHoverCard-images.inc
+@@ -0,0 +1 @@
++SET_CROMITE_FEATURE_DISABLED(kTabHoverCardImages);
 --

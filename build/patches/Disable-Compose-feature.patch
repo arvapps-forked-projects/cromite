@@ -1,0 +1,21 @@
+From: uazo <uazo@users.noreply.github.com>
+Date: Mon, 26 Feb 2024 16:35:16 +0000
+Subject: Disable Compose feature
+
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
+---
+ components/compose/core/browser/compose_features.cc | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/components/compose/core/browser/compose_features.cc b/components/compose/core/browser/compose_features.cc
+--- a/components/compose/core/browser/compose_features.cc
++++ b/components/compose/core/browser/compose_features.cc
+@@ -48,4 +48,7 @@ BASE_FEATURE(kEnableComposeSavedStateNotification,
+ BASE_FEATURE(kComposeUiParams,
+              "ComposeUiParams",
+              base::FEATURE_DISABLED_BY_DEFAULT);
++
++SET_CROMITE_FEATURE_DISABLED(kEnableCompose);
++SET_CROMITE_FEATURE_DISABLED(kComposeEligible);
+ }  // namespace compose::features
+--

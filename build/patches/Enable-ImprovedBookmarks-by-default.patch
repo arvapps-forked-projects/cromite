@@ -9,7 +9,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
  .../chromium/chrome/browser/bookmarks/BookmarkUiPrefs.java    | 2 +-
  .../org/chromium/chrome/browser/bookmarks/BookmarkUtils.java  | 3 ++-
  .../org/chromium/chrome/browser/flags/ChromeFeatureList.java  | 2 +-
- components/bookmarks/browser/bookmark_client.cc               | 3 +--
+ components/bookmarks/browser/bookmark_node.cc                 | 3 +--
  .../Enable-ImprovedBookmarks-by-default.inc                   | 1 +
  7 files changed, 10 insertions(+), 7 deletions(-)
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Enable-ImprovedBookmarks-by-default.inc
@@ -39,7 +39,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/Bookm
  
  import androidx.annotation.DrawableRes;
  import androidx.annotation.StringRes;
-@@ -54,6 +55,7 @@ class BookmarkSearchBoxRowViewBinder {
+@@ -34,6 +35,7 @@ class BookmarkSearchBoxRowViewBinder {
      private void bindInternal(PropertyModel model, View view, PropertyKey key) {
          BookmarkSearchBoxRow row = (BookmarkSearchBoxRow) view;
          ChipView shoppingChip = view.findViewById(R.id.shopping_filter_chip);
@@ -70,7 +70,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/Bookm
  import org.chromium.chrome.browser.bookmarks.BookmarkUiPrefs.BookmarkRowDisplayPref;
  import org.chromium.chrome.browser.commerce.ShoppingServiceFactory;
  import org.chromium.chrome.browser.document.ChromeLauncherActivity;
-@@ -491,7 +492,7 @@ public class BookmarkUtils {
+@@ -489,7 +490,7 @@ public class BookmarkUtils {
              RecordUserAction.record("MobileBookmarkManagerReopenBookmarksInSameSession");
          }
  
@@ -82,19 +82,19 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/Bookm
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -773,7 +773,7 @@ public abstract class ChromeFeatureList {
+@@ -768,7 +768,7 @@ public abstract class ChromeFeatureList {
      public static final MutableFlagWithSafeDefault sAdvancedPeripheralsSupportTabStrip =
-             newMutableFlagWithSafeDefault(ADVANCED_PERIPHERALS_SUPPORT_TAB_STRIP, false);
+             newMutableFlagWithSafeDefault(ADVANCED_PERIPHERALS_SUPPORT_TAB_STRIP, true);
      public static final MutableFlagWithSafeDefault sAndroidImprovedBookmarks =
 -            newMutableFlagWithSafeDefault(ANDROID_IMPROVED_BOOKMARKS, false);
 +            newMutableFlagWithSafeDefault(ANDROID_IMPROVED_BOOKMARKS, true);
-     public static final MutableFlagWithSafeDefault sAvoidRelayoutDuringFocusAnimation =
-             newMutableFlagWithSafeDefault(AVOID_RELAYOUT_DURING_FOCUS_ANIMATION, true);
-     public static final MutableFlagWithSafeDefault sCctRealTimeEngagementSignals =
-diff --git a/components/bookmarks/browser/bookmark_client.cc b/components/bookmarks/browser/bookmark_client.cc
---- a/components/bookmarks/browser/bookmark_client.cc
-+++ b/components/bookmarks/browser/bookmark_client.cc
-@@ -50,8 +50,7 @@ bool BookmarkClient::IsPermanentNodeVisibleWhenEmpty(
+     public static final MutableFlagWithSafeDefault sDeferKeepScreenOnDuringGesture =
+             newMutableFlagWithSafeDefault(DEFER_KEEP_SCREEN_ON_DURING_GESTURE, false);
+     public static final MutableFlagWithSafeDefault sDeferNotifyInMotion =
+diff --git a/components/bookmarks/browser/bookmark_node.cc b/components/bookmarks/browser/bookmark_node.cc
+--- a/components/bookmarks/browser/bookmark_node.cc
++++ b/components/bookmarks/browser/bookmark_node.cc
+@@ -171,8 +171,7 @@ bool BookmarkPermanentNode::IsTypeVisibleWhenEmpty(Type type) {
      case BookmarkNode::BOOKMARK_BAR:
        return is_desktop;
      case BookmarkNode::OTHER_NODE:
@@ -103,7 +103,7 @@ diff --git a/components/bookmarks/browser/bookmark_client.cc b/components/bookma
 +      return true;
      case BookmarkNode::MOBILE:
        // Either MOBILE or OTHER_NODE is visible when empty, but never both.
-       return !IsPermanentNodeVisibleWhenEmpty(BookmarkNode::OTHER_NODE);
+       return !IsTypeVisibleWhenEmpty(BookmarkNode::OTHER_NODE);
 diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Enable-ImprovedBookmarks-by-default.inc b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Enable-ImprovedBookmarks-by-default.inc
 new file mode 100644
 --- /dev/null

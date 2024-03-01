@@ -14,14 +14,14 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../feedback/SimplifiedNtpFeedbackSource.java | 38 +++++++++++
  .../identity_disc/IdentityDiscController.java |  5 +-
  .../NativePageNavigationDelegateImpl.java     |  4 +-
- .../chrome/browser/ntp/NewTabPageLayout.java  | 30 ++++++++-
+ .../chrome/browser/ntp/NewTabPageLayout.java  | 31 ++++++++-
  .../SuggestionsNavigationDelegate.java        | 17 +++++
  .../flags/android/chrome_feature_list.cc      |  1 +
  .../browser/flags/ChromeFeatureList.java      |  1 +
  .../Restore-Simplified-NTP-launch.inc         | 12 ++++
  .../Restore-Simplified-NTP-launch.inc         |  3 +
  .../Restore-Simplified-NTP-launch.inc         |  1 +
- 15 files changed, 182 insertions(+), 5 deletions(-)
+ 15 files changed, 183 insertions(+), 5 deletions(-)
  create mode 100644 chrome/android/java/res/layout/ntp_shortcuts.xml
  create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/feedback/SimplifiedNtpFeedbackSource.java
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Restore-Simplified-NTP-launch.inc
@@ -31,7 +31,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_java_resources.gni
 --- a/chrome/android/chrome_java_resources.gni
 +++ b/chrome/android/chrome_java_resources.gni
-@@ -550,6 +550,7 @@ chrome_java_resources = [
+@@ -543,6 +543,7 @@ chrome_java_resources = [
    "java/res/layout/new_tab_page_incognito.xml",
    "java/res/layout/new_tab_page_layout.xml",
    "java/res/layout/new_tab_page_tile_grid_placeholder.xml",
@@ -42,7 +42,7 @@ diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_ja
 diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
 --- a/chrome/android/chrome_java_sources.gni
 +++ b/chrome/android/chrome_java_sources.gni
-@@ -619,6 +619,7 @@ chrome_java_sources = [
+@@ -620,6 +620,7 @@ chrome_java_sources = [
    "java/src/org/chromium/chrome/browser/feedback/FeedFeedbackCollector.java",
    "java/src/org/chromium/chrome/browser/feedback/HelpAndFeedbackLauncherImpl.java",
    "java/src/org/chromium/chrome/browser/feedback/ScreenshotTask.java",
@@ -53,7 +53,7 @@ diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java
 diff --git a/chrome/android/java/res/layout/new_tab_page_layout.xml b/chrome/android/java/res/layout/new_tab_page_layout.xml
 --- a/chrome/android/java/res/layout/new_tab_page_layout.xml
 +++ b/chrome/android/java/res/layout/new_tab_page_layout.xml
-@@ -44,6 +44,13 @@ found in the LICENSE file.
+@@ -37,6 +37,13 @@ found in the LICENSE file.
          android:layout_marginTop="16dp"
          android:visibility="gone"/>
  
@@ -224,7 +224,15 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/native_page/Nat
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
-@@ -38,6 +38,7 @@ import org.chromium.chrome.browser.cryptids.ProbabilisticCryptidRenderer;
+@@ -18,6 +18,7 @@ import android.util.AttributeSet;
+ import android.view.DragEvent;
+ import android.view.Gravity;
+ import android.view.LayoutInflater;
++import android.view.ViewStub;
+ import android.view.View;
+ import android.view.ViewGroup;
+ import android.widget.LinearLayout;
+@@ -37,6 +38,7 @@ import org.chromium.chrome.browser.compositor.layouts.content.InvalidationAwareT
  import org.chromium.chrome.browser.feed.FeedSurfaceScrollDelegate;
  import org.chromium.chrome.browser.flags.ChromeFeatureList;
  import org.chromium.chrome.browser.lens.LensEntryPoint;
@@ -232,7 +240,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
  import org.chromium.chrome.browser.lens.LensMetrics;
  import org.chromium.chrome.browser.lifecycle.ActivityLifecycleDispatcher;
  import org.chromium.chrome.browser.logo.LogoBridge.Logo;
-@@ -106,6 +107,8 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -107,6 +109,8 @@ public class NewTabPageLayout extends LinearLayout {
      private @Nullable DisplayStyleObserver mDisplayStyleObserver;
      private CallbackController mCallbackController = new CallbackController();
  
@@ -241,7 +249,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
      /**
       * Whether the tiles shown in the layout have finished loading.
       * With {@link #mHasShownView}, it's one of the 2 flags used to track initialisation progress.
-@@ -307,6 +310,7 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -314,6 +318,7 @@ public class NewTabPageLayout extends LinearLayout {
                  isScrollableMvtEnabled(),
                  searchProviderIsGoogle);
          initializeSearchBoxBackground();
@@ -249,7 +257,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
          initializeSearchBoxTextView();
          initializeVoiceSearchButton();
          initializeLensButton();
-@@ -769,12 +773,15 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -802,12 +807,15 @@ public class NewTabPageLayout extends LinearLayout {
                  marginLayoutParams.leftMargin = lateralPaddingsForNtp;
                  marginLayoutParams.rightMargin = lateralPaddingsForNtp;
              }
@@ -266,7 +274,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
              marginLayoutParams.bottomMargin =
                      getResources()
                              .getDimensionPixelSize(R.dimen.tile_carousel_layout_bottom_margin);
-@@ -782,7 +789,10 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -815,7 +823,10 @@ public class NewTabPageLayout extends LinearLayout {
              // Set a bit more top padding on the tile grid if there is no logo.
              ViewGroup.LayoutParams layoutParams = mMvTilesContainerLayout.getLayoutParams();
              layoutParams.width = ViewGroup.LayoutParams.WRAP_CONTENT;
@@ -278,7 +286,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
              marginLayoutParams.bottomMargin = getGridMvtBottomMargin();
          }
  
-@@ -1109,6 +1119,22 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -1117,6 +1128,22 @@ public class NewTabPageLayout extends LinearLayout {
          return iphCommandBuilder;
      }
  
@@ -338,20 +346,20 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/suggestions/Sug
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -253,6 +253,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -223,6 +223,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+     &kHideTabOnTabSwitcher,
      &kIncognitoReauthenticationForAndroid,
      &kIncognitoScreenshot,
-     &kInfobarScrollOptimization,
 +    &kSimplifiedNTP,
-     &kInstanceSwitcher,
      &kInstantStart,
-     &kLensCameraAssistedSearch,
+     &kLensOnQuickActionSearchWidget,
+     &kMagicStackAndroid,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -316,6 +316,7 @@ public abstract class ChromeFeatureList {
-     public static final String LOOKALIKE_NAVIGATION_URL_SUGGESTIONS_UI =
+@@ -325,6 +325,7 @@ public abstract class ChromeFeatureList {
              "LookalikeUrlNavigationSuggestionsUI";
+     public static final String MAGIC_STACK_ANDROID = "MagicStackAndroid";
      public static final String MESSAGES_FOR_ANDROID_ADS_BLOCKED = "MessagesForAndroidAdsBlocked";
 +    public static final String SIMPLIFIED_NTP = "SimplifiedNTP";
      public static final String MESSAGES_FOR_ANDROID_INFRASTRUCTURE =

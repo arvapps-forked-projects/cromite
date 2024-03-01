@@ -10,19 +10,18 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/components/performance_manager/user_tuning/prefs.cc b/components/performance_manager/user_tuning/prefs.cc
 --- a/components/performance_manager/user_tuning/prefs.cc
 +++ b/components/performance_manager/user_tuning/prefs.cc
-@@ -12,13 +12,13 @@
+@@ -13,12 +13,12 @@
  namespace performance_manager::user_tuning::prefs {
  
  void RegisterLocalStatePrefs(PrefRegistrySimple* registry) {
--  registry->RegisterBooleanPref(kHighEfficiencyModeEnabled, false);
-+  registry->RegisterBooleanPref(kHighEfficiencyModeEnabled, true);
+-  registry->RegisterBooleanPref(kMemorySaverModeEnabled, false);
++  registry->RegisterBooleanPref(kMemorySaverModeEnabled, true);
    registry->RegisterIntegerPref(
-       kHighEfficiencyModeTimeBeforeDiscardInMinutes,
-       kDefaultHighEfficiencyModeTimeBeforeDiscardInMinutes);
+       kMemorySaverModeTimeBeforeDiscardInMinutes,
+       kDefaultMemorySaverModeTimeBeforeDiscardInMinutes);
    registry->RegisterIntegerPref(
-       kHighEfficiencyModeState,
--      static_cast<int>(HighEfficiencyModeState::kDisabled));
-+      static_cast<int>(HighEfficiencyModeState::kEnabled));
+-      kMemorySaverModeState, static_cast<int>(MemorySaverModeState::kDisabled));
++      kMemorySaverModeState, static_cast<int>(MemorySaverModeState::kEnabled));
    registry->RegisterIntegerPref(
        kBatterySaverModeState,
        static_cast<int>(BatterySaverModeState::kEnabledBelowThreshold));

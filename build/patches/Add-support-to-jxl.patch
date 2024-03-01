@@ -56,8 +56,9 @@ Enabled by default
  third_party/libjxl/OWNERS                     |   9 +
  third_party/libjxl/README.chromium            |  15 +
  .../libjxl/gen_headers/jxl/jxl_export.h       |  11 +
- tools/metrics/histograms/enums.xml            |   3 +-
- 52 files changed, 1995 insertions(+), 17 deletions(-)
+ tools/metrics/histograms/enums.xml            |   1 +
+ .../histograms/metadata/blink/enums.xml       |   2 +-
+ 53 files changed, 1995 insertions(+), 17 deletions(-)
  create mode 100644 build/linux/unbundle/libjxl.gn
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Add-support-to-jxl.inc
  create mode 100644 cromite_flags/third_party/blink/common/features_cc/Add-support-to-jxl.inc
@@ -83,7 +84,7 @@ Enabled by default
 diff --git a/DEPS b/DEPS
 --- a/DEPS
 +++ b/DEPS
-@@ -485,6 +485,10 @@ vars = {
+@@ -487,6 +487,10 @@ vars = {
    # Three lines of non-changing comments so that
    # the commit queue can handle CLs rolling feed
    # and whatever else without interference from each other.
@@ -94,7 +95,7 @@ diff --git a/DEPS b/DEPS
    'highway_revision': '8f20644eca693cfb74aa795b0006b6779c370e7a',
    # Three lines of non-changing comments so that
    # the commit queue can handle CLs rolling ffmpeg
-@@ -1103,6 +1107,9 @@ deps = {
+@@ -1105,6 +1109,9 @@ deps = {
    'src/third_party/dawn':
      Var('dawn_git') + '/dawn.git' + '@' +  Var('dawn_revision'),
  
@@ -315,7 +316,7 @@ diff --git a/media/BUILD.gn b/media/BUILD.gn
 diff --git a/media/media_options.gni b/media/media_options.gni
 --- a/media/media_options.gni
 +++ b/media/media_options.gni
-@@ -129,6 +129,9 @@ declare_args() {
+@@ -132,6 +132,9 @@ declare_args() {
    # `enable_libaom` should likely also be overriddent to false.
    enable_av1_decoder = enable_dav1d_decoder
  
@@ -374,7 +375,7 @@ diff --git a/net/base/mime_util_unittest.cc b/net/base/mime_util_unittest.cc
 diff --git a/third_party/.gitignore b/third_party/.gitignore
 --- a/third_party/.gitignore
 +++ b/third_party/.gitignore
-@@ -97,6 +97,7 @@
+@@ -91,6 +91,7 @@
  /libgifcodec
  /libjingle/source
  /libupnp
@@ -393,7 +394,7 @@ diff --git a/third_party/blink/common/loader/network_utils.cc b/third_party/blin
  
  namespace blink {
  namespace network_utils {
-@@ -33,7 +34,20 @@ bool AlwaysAccessNetwork(
+@@ -34,7 +35,20 @@ bool AlwaysAccessNetwork(
  }
  
  const char* ImageAcceptHeader() {
@@ -466,7 +467,7 @@ diff --git a/third_party/blink/common/mime_util/mime_util_unittest.cc b/third_pa
 diff --git a/third_party/blink/public/devtools_protocol/browser_protocol.pdl b/third_party/blink/public/devtools_protocol/browser_protocol.pdl
 --- a/third_party/blink/public/devtools_protocol/browser_protocol.pdl
 +++ b/third_party/blink/public/devtools_protocol/browser_protocol.pdl
-@@ -4246,6 +4246,7 @@ domain Emulation
+@@ -4258,6 +4258,7 @@ domain Emulation
    experimental type DisabledImageType extends string
      enum
        avif
@@ -477,7 +478,7 @@ diff --git a/third_party/blink/public/devtools_protocol/browser_protocol.pdl b/t
 diff --git a/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc b/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
 --- a/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
 +++ b/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
-@@ -495,10 +495,10 @@ AtomicString InspectorEmulationAgent::OverrideAcceptImageHeader(
+@@ -502,10 +502,10 @@ AtomicString InspectorEmulationAgent::OverrideAcceptImageHeader(
    String header(network_utils::ImageAcceptHeader());
    for (String type : *disabled_image_types) {
      // The header string is expected to be like
@@ -491,7 +492,7 @@ diff --git a/third_party/blink/renderer/core/inspector/inspector_emulation_agent
      header.Replace(String(type + ","), "");
    }
    return AtomicString(header);
-@@ -843,6 +843,7 @@ protocol::Response InspectorEmulationAgent::setDisabledImageTypes(
+@@ -850,6 +850,7 @@ protocol::Response InspectorEmulationAgent::setDisabledImageTypes(
    namespace DisabledImageTypeEnum = protocol::Emulation::DisabledImageTypeEnum;
    for (protocol::Emulation::DisabledImageType type : *disabled_types) {
      if (DisabledImageTypeEnum::Avif == type ||
@@ -607,7 +608,7 @@ diff --git a/third_party/blink/renderer/modules/webcodecs/image_decoder_fuzzer.c
 diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/renderer/platform/BUILD.gn
 --- a/third_party/blink/renderer/platform/BUILD.gn
 +++ b/third_party/blink/renderer/platform/BUILD.gn
-@@ -2264,6 +2264,10 @@ source_set("blink_platform_unittests_sources") {
+@@ -2277,6 +2277,10 @@ source_set("blink_platform_unittests_sources") {
      sources += [ "text/locale_icu_test.cc" ]
    }
  
@@ -618,7 +619,7 @@ diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/re
    sources += [ "testing/run_all_tests.cc" ]
  
    configs += [
-@@ -2307,6 +2311,7 @@ source_set("blink_platform_unittests_sources") {
+@@ -2320,6 +2324,7 @@ source_set("blink_platform_unittests_sources") {
      "//third_party/blink/renderer/platform/scheduler:unit_tests",
      "//third_party/blink/renderer/platform/wtf",
      "//third_party/libavif:libavif",
@@ -2221,7 +2222,7 @@ diff --git a/third_party/blink/tools/commit_stats/git-dirs.txt b/third_party/bli
 diff --git a/third_party/blink/web_tests/TestExpectations b/third_party/blink/web_tests/TestExpectations
 --- a/third_party/blink/web_tests/TestExpectations
 +++ b/third_party/blink/web_tests/TestExpectations
-@@ -4852,6 +4852,12 @@ crbug.com/1199522 http/tests/devtools/layers/layers-3d-view-hit-testing.js [ Fai
+@@ -4569,6 +4569,12 @@ crbug.com/1199522 http/tests/devtools/layers/layers-3d-view-hit-testing.js [ Fai
  # Started failing after rolling new version of check-layout-th.js
  css3/flexbox/perpendicular-writing-modes-inside-flex-item.html [ Failure ]
  
@@ -2237,7 +2238,7 @@ diff --git a/third_party/blink/web_tests/TestExpectations b/third_party/blink/we
 diff --git a/third_party/blink/web_tests/VirtualTestSuites b/third_party/blink/web_tests/VirtualTestSuites
 --- a/third_party/blink/web_tests/VirtualTestSuites
 +++ b/third_party/blink/web_tests/VirtualTestSuites
-@@ -441,6 +441,15 @@
+@@ -102,6 +102,15 @@
               "--disable-threaded-compositing", "--disable-threaded-animation"],
      "expires": "Jul 1, 2023"
    },
@@ -2251,8 +2252,8 @@ diff --git a/third_party/blink/web_tests/VirtualTestSuites b/third_party/blink/w
 +    "expires": "Jul 1, 2023"
 +  },
    {
-     "prefix": "scalefactor150",
-     "platforms": ["Linux", "Win"],
+     "prefix": "unsafe_webgpu",
+     "platforms": ["Linux", "Mac", "Win"],
 diff --git a/third_party/blink/web_tests/http/tests/inspector-protocol/emulation/emulation-set-disabled-image-types-jxl-expected.txt b/third_party/blink/web_tests/http/tests/inspector-protocol/emulation/emulation-set-disabled-image-types-jxl-expected.txt
 new file mode 100644
 --- /dev/null
@@ -2652,16 +2653,7 @@ new file mode 100644
 diff --git a/tools/metrics/histograms/enums.xml b/tools/metrics/histograms/enums.xml
 --- a/tools/metrics/histograms/enums.xml
 +++ b/tools/metrics/histograms/enums.xml
-@@ -11344,7 +11344,7 @@ to ensure that the crash string is shown properly on the user-facing crash UI.
-   <int value="5" label="kImageICO"/>
-   <int value="6" label="kImageBMP"/>
-   <int value="7" label="kImageAVIF"/>
--  <int value="8" label="(obsolete) kImageJXL"/>
-+  <int value="8" label="kImageJXL"/>
- </enum>
- 
- <enum name="DefaultAppName">
-@@ -34310,6 +34310,7 @@ from previous Chrome versions.
+@@ -23856,6 +23856,7 @@ from previous Chrome versions.
    <int value="188610022" label="NewMessageListView:enabled"/>
    <int value="189728101" label="FasterLocationReload:disabled"/>
    <int value="189777537" label="DisableInitialMostVisitedFadeIn:enabled"/>
@@ -2669,4 +2661,16 @@ diff --git a/tools/metrics/histograms/enums.xml b/tools/metrics/histograms/enums
    <int value="190395448" label="SearchWebInSidePanel:enabled"/>
    <int value="191737931" label="enable-mark-http-as"/>
    <int value="191891628" label="AutocompleteExtendedSuggestions:enabled"/>
+diff --git a/tools/metrics/histograms/metadata/blink/enums.xml b/tools/metrics/histograms/metadata/blink/enums.xml
+--- a/tools/metrics/histograms/metadata/blink/enums.xml
++++ b/tools/metrics/histograms/metadata/blink/enums.xml
+@@ -227,7 +227,7 @@ chromium-metrics-reviews@google.com.
+   <int value="5" label="kImageICO"/>
+   <int value="6" label="kImageBMP"/>
+   <int value="7" label="kImageAVIF"/>
+-  <int value="8" label="(obsolete) kImageJXL"/>
++  <int value="8" label="kImageJXL"/>
+ </enum>
+ 
+ <enum name="FedCmAccountsResponseInvalidReason">
 --

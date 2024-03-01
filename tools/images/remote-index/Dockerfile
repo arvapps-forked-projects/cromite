@@ -8,9 +8,9 @@ RUN apt-get install -y --no-install-recommends python3-pip && \
 RUN rm -rf /var/www/html/*
 #WORKDIR "/"
 
-RUN wget https://github.com/clangd/clangd/releases/download/snapshot_20231203/clangd_indexing_tools-linux-snapshot_20231203.zip && \
-    unzip clangd_indexing_tools-linux-snapshot_20231203.zip && \
-    rm clangd_indexing_tools-linux-snapshot_20231203.zip
+RUN wget https://github.com/clangd/clangd/releases/download/17.0.3/clangd_indexing_tools-linux-17.0.3.zip && \
+    unzip clangd_indexing_tools-linux-17.0.3.zip && \
+    rm clangd_indexing_tools-linux-17.0.3.zip
 
 ADD bromite.idx .
 ADD entry_point.sh .

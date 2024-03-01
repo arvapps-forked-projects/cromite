@@ -13,13 +13,14 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
  .../java/res/xml/privacy_preferences.xml      | 10 ++++++++
  .../browser/LaunchIntentDispatcher.java       | 21 ++++++++++++++++
+ .../customtabs/CustomTabsConnection.java      |  1 +
  .../IncognitoCustomTabIntentDataProvider.java |  6 +++++
  .../privacy/settings/PrivacySettings.java     | 24 +++++++++++++++++++
  .../chrome/browser/tab/TabAssociatedApp.java  |  6 ++++-
  .../strings/android_chrome_strings.grd        | 14 +++++++++++
  .../core/common/language_experiments.cc       |  1 +
- .../add-custom-tab-intents-privacy-option.inc |  2 ++
- 8 files changed, 83 insertions(+), 1 deletion(-)
+ .../add-custom-tab-intents-privacy-option.inc |  1 +
+ 9 files changed, 83 insertions(+), 1 deletion(-)
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/add-custom-tab-intents-privacy-option.inc
 
 diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/android/java/res/xml/privacy_preferences.xml
@@ -45,7 +46,7 @@ diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/androi
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDispatcher.java b/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDispatcher.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDispatcher.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDispatcher.java
-@@ -56,6 +56,9 @@ import java.lang.annotation.Retention;
+@@ -55,6 +55,9 @@ import java.lang.annotation.Retention;
  import java.lang.annotation.RetentionPolicy;
  import java.util.Set;
  
@@ -55,7 +56,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
  /**
   * Dispatches incoming intents to the appropriate activity based on the current configuration and
   * Intent fired.
-@@ -247,6 +250,9 @@ public class LaunchIntentDispatcher {
+@@ -244,6 +247,9 @@ public class LaunchIntentDispatcher {
       */
      public static boolean isCustomTabIntent(Intent intent) {
          if (intent == null) return false;
@@ -65,7 +66,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
          Log.w(
                  TAG,
                  "CustomTabsIntent#shouldAlwaysUseBrowserUI() = "
-@@ -268,6 +274,10 @@ public class LaunchIntentDispatcher {
+@@ -265,6 +271,10 @@ public class LaunchIntentDispatcher {
          newIntent.setData(uri);
          newIntent.setClassName(context, CustomTabActivity.class.getName());
  
@@ -76,7 +77,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
          // Since configureIntentForResizableCustomTab() might change the componenet/class
          // associated with the passed intent, it needs to be called after #setClassName(context,
          // CustomTabActivity.class.getName());
-@@ -413,6 +423,17 @@ public class LaunchIntentDispatcher {
+@@ -410,6 +420,17 @@ public class LaunchIntentDispatcher {
  
          if (Intent.ACTION_VIEW.equals(newIntent.getAction())
                  && !IntentHandler.wasIntentSenderChrome(newIntent)) {
@@ -94,6 +95,17 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
              if (!chromeTabbedTaskExists()) {
                  newIntent.putExtra(IntentHandler.EXTRA_STARTED_TABBED_CHROME_TASK, true);
              }
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabsConnection.java b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabsConnection.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabsConnection.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/CustomTabsConnection.java
+@@ -849,6 +849,7 @@ public class CustomTabsConnection {
+         PostTask.postTask(
+                 TaskTraits.UI_DEFAULT,
+                 () -> {
++                    if ((true)) return; // Disable CCTPostMessageAPI
+                     // Attempt to verify origin synchronously. If successful directly initialize
+                     // postMessage channel for session.
+                     Uri verifiedOrigin = verifyOriginForSession(session, uid, postMessageOrigin);
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/IncognitoCustomTabIntentDataProvider.java b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/IncognitoCustomTabIntentDataProvider.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/customtabs/IncognitoCustomTabIntentDataProvider.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/customtabs/IncognitoCustomTabIntentDataProvider.java
@@ -130,7 +142,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
      @Override
      public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
          getActivity().setTitle(R.string.prefs_privacy_security);
-@@ -276,6 +279,9 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -274,6 +277,9 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
                  new SpanApplier.SpanInfo("<link2>", "</link2>", servicesLink));
      }
  
@@ -140,7 +152,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
      @Override
      public boolean onPreferenceChange(Preference preference, Object newValue) {
          String key = preference.getKey();
-@@ -292,6 +298,14 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -290,6 +296,14 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
          } else if (PREF_SEARCH_SUGGESTIONS.equals(key)) {
              UserPrefs.get(getProfile())
                      .setBoolean(Pref.SEARCH_SUGGEST_ENABLED, (boolean) newValue);
@@ -155,7 +167,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
          }
          return true;
      }
-@@ -314,6 +328,16 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -312,6 +326,16 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
                      UserPrefs.get(getProfile()).getBoolean(Pref.CAN_MAKE_PAYMENT_ENABLED));
          }
  
@@ -191,7 +203,7 @@ diff --git a/chrome/browser/tab/java/src/org/chromium/chrome/browser/tab/TabAsso
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -5056,6 +5056,20 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -5071,6 +5071,20 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_NEAR_OOM_INTERVENTION_DECLINE" desc="The text of the button letting the user decline the browser's intervention, so that the page can resume what it was doing.">
           Resume
        </message>
@@ -225,7 +237,6 @@ diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/a
 new file mode 100644
 --- /dev/null
 +++ b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/add-custom-tab-intents-privacy-option.inc
-@@ -0,0 +1,2 @@
+@@ -0,0 +1 @@
 +SET_CROMITE_FEATURE_DISABLED(kCCTIntentFeatureOverrides);
-+SET_CROMITE_FEATURE_DISABLED(kCCTPostMessageAPI);
 --

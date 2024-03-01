@@ -43,7 +43,7 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2133,9 +2133,9 @@
+@@ -2160,9 +2160,9 @@
        status: {"Android": "test", "default": "stable"},
      },
      {

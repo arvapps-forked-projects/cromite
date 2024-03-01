@@ -31,7 +31,7 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5 b/third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5
 --- a/third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5
 +++ b/third_party/blink/renderer/core/permissions_policy/permissions_policy_features.json5
-@@ -275,6 +275,7 @@
+@@ -280,6 +280,7 @@
      {
        name: "IdleDetection",
        permissions_policy_name: "idle-detection",
@@ -55,7 +55,7 @@ diff --git a/third_party/blink/renderer/modules/idle/idle_detector.idl b/third_p
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2068,6 +2068,11 @@
+@@ -2105,6 +2105,11 @@
        name: "HTMLUnsafeMethods",
        status: "experimental",
      },

@@ -4,8 +4,8 @@ Subject: kill Auth
 
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
- .../signin/SystemAccountManagerDelegate.java  | 69 +------------------
- 1 file changed, 3 insertions(+), 66 deletions(-)
+ .../signin/SystemAccountManagerDelegate.java  | 63 +------------------
+ 1 file changed, 3 insertions(+), 60 deletions(-)
 
 diff --git a/components/signin/public/android/java/src/org/chromium/components/signin/SystemAccountManagerDelegate.java b/components/signin/public/android/java/src/org/chromium/components/signin/SystemAccountManagerDelegate.java
 --- a/components/signin/public/android/java/src/org/chromium/components/signin/SystemAccountManagerDelegate.java
@@ -20,26 +20,13 @@ diff --git a/components/signin/public/android/java/src/org/chromium/components/s
  import org.chromium.base.ApiCompatibilityUtils;
  import org.chromium.base.Callback;
  import org.chromium.base.ContextUtils;
-@@ -89,15 +86,6 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
-     @Deprecated
+@@ -88,18 +85,6 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
+ 
      @Override
-     public Account[] getAccounts() {
--        if (hasGetAccountsPermission() && isGooglePlayServicesAvailable()) {
--            long startTime = SystemClock.elapsedRealtime();
--            Account[] accounts =
--                    mAccountManager.getAccountsByType(GoogleAuthUtil.GOOGLE_ACCOUNT_TYPE);
--            RecordHistogram.recordTimesHistogram(
--                    "Signin.AndroidGetAccountsTime_AccountManager",
--                    SystemClock.elapsedRealtime() - startTime);
--            return accounts;
+     public Account[] getAccountsSynchronous() throws AccountManagerDelegateException {
+-        if (!isGooglePlayServicesAvailable()) {
+-            throw new AccountManagerDelegateException("Can't use Google Play Services");
 -        }
-         // Account seeding relies on GoogleAuthUtil.getAccountId to get GAIA ids,
-         // so don't report any accounts if Google Play Services are out of date.
-         return new Account[] {};
-@@ -108,15 +96,6 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
-         if (!isGooglePlayServicesAvailable()) {
-             throw new AccountManagerDelegateException("Can't use Google Play Services");
-         }
 -        if (hasGetAccountsPermission()) {
 -            long startTime = SystemClock.elapsedRealtime();
 -            Account[] accounts =
@@ -52,7 +39,7 @@ diff --git a/components/signin/public/android/java/src/org/chromium/components/s
          // Don't report any accounts if we don't have permission.
          // TODO(crbug.com/1502123): Throw an exception if permission was denied.
          return new Account[] {};
-@@ -127,31 +106,12 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
+@@ -110,31 +95,12 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
              throws AuthException {
          ThreadUtils.assertOnBackgroundThread();
          assert AccountUtils.GOOGLE_ACCOUNT_TYPE.equals(account.type);
@@ -86,7 +73,7 @@ diff --git a/components/signin/public/android/java/src/org/chromium/components/s
      }
  
      @Override
-@@ -188,24 +148,6 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
+@@ -171,24 +137,6 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
      @SuppressLint("MissingPermission")
      @Override
      public void createAddAccountIntent(Callback<Intent> callback) {
@@ -111,7 +98,7 @@ diff --git a/components/signin/public/android/java/src/org/chromium/components/s
      }
  
      // No permission is needed on 23+ and Chrome always has MANAGE_ACCOUNTS permission on lower APIs
-@@ -240,12 +182,7 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
+@@ -223,12 +171,7 @@ public class SystemAccountManagerDelegate implements AccountManagerDelegate {
      @Nullable
      @Override
      public String getAccountGaiaId(String accountEmail) {

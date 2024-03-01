@@ -13,7 +13,7 @@ See https://source.chromium.org/chromium/chromium/src/+/4a9dd5ab3709d60f40beb2f8
 diff --git a/components/bookmarks/common/android/java/src/org/chromium/components/bookmarks/BookmarkItem.java b/components/bookmarks/common/android/java/src/org/chromium/components/bookmarks/BookmarkItem.java
 --- a/components/bookmarks/common/android/java/src/org/chromium/components/bookmarks/BookmarkItem.java
 +++ b/components/bookmarks/common/android/java/src/org/chromium/components/bookmarks/BookmarkItem.java
-@@ -57,6 +57,7 @@ public class BookmarkItem {
+@@ -61,6 +61,7 @@ public class BookmarkItem {
  
      /** Returns the string to display for the item's url. */
      public String getUrlForDisplay() {

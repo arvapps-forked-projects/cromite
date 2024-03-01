@@ -13,7 +13,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/visitedlink/browser/visitedlink_writer.cc
 --- a/components/visitedlink/browser/visitedlink_writer.cc
 +++ b/components/visitedlink/browser/visitedlink_writer.cc
-@@ -234,7 +234,7 @@ VisitedLinkWriter::VisitedLinkWriter(content::BrowserContext* browser_context,
+@@ -235,7 +235,7 @@ VisitedLinkWriter::VisitedLinkWriter(content::BrowserContext* browser_context,
      : browser_context_(browser_context),
        delegate_(delegate),
        listener_(std::make_unique<VisitedLinkEventListener>(browser_context)),
@@ -22,7 +22,7 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
  
  VisitedLinkWriter::VisitedLinkWriter(Listener* listener,
                                       VisitedLinkDelegate* delegate,
-@@ -244,10 +244,10 @@ VisitedLinkWriter::VisitedLinkWriter(Listener* listener,
+@@ -245,10 +245,10 @@ VisitedLinkWriter::VisitedLinkWriter(Listener* listener,
                                       int32_t default_table_size)
      : delegate_(delegate),
        listener_(listener),
@@ -35,7 +35,7 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
    DCHECK(listener_);
  }
  
-@@ -317,6 +317,7 @@ void VisitedLinkWriter::AddURL(const GURL& url, bool update_file) {
+@@ -318,6 +318,7 @@ void VisitedLinkWriter::AddURL(const GURL& url, bool update_file) {
  }
  
  VisitedLinkWriter::Hash VisitedLinkWriter::TryToAddURL(const GURL& url) {
@@ -43,7 +43,7 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
    // Extra check that we are not incognito. This should not happen.
    // TODO(boliu): Move this check to HistoryService when IsOffTheRecord is
    // removed from BrowserContext.
-@@ -1033,7 +1034,6 @@ bool VisitedLinkWriter::RebuildTableFromDelegate() {
+@@ -1029,7 +1030,6 @@ bool VisitedLinkWriter::RebuildTableFromDelegate() {
  
    // TODO(brettw) make sure we have reasonable salt!
    table_builder_ = new TableBuilder(this, salt_);
@@ -54,7 +54,7 @@ diff --git a/components/visitedlink/browser/visitedlink_writer.cc b/components/v
 diff --git a/components/visitedlink/common/visitedlink_common.cc b/components/visitedlink/common/visitedlink_common.cc
 --- a/components/visitedlink/common/visitedlink_common.cc
 +++ b/components/visitedlink/common/visitedlink_common.cc
-@@ -41,6 +41,7 @@ bool VisitedLinkCommon::IsVisited(const GURL& url) const {
+@@ -43,6 +43,7 @@ bool VisitedLinkCommon::IsVisited(const GURL& url) const {
  }
  
  bool VisitedLinkCommon::IsVisited(Fingerprint fingerprint) const {

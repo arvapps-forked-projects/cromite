@@ -116,7 +116,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/contextmenu/Chr
              if (FirstRunStatus.getFirstRunFlowComplete()
                      && !isEmptyUrl(mParams.getUrl())
                      && UrlUtilities.isAcceptedScheme(mParams.getUrl())) {
-@@ -643,6 +646,8 @@ public class ChromeContextMenuPopulator implements ContextMenuPopulator {
+@@ -631,6 +634,8 @@ public class ChromeContextMenuPopulator implements ContextMenuPopulator {
                                  getProfile(),
                                  false);
                      });
@@ -158,18 +158,18 @@ diff --git a/chrome/browser/contextmenu/java/src/org/chromium/chrome/browser/con
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -327,6 +327,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
-     &kTabDragDropAndroid,
-     &kTabAndLinkDragDropAndroid,
-     &kTabEngagementReportingAndroid,
+@@ -289,6 +289,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+     &kTabGroupParityAndroid,
+     &kTabletTabSwitcherLongPressMenu,
+     &kTabletToolbarIncognitoStatus,
 +    &blink::features::kShowAlwaysContextMenuOnLinks,
      &kTabletToolbarReordering,
+     &kTabResumptionModuleAndroid,
      &kTabStateFlatBuffer,
-     &kTabStripStartupRefactoring,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -327,6 +327,8 @@ public abstract class ChromeFeatureList {
+@@ -339,6 +339,8 @@ public abstract class ChromeFeatureList {
      public static final String NEW_TAB_SEARCH_ENGINE_URL_ANDROID = "NewTabSearchEngineUrlAndroid";
      public static final String MOVE_TOP_TOOLBAR_TO_BOTTOM =
              "MoveTopToolbarToBottom";
@@ -178,17 +178,17 @@ diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/f
      public static final String NOTIFICATION_PERMISSION_VARIANT = "NotificationPermissionVariant";
      public static final String NOTIFICATION_PERMISSION_BOTTOM_SHEET =
              "NotificationPermissionBottomSheet";
-@@ -614,6 +616,8 @@ public abstract class ChromeFeatureList {
-             new CachedFlag(OMNIBOX_MATCH_TOOLBAR_AND_STATUS_BAR_COLOR, false);
+@@ -607,6 +609,8 @@ public abstract class ChromeFeatureList {
+             newCachedFlag(OMNIBOX_MATCH_TOOLBAR_AND_STATUS_BAR_COLOR, false);
      public static final CachedFlag sMoveTopToolbarToBottom =
-             new CachedFlag(MOVE_TOP_TOOLBAR_TO_BOTTOM, false);
+             newCachedFlag(MOVE_TOP_TOOLBAR_TO_BOTTOM, false);
 +    public static final CachedFlag sShowAlwaysContextMenuOnLinks =
-+            new CachedFlag(SHOW_ALWAYS_CONTEXT_MENU_ON_LINKS, false);
++            newCachedFlag(SHOW_ALWAYS_CONTEXT_MENU_ON_LINKS, false);
      public static final CachedFlag sOmniboxModernizeVisualUpdate =
-             new CachedFlag(OMNIBOX_MODERNIZE_VISUAL_UPDATE, true);
+             newCachedFlag(OMNIBOX_MODERNIZE_VISUAL_UPDATE, true);
      public static final CachedFlag sOptimizationGuidePushNotifications =
-@@ -747,6 +751,7 @@ public abstract class ChromeFeatureList {
-                     sTabToGTSAnimation,
+@@ -742,6 +746,7 @@ public abstract class ChromeFeatureList {
+                     sTabWindowManagerReportIndicesMismatch,
                      sToolbarUseHardwareBitmapDraw,
                      sUseChimeAndroidSdk,
 +                    sShowAlwaysContextMenuOnLinks,
@@ -198,7 +198,7 @@ diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/f
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -1635,6 +1635,12 @@ Your Google account may have other forms of browsing history like searches and a
+@@ -1632,6 +1632,12 @@ Your Google account may have other forms of browsing history like searches and a
        <message name="IDS_MOVE_TOOLBAR_BOTTOM_SUMMARY" desc="Summary of the preference that allows the user to move toolbar on bottom.">
          Move toolbar to bottom
        </message>
@@ -211,7 +211,7 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
  
        <!-- Safety check -->
        <message name="IDS_PREFS_SAFETY_CHECK" desc="Title of the Safety check element in settings, allowing the user to check multiple areas of browser safety. [CHAR_LIMIT=32]">
-@@ -2675,6 +2681,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -2701,6 +2707,9 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_CONTEXTMENU_OPEN_IN_NEW_CHROME_TAB" desc="Context sensitive menu item to open the selected link in a new Chrome tab from Chrome Custom Tab. [CHAR_LIMIT=30]">
          Open in new Chrome tab
        </message>
@@ -224,7 +224,7 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
 diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml b/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
 --- a/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
 +++ b/components/browser_ui/accessibility/android/java/res/xml/accessibility_preferences.xml
-@@ -30,6 +30,11 @@ found in the LICENSE file.
+@@ -35,6 +35,11 @@ found in the LICENSE file.
          android:summary="@string/page_zoom_always_show_preference_summary"
          android:title="@string/page_zoom_always_show_preference_title" />
  
@@ -239,15 +239,15 @@ diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibil
 diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
 --- a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
 +++ b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
-@@ -34,6 +34,7 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+@@ -35,6 +35,7 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
      private BooleanPreferenceDelegate mForceTabletUIDelegate;
      static final String PREF_FORCE_TABLET_UI = "force_tablet_ui";
      static final String PREF_MOVE_TOOLBAR_TO_BOTTOM = "move_toolbar_bottom";
 +    static final String PREF_ALWAYS_SHOW_CONTEXTMENU_ON_LINKS = "always_show_contextmenu_on_links";
      private TextScalePreference mTextScalePref;
      private PageZoomPreference mPageZoomDefaultZoomPref;
-     private ChromeSwitchPreference mPageZoomAlwaysShowPref;
-@@ -43,6 +44,7 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+     private ChromeSwitchPreference mPageZoomIncludeOSAdjustment;
+@@ -45,6 +46,7 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
      private BooleanPreferenceDelegate mReaderForAccessibilityDelegate;
      private double mPageZoomLatestDefaultZoomPrefValue;
      private BooleanPreferenceDelegate mMoveTopToolbarToBottomDelegate;
@@ -255,7 +255,7 @@ diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/c
  
      private FontSizePrefs mFontSizePrefs;
      private FontSizePrefsObserver mFontSizePrefsObserver =
-@@ -143,6 +145,12 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+@@ -149,6 +151,12 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
          mMoveToolbarToBottomPref.setChecked(mMoveTopToolbarToBottomDelegate.isEnabled());
          mMoveToolbarToBottomPref.setOnPreferenceChangeListener(this);
  
@@ -268,16 +268,16 @@ diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/c
          Preference captions = findPreference(PREF_CAPTIONS);
          captions.setOnPreferenceClickListener(
                  preference -> {
-@@ -218,6 +226,9 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+@@ -226,6 +234,9 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
          } else if (PREF_MOVE_TOOLBAR_TO_BOTTOM.equals(preference.getKey())) {
              mMoveTopToolbarToBottomDelegate.setEnabled((Boolean) newValue);
              mDelegate.requestRestart(getActivity());
 +        } else if (PREF_ALWAYS_SHOW_CONTEXTMENU_ON_LINKS.equals(preference.getKey())) {
 +            mShowAlwaysContextMenuOnLinksDelegate.setEnabled((Boolean) newValue);
 +            mDelegate.requestRestart(getActivity());
+         } else if (PREF_PAGE_ZOOM_INCLUDE_OS_ADJUSTMENT.equals(preference.getKey())) {
+             // TODO(mschillaci): Implement the override behavior for OS level.
          }
- 
-         return true;
 diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
 --- a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
 +++ b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
@@ -441,7 +441,7 @@ diff --git a/third_party/blink/renderer/core/html/html_image_element.cc b/third_
  #include "third_party/blink/renderer/core/frame/attribution_src_loader.h"
  #include "third_party/blink/renderer/core/frame/deprecation/deprecation.h"
  #include "third_party/blink/renderer/core/frame/local_dom_window.h"
-@@ -63,6 +64,7 @@
+@@ -64,6 +65,7 @@
  #include "third_party/blink/renderer/core/media_type_names.h"
  #include "third_party/blink/renderer/core/page/chrome_client.h"
  #include "third_party/blink/renderer/core/page/page.h"
@@ -449,7 +449,7 @@ diff --git a/third_party/blink/renderer/core/html/html_image_element.cc b/third_
  #include "third_party/blink/renderer/core/paint/timing/paint_timing.h"
  #include "third_party/blink/renderer/core/probe/core_probes.h"
  #include "third_party/blink/renderer/core/resize_observer/resize_observer_entry.h"
-@@ -794,6 +796,21 @@ void HTMLImageElement::DidFinishLifecycleUpdate(
+@@ -802,6 +804,21 @@ void HTMLImageElement::DidFinishLifecycleUpdate(
    }
  }
  
@@ -474,7 +474,7 @@ diff --git a/third_party/blink/renderer/core/html/html_image_element.cc b/third_
 diff --git a/third_party/blink/renderer/core/html/html_image_element.h b/third_party/blink/renderer/core/html/html_image_element.h
 --- a/third_party/blink/renderer/core/html/html_image_element.h
 +++ b/third_party/blink/renderer/core/html/html_image_element.h
-@@ -232,6 +232,8 @@ class CORE_EXPORT HTMLImageElement final
+@@ -236,6 +236,8 @@ class CORE_EXPORT HTMLImageElement final
    void DidAddUserAgentShadowRoot(ShadowRoot&) override;
    void AdjustStyle(ComputedStyleBuilder&) override;
  
@@ -532,7 +532,7 @@ diff --git a/third_party/blink/renderer/core/page/context_menu_controller.cc b/t
    // Clear any previously set cached results if we are resetting the hit test
    // result.
    image_selection_cached_result_ = nullptr;
-@@ -835,11 +847,13 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
+@@ -840,11 +852,13 @@ bool ContextMenuController::ShowContextMenu(LocalFrame* frame,
    SetAutofillData(result.InnerNode(), data);
    SetPasswordManagerData(result.InnerElement(), data);
  

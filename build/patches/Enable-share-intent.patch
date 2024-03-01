@@ -34,7 +34,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_java_resources.gni
 --- a/chrome/android/chrome_java_resources.gni
 +++ b/chrome/android/chrome_java_resources.gni
-@@ -589,6 +589,7 @@ chrome_java_resources = [
+@@ -582,6 +582,7 @@ chrome_java_resources = [
    "java/res/layout/signin_activity.xml",
    "java/res/layout/status_indicator_container.xml",
    "java/res/layout/suggestions_tile_view_condensed.xml",
@@ -211,7 +211,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/IntentHandler.j
      /** A hash code for the URL to verify intent data hasn't been modified. */
      public static final String EXTRA_DATA_HASH_CODE = "org.chromium.chrome.browser.data_hash";
  
-@@ -1264,6 +1267,17 @@ public class IntentHandler {
+@@ -1268,6 +1271,17 @@ public class IntentHandler {
          return IntentUtils.safeGetSerializableExtra(intent, EXTRA_TAB_LAUNCH_TYPE);
      }
  
@@ -229,7 +229,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/IntentHandler.j
      /**
       * Creates an Intent that will launch a ChromeTabbedActivity on the new tab page. The Intent
       * will be trusted and therefore able to launch Incognito tabs.
-@@ -1393,7 +1407,7 @@ public class IntentHandler {
+@@ -1397,7 +1411,7 @@ public class IntentHandler {
          String headers = getExtraHeadersFromIntent(intent);
          headers = maybeAddAdditionalContentHeaders(intent, url, headers);
  
@@ -249,7 +249,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
  import org.chromium.chrome.browser.searchwidget.SearchActivity;
  import org.chromium.chrome.browser.tab.Tab;
  import org.chromium.chrome.browser.util.AndroidTaskUtils;
-@@ -205,11 +206,22 @@ public class LaunchIntentDispatcher {
+@@ -202,11 +203,22 @@ public class LaunchIntentDispatcher {
  
          String query = null;
          final String action = intent.getAction();
@@ -272,7 +272,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/LaunchIntentDis
  
          // Only the ChromeLauncherActivity can handle search intents. Drop the intent and abort the
          // launch.
-@@ -431,8 +443,8 @@ public class LaunchIntentDispatcher {
+@@ -428,8 +440,8 @@ public class LaunchIntentDispatcher {
                      /*incognito*/true);
                  newIntent.setData(mIntent.getData());
                  newIntent.setPackage(applicationContext.getPackageName());
@@ -293,7 +293,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/init/ProcessIni
  import org.chromium.chrome.browser.usb.UsbNotificationManager;
  import org.chromium.chrome.browser.util.AfterStartupTaskUtils;
  import org.chromium.chrome.browser.webapps.WebappRegistry;
-@@ -467,6 +468,8 @@ public class ProcessInitializationHandler {
+@@ -466,6 +467,8 @@ public class ProcessInitializationHandler {
                          ::makeDeferredRecordings);
          deferredStartupHandler.addDeferredTask(WebApkUninstallUmaTracker::recordDeferredUma);
  
@@ -468,9 +468,9 @@ new file mode 100644
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -289,6 +289,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -255,6 +255,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+     &kReengagementNotification,
      &kSearchReadyOmniboxFeature,
-     &kRelatedSearches,
      &kRelatedSearchesAllLanguage,
 +    &kSharedIntentUI,
      &kReportParentalControlSitesChild,
@@ -479,8 +479,8 @@ diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browse
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -397,6 +397,7 @@ public abstract class ChromeFeatureList {
-     public static final String READALOUD = "ReadAloud";
+@@ -402,6 +402,7 @@ public abstract class ChromeFeatureList {
+     public static final String READALOUD_IN_MULTI_WINDOW = "ReadAloudInMultiWindow";
      public static final String READALOUD_PLAYBACK = "ReadAloudPlayback";
      public static final String READER_MODE_IN_CCT = "ReaderModeInCCT";
 +    public static final String SHARED_INTENT_UI = "SharedIntentUI";
@@ -490,7 +490,7 @@ diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/f
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -5130,6 +5130,19 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -5145,6 +5145,19 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
          Copied to your clipboard
        </message>
  

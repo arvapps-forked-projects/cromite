@@ -10,29 +10,29 @@ Subject: Temp guard FileSystemAccessPersistentPermissions
 diff --git a/chrome/browser/file_system_access/chrome_file_system_access_permission_context.cc b/chrome/browser/file_system_access/chrome_file_system_access_permission_context.cc
 --- a/chrome/browser/file_system_access/chrome_file_system_access_permission_context.cc
 +++ b/chrome/browser/file_system_access/chrome_file_system_access_permission_context.cc
-@@ -377,7 +377,7 @@ bool ShouldBlockAccessToPath(const base::FilePath& check_path,
-     }
- 
-     if (check_path == blocked_path || check_path.IsParent(blocked_path)) {
+@@ -393,7 +393,7 @@ bool ShouldBlockAccessToPath(const base::FilePath& path,
+   BlockType nearest_ancestor_block_type = kDontBlockChildren;
+   for (const auto& block : rules) {
+     if (check_path == block.path || check_path.IsParent(block.path)) {
 -      VLOG(1) << "Blocking access to " << check_path
 +      LOG(INFO) << "Blocking access to " << check_path
-               << " because it is a parent of " << blocked_path << " ("
-               << block.base_path_key << ")";
+               << " because it is a parent of " << block.path;
        return true;
-@@ -406,7 +406,7 @@ bool ShouldBlockAccessToPath(const base::FilePath& check_path,
+     }
+@@ -420,7 +420,7 @@ bool ShouldBlockAccessToPath(const base::FilePath& path,
    }
  
    // The nearest ancestor blocks access to its children, so block access.
 -  VLOG(1) << "Blocking access to " << check_path << " because it is inside "
 +  LOG(INFO) << "Blocking access to " << check_path << " because it is inside "
-           << nearest_ancestor << " (" << nearest_ancestor_path_key << ")";
+           << nearest_ancestor;
    return true;
  }
 diff --git a/chrome/browser/file_system_access/file_system_access_features.cc b/chrome/browser/file_system_access/file_system_access_features.cc
 --- a/chrome/browser/file_system_access/file_system_access_features.cc
 +++ b/chrome/browser/file_system_access/file_system_access_features.cc
-@@ -22,4 +22,8 @@ BASE_FEATURE(kFileSystemAccessPersistentPermissions,
-              "kFileSystemAccessPersistentPermissions",
+@@ -26,4 +26,8 @@ BASE_FEATURE(kFileSystemAccessSymbolicLinkCheck,
+              "FileSystemAccessSymbolicLinkCheck",
               base::FEATURE_DISABLED_BY_DEFAULT);
  
 +#if BUILDFLAG(IS_WIN)

@@ -87,6 +87,12 @@ icacls . /grant "*S-1-15-2-2:(OI)(CI)(RX)"
 ```
 see https://github.com/uazo/bromite-buildtools/issues/51
 
+### Enable AppContainer for renderer process in windows
+you can activate the 'RendererAppContainer' flag from the command line with
+```
+  --enable-features=RendererAppContainer
+```
+
 ## (TODO) Integrity and authenticity
 
 You can verify the integrity of a downloaded APK file from this project with any `sha256sum`-compatible tool by downloading the corresponding `brm_X.Y.Z.sha256.txt` or `chr_X.Y.Z.sha256.txt` file, where X.Y.Z is the release version number. Example:

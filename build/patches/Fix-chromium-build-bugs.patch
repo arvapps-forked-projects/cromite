@@ -9,7 +9,6 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=1491776#c10
  .../chrome_browsing_data_model_delegate.cc         |  1 +
  .../navigation_predictor_metrics_document_data.h   |  2 ++
  chrome/browser/safe_browsing/BUILD.gn              |  1 +
- .../browser/metrics/shadow_prediction_metrics.cc   |  2 +-
  .../omnibox/browser/autocomplete_classifier.cc     |  4 ++--
  components/omnibox/browser/omnibox_field_trial.cc  |  4 ++--
  .../phishing_classifier/phishing_image_embedder.cc | 14 +++-----------
@@ -17,12 +16,12 @@ https://bugs.chromium.org/p/chromium/issues/detail?id=1491776#c10
  crypto/BUILD.gn                                    |  3 +++
  net/BUILD.gn                                       |  1 +
  third_party/libevent/BUILD.gn                      |  2 ++
- 12 files changed, 19 insertions(+), 17 deletions(-)
+ 11 files changed, 18 insertions(+), 16 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -399,7 +399,6 @@ group("gn_all") {
+@@ -407,7 +407,6 @@ group("gn_all") {
            "//android_webview:empty_group",
            "//android_webview/test",
            "//android_webview/tools/automated_ui_tests:webview_ui_test_app",
@@ -33,14 +32,14 @@ diff --git a/BUILD.gn b/BUILD.gn
 diff --git a/chrome/browser/browsing_data/chrome_browsing_data_model_delegate.cc b/chrome/browser/browsing_data/chrome_browsing_data_model_delegate.cc
 --- a/chrome/browser/browsing_data/chrome_browsing_data_model_delegate.cc
 +++ b/chrome/browser/browsing_data/chrome_browsing_data_model_delegate.cc
-@@ -221,6 +221,7 @@ bool ChromeBrowsingDataModelDelegate::IsCookieDeletionDisabled(
+@@ -255,6 +255,7 @@ bool ChromeBrowsingDataModelDelegate::IsCookieDeletionDisabled(
      auto* client = permissions::PermissionsClient::Get();
      return client->IsCookieDeletionDisabled(profile_, url);
    }
 +  return false;
- #else
-   return false;
  #endif
+   return false;
+ }
 diff --git a/chrome/browser/navigation_predictor/navigation_predictor_metrics_document_data.h b/chrome/browser/navigation_predictor/navigation_predictor_metrics_document_data.h
 --- a/chrome/browser/navigation_predictor/navigation_predictor_metrics_document_data.h
 +++ b/chrome/browser/navigation_predictor/navigation_predictor_metrics_document_data.h
@@ -56,7 +55,7 @@ diff --git a/chrome/browser/navigation_predictor/navigation_predictor_metrics_do
 diff --git a/chrome/browser/safe_browsing/BUILD.gn b/chrome/browser/safe_browsing/BUILD.gn
 --- a/chrome/browser/safe_browsing/BUILD.gn
 +++ b/chrome/browser/safe_browsing/BUILD.gn
-@@ -185,6 +185,7 @@ static_library("safe_browsing") {
+@@ -182,6 +182,7 @@ static_library("safe_browsing") {
        "//components/version_info",
        "//content/public/browser",
        "//services/preferences/public/mojom:mojom",
@@ -64,22 +63,10 @@ diff --git a/chrome/browser/safe_browsing/BUILD.gn b/chrome/browser/safe_browsin
      ]
      if (safe_browsing_mode == 1) {
        # "Safe Browsing Full" files in addition to the "basic" ones to use for
-diff --git a/components/autofill/core/browser/metrics/shadow_prediction_metrics.cc b/components/autofill/core/browser/metrics/shadow_prediction_metrics.cc
---- a/components/autofill/core/browser/metrics/shadow_prediction_metrics.cc
-+++ b/components/autofill/core/browser/metrics/shadow_prediction_metrics.cc
-@@ -61,7 +61,7 @@ int GetShadowPrediction(ServerFieldType current,
- }
- 
- void LogShadowPredictionComparison(const AutofillField& field) {
--  const auto& submitted_types = field.possible_types();
-+  [[maybe_unused]] const auto& submitted_types = field.possible_types();
- 
- #if BUILDFLAG(USE_INTERNAL_AUTOFILL_PATTERNS)
-   base::UmaHistogramSparse(
 diff --git a/components/omnibox/browser/autocomplete_classifier.cc b/components/omnibox/browser/autocomplete_classifier.cc
 --- a/components/omnibox/browser/autocomplete_classifier.cc
 +++ b/components/omnibox/browser/autocomplete_classifier.cc
-@@ -95,8 +95,8 @@ void AutocompleteClassifier::Classify(
+@@ -97,8 +97,8 @@ void AutocompleteClassifier::Classify(
      metrics::OmniboxEventProto::PageClassification page_classification,
      AutocompleteMatch* match,
      GURL* alternate_nav_url) {
@@ -93,7 +80,7 @@ diff --git a/components/omnibox/browser/autocomplete_classifier.cc b/components/
 diff --git a/components/omnibox/browser/omnibox_field_trial.cc b/components/omnibox/browser/omnibox_field_trial.cc
 --- a/components/omnibox/browser/omnibox_field_trial.cc
 +++ b/components/omnibox/browser/omnibox_field_trial.cc
-@@ -1071,11 +1071,11 @@ MLConfig& MLConfig::operator=(const MLConfig& other) = default;
+@@ -1083,11 +1083,11 @@ MLConfig& MLConfig::operator=(const MLConfig& other) = default;
  
  ScopedMLConfigForTesting::ScopedMLConfigForTesting()
      : original_config_(std::make_unique<MLConfig>(GetMLConfig())) {
@@ -134,7 +121,7 @@ diff --git a/components/safe_browsing/content/renderer/phishing_classifier/phish
 diff --git a/content/browser/browser_interface_binders.cc b/content/browser/browser_interface_binders.cc
 --- a/content/browser/browser_interface_binders.cc
 +++ b/content/browser/browser_interface_binders.cc
-@@ -356,6 +356,7 @@ void BindDateTimeChooserForFrame(
+@@ -360,6 +360,7 @@ void BindDateTimeChooserForFrame(
  void BindTextSuggestionHostForFrame(
      RenderFrameHost* host,
      mojo::PendingReceiver<blink::mojom::TextSuggestionHost> receiver) {
@@ -158,7 +145,7 @@ diff --git a/crypto/BUILD.gn b/crypto/BUILD.gn
 diff --git a/net/BUILD.gn b/net/BUILD.gn
 --- a/net/BUILD.gn
 +++ b/net/BUILD.gn
-@@ -1587,6 +1587,7 @@ component("net") {
+@@ -1583,6 +1583,7 @@ component("net") {
      configs -= [ "//build/config/compiler:default_optimization" ]
      configs += [ "//build/config/compiler:optimize_max" ]
    }

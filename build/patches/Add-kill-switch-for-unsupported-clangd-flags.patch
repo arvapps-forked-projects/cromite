@@ -7,30 +7,31 @@ Allows build with clangd by suppressing unsupported parameters
 Original License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
- build/config/compiler/BUILD.gn | 6 ++++++
+ build/config/compiler/BUILD.gn | 7 ++++++-
  build_overrides/build.gni      | 3 +++
- 2 files changed, 9 insertions(+)
+ 2 files changed, 9 insertions(+), 1 deletion(-)
 
 diff --git a/build/config/compiler/BUILD.gn b/build/config/compiler/BUILD.gn
 --- a/build/config/compiler/BUILD.gn
 +++ b/build/config/compiler/BUILD.gn
-@@ -1888,6 +1888,12 @@ config("default_warnings") {
-           # TODO(https://crbug.com/1490607): Fix and re-enable.
-           "-Wno-thread-safety-reference-return",
-         ]
-+        if (skip_clangd_unsupported_options) {
-+          cflags -= [
-+            "-Wno-deprecated-builtins",
-+            "-Wno-thread-safety-reference-return",
-+          ]
-+        }
-       }
-     }
- 
+@@ -1884,7 +1884,12 @@ config("default_warnings") {
+         # TODO(https://crbug.com/1490607): Fix and re-enable.
+         "-Wno-thread-safety-reference-return",
+       ]
+-
++      if (skip_clangd_unsupported_options) {
++        cflags -= [
++          "-Wno-deprecated-builtins",
++          "-Wno-thread-safety-reference-return",
++        ]
++      }
+       if (!is_nacl) {
+         cflags_cc += [
+           # TODO(https://crbug.com/1513724): Fix and re-enable.
 diff --git a/build_overrides/build.gni b/build_overrides/build.gni
 --- a/build_overrides/build.gni
 +++ b/build_overrides/build.gni
-@@ -57,6 +57,9 @@ declare_args() {
+@@ -58,6 +58,9 @@ declare_args() {
    # to lack of toolchain support.
    gtest_enable_absl_printers = !is_nacl
  

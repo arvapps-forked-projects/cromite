@@ -70,7 +70,7 @@ diff --git a/third_party/blink/public/platform/web_runtime_features.h b/third_pa
 diff --git a/third_party/blink/renderer/modules/vibration/vibration_controller.cc b/third_party/blink/renderer/modules/vibration/vibration_controller.cc
 --- a/third_party/blink/renderer/modules/vibration/vibration_controller.cc
 +++ b/third_party/blink/renderer/modules/vibration/vibration_controller.cc
-@@ -29,6 +29,7 @@
+@@ -28,6 +28,7 @@
  #include "third_party/blink/renderer/core/frame/local_frame.h"
  #include "third_party/blink/renderer/core/frame/navigator.h"
  #include "third_party/blink/renderer/core/page/page.h"
@@ -78,7 +78,7 @@ diff --git a/third_party/blink/renderer/modules/vibration/vibration_controller.c
  
  // Maximum number of entries in a vibration pattern.
  const unsigned kVibrationPatternLengthMax = 99;
-@@ -152,6 +153,8 @@ bool VibrationController::vibrate(Navigator& navigator,
+@@ -109,6 +110,8 @@ bool VibrationController::vibrate(Navigator& navigator,
    // reference to |window| or |navigator| was retained in another window.
    if (!navigator.DomWindow())
      return false;
@@ -104,7 +104,7 @@ diff --git a/third_party/blink/renderer/platform/exported/web_runtime_features.c
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2621,6 +2621,10 @@
+@@ -2669,6 +2669,10 @@
        status: {"Android": "stable"},
        base_feature: "none",
      },

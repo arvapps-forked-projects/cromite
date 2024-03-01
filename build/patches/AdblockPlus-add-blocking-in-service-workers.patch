@@ -401,7 +401,7 @@ diff --git a/chrome/browser/adblock/adblock_content_browser_client.h b/chrome/br
 diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
 --- a/chrome/browser/chrome_content_browser_client.cc
 +++ b/chrome/browser/chrome_content_browser_client.cc
-@@ -6305,7 +6305,9 @@ ChromeContentBrowserClient::
+@@ -6132,7 +6132,9 @@ ChromeContentBrowserClient::
  }
  
  bool ChromeContentBrowserClient::WillInterceptWebSocket(
@@ -412,7 +412,7 @@ diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/ch
  #if BUILDFLAG(ENABLE_EXTENSIONS)
    if (!frame) {
      return false;
-@@ -6328,9 +6330,11 @@ bool ChromeContentBrowserClient::WillInterceptWebSocket(
+@@ -6155,9 +6157,11 @@ bool ChromeContentBrowserClient::WillInterceptWebSocket(
  }
  
  void ChromeContentBrowserClient::CreateWebSocket(
@@ -422,12 +422,12 @@ diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/ch
      const GURL& url,
 +    const url::Origin& initiator_origin,
      const net::SiteForCookies& site_for_cookies,
-     const absl::optional<std::string>& user_agent,
+     const std::optional<std::string>& user_agent,
      mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
 diff --git a/chrome/browser/chrome_content_browser_client.h b/chrome/browser/chrome_content_browser_client.h
 --- a/chrome/browser/chrome_content_browser_client.h
 +++ b/chrome/browser/chrome_content_browser_client.h
-@@ -642,11 +642,15 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
+@@ -637,11 +637,15 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
    CreateURLLoaderHandlerForServiceWorkerNavigationPreload(
        int frame_tree_node_id,
        const network::ResourceRequest& resource_request) override;
@@ -442,12 +442,12 @@ diff --git a/chrome/browser/chrome_content_browser_client.h b/chrome/browser/chr
        const GURL& url,
 +      const url::Origin& initiator_origin,
        const net::SiteForCookies& site_for_cookies,
-       const absl::optional<std::string>& user_agent,
+       const std::optional<std::string>& user_agent,
        mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
 diff --git a/components/adblock/content/browser/adblock_url_loader_factory.cc b/components/adblock/content/browser/adblock_url_loader_factory.cc
 --- a/components/adblock/content/browser/adblock_url_loader_factory.cc
 +++ b/components/adblock/content/browser/adblock_url_loader_factory.cc
-@@ -343,12 +343,6 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestError(
+@@ -344,12 +344,6 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestError(
  
  void AdblockURLLoaderFactory::InProgressRequest::CheckFilterMatch(
      CheckFilterMatchCallback callback) {
@@ -460,7 +460,7 @@ diff --git a/components/adblock/content/browser/adblock_url_loader_factory.cc b/
    auto subscription_service = factory_->config_.subscription_service;
    if (is_document_request_) {
      auto* host = content::RenderFrameHost::FromID(factory_->host_id_);
-@@ -387,7 +381,7 @@ void AdblockURLLoaderFactory::InProgressRequest::CheckFilterMatch(
+@@ -388,7 +382,7 @@ void AdblockURLLoaderFactory::InProgressRequest::CheckFilterMatch(
    } else {
      factory_->config_.resource_classifier->CheckRequestFilterMatch(
          subscription_service->GetCurrentSnapshot(), request_url_,
@@ -469,7 +469,7 @@ diff --git a/components/adblock/content/browser/adblock_url_loader_factory.cc b/
          base::BindOnce(
              &AdblockURLLoaderFactory::InProgressRequest::OnRequestUrlClassified,
              weak_factory_.GetWeakPtr(),
-@@ -676,12 +670,14 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestFilterMatchResult(
+@@ -677,12 +671,14 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestFilterMatchResult(
  
  AdblockURLLoaderFactory::AdblockURLLoaderFactory(
      AdblockURLLoaderFactoryConfig config,
@@ -528,7 +528,7 @@ diff --git a/components/adblock/content/browser/frame_hierarchy_builder.cc b/com
 diff --git a/components/adblock/content/browser/resource_classification_runner.h b/components/adblock/content/browser/resource_classification_runner.h
 --- a/components/adblock/content/browser/resource_classification_runner.h
 +++ b/components/adblock/content/browser/resource_classification_runner.h
-@@ -81,14 +81,22 @@ class ResourceClassificationRunner : public KeyedService {
+@@ -81,12 +81,20 @@ class ResourceClassificationRunner : public KeyedService {
    virtual void CheckRequestFilterMatch(
        SubscriptionService::Snapshot subscription_collections,
        const GURL& request_url,
@@ -540,17 +540,15 @@ diff --git a/components/adblock/content/browser/resource_classification_runner.h
        SubscriptionService::Snapshot subscription_collections,
        const GURL& request_url,
 +      const GURL& request_initiator,
-       content::GlobalRenderFrameHostId render_frame_host_id,
-       CheckFilterMatchCallback callback) = 0;
++      content::GlobalRenderFrameHostId render_frame_host_id,
++      CheckFilterMatchCallback callback) = 0;
 +  virtual void CheckRequestFilterMatchForWebTransport(
 +      SubscriptionService::Snapshot subscription_collections,
 +      const GURL& request_url,
 +      const GURL& request_initiator,
-+      content::GlobalRenderFrameHostId render_frame_host_id,
-+      CheckFilterMatchCallback callback);
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       CheckFilterMatchCallback callback) = 0;
    // No callback, just notify observers
-   virtual void CheckDocumentAllowlisted(
-       SubscriptionService::Snapshot subscription_collection,
 diff --git a/components/adblock/content/browser/resource_classification_runner_impl.cc b/components/adblock/content/browser/resource_classification_runner_impl.cc
 --- a/components/adblock/content/browser/resource_classification_runner_impl.cc
 +++ b/components/adblock/content/browser/resource_classification_runner_impl.cc
@@ -683,7 +681,7 @@ diff --git a/content/browser/websockets/websocket_connector_impl.cc b/content/br
 diff --git a/content/public/browser/content_browser_client.cc b/content/public/browser/content_browser_client.cc
 --- a/content/public/browser/content_browser_client.cc
 +++ b/content/public/browser/content_browser_client.cc
-@@ -1023,7 +1023,7 @@ bool ContentBrowserClient::WillCreateURLLoaderFactory(
+@@ -1009,7 +1009,7 @@ bool ContentBrowserClient::WillCreateURLLoaderFactory(
    return false;
  }
  
@@ -692,7 +690,7 @@ diff --git a/content/public/browser/content_browser_client.cc b/content/public/b
    return false;
  }
  
-@@ -1032,9 +1032,11 @@ uint32_t ContentBrowserClient::GetWebSocketOptions(RenderFrameHost* frame) {
+@@ -1018,9 +1018,11 @@ uint32_t ContentBrowserClient::GetWebSocketOptions(RenderFrameHost* frame) {
  }
  
  void ContentBrowserClient::CreateWebSocket(
@@ -702,12 +700,12 @@ diff --git a/content/public/browser/content_browser_client.cc b/content/public/b
      const GURL& url,
 +    const url::Origin& initiator_origin,
      const net::SiteForCookies& site_for_cookies,
-     const absl::optional<std::string>& user_agent,
+     const std::optional<std::string>& user_agent,
      mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
 diff --git a/content/public/browser/content_browser_client.h b/content/public/browser/content_browser_client.h
 --- a/content/public/browser/content_browser_client.h
 +++ b/content/public/browser/content_browser_client.h
-@@ -1859,7 +1859,7 @@ class CONTENT_EXPORT ContentBrowserClient {
+@@ -1840,7 +1840,7 @@ class CONTENT_EXPORT ContentBrowserClient {
        scoped_refptr<base::SequencedTaskRunner> navigation_response_task_runner);
  
    // Returns true when the embedder wants to intercept a websocket connection.
@@ -716,7 +714,7 @@ diff --git a/content/public/browser/content_browser_client.h b/content/public/br
  
    // Returns the WebSocket creation options.
    virtual uint32_t GetWebSocketOptions(RenderFrameHost* frame);
-@@ -1881,9 +1881,11 @@ class CONTENT_EXPORT ContentBrowserClient {
+@@ -1862,9 +1862,11 @@ class CONTENT_EXPORT ContentBrowserClient {
    // Always called on the UI thread and only when the Network Service is
    // enabled.
    virtual void CreateWebSocket(
@@ -726,6 +724,6 @@ diff --git a/content/public/browser/content_browser_client.h b/content/public/br
        const GURL& url,
 +      const url::Origin& initiator_origin,
        const net::SiteForCookies& site_for_cookies,
-       const absl::optional<std::string>& user_agent,
+       const std::optional<std::string>& user_agent,
        mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
 --

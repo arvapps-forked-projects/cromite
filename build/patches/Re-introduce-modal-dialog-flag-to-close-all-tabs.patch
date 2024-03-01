@@ -45,19 +45,19 @@ diff --git a/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -182,6 +182,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -172,6 +172,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &kBackGestureActivityTabProvider,
-     &kBackGestureRefactorActivityAndroid,
+     &kBackGestureMoveToBackDuringStartup,
      &kBackGestureRefactorAndroid,
 +    &kCloseAllTabsModalDialog,
      &kBackgroundThreadPool,
-     &kBaselineGM3SurfaceColors,
      &kBlockIntentsWhileLocked,
+     &kCacheActivityTaskID,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -202,6 +202,7 @@ public abstract class ChromeFeatureList {
-     public static final String CCT_REMOVE_REMOTE_VIEW_IDS = "CCTRemoveRemoteViewIds";
+@@ -225,6 +225,7 @@ public abstract class ChromeFeatureList {
+             "CCTPageInsightsHubBetterScroll";
      public static final String CCT_REPORT_PARALLEL_REQUEST_STATUS =
              "CCTReportParallelRequestStatus";
 +    public static final String CLOSE_ALL_TABS_MODAL_DIALOG = "CloseAllTabsModalDialog";

@@ -4,11 +4,12 @@ Subject: Keep Side Panel Companion disabled
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- chrome/browser/companion/core/features.cc          | 6 ++++++
- chrome/browser/ui/side_search/side_search_prefs.cc | 2 +-
- chrome/browser/ui/ui_features.cc                   | 1 +
- components/search_engines/template_url.cc          | 2 +-
+ chrome/browser/companion/core/features.cc                   | 6 ++++++
+ chrome/browser/ui/side_search/side_search_prefs.cc          | 2 +-
+ components/search_engines/template_url.cc                   | 2 +-
+ .../ui_features_cc/Keep-Side-Panel-Companion-disabled.inc   | 1 +
  4 files changed, 9 insertions(+), 2 deletions(-)
+ create mode 100755 cromite_flags/chrome/browser/ui/ui_features_cc/Keep-Side-Panel-Companion-disabled.inc
 
 diff --git a/chrome/browser/companion/core/features.cc b/chrome/browser/companion/core/features.cc
 --- a/chrome/browser/companion/core/features.cc
@@ -45,21 +46,10 @@ diff --git a/chrome/browser/ui/side_search/side_search_prefs.cc b/chrome/browser
  }
  
  }  // namespace side_search_prefs
-diff --git a/chrome/browser/ui/ui_features.cc b/chrome/browser/ui/ui_features.cc
---- a/chrome/browser/ui/ui_features.cc
-+++ b/chrome/browser/ui/ui_features.cc
-@@ -113,6 +113,7 @@ BASE_FEATURE(kResponsiveToolbar,
- // Enables the side search feature for Google Search. Presents recent Google
- // search results in a browser side panel.
- BASE_FEATURE(kSideSearch, "SideSearch", base::FEATURE_DISABLED_BY_DEFAULT);
-+SET_CROMITE_FEATURE_DISABLED(kSideSearch);
- 
- BASE_FEATURE(kSideSearchFeedback,
-              "SideSearchFeedback",
 diff --git a/components/search_engines/template_url.cc b/components/search_engines/template_url.cc
 --- a/components/search_engines/template_url.cc
 +++ b/components/search_engines/template_url.cc
-@@ -1830,7 +1830,7 @@ GURL TemplateURL::GenerateSuggestionURL(
+@@ -1858,7 +1858,7 @@ GURL TemplateURL::GenerateSuggestionURL(
  }
  
  bool TemplateURL::IsSideSearchSupported() const {
@@ -68,4 +58,10 @@ diff --git a/components/search_engines/template_url.cc b/components/search_engin
  }
  
  bool TemplateURL::IsSideImageSearchSupported() const {
+diff --git a/cromite_flags/chrome/browser/ui/ui_features_cc/Keep-Side-Panel-Companion-disabled.inc b/cromite_flags/chrome/browser/ui/ui_features_cc/Keep-Side-Panel-Companion-disabled.inc
+new file mode 100755
+--- /dev/null
++++ b/cromite_flags/chrome/browser/ui/ui_features_cc/Keep-Side-Panel-Companion-disabled.inc
+@@ -0,0 +1 @@
++SET_CROMITE_FEATURE_DISABLED(kSideSearch);
 --

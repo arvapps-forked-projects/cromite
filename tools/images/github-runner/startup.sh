@@ -6,6 +6,8 @@ sudo iptables -A INPUT -p tcp -s localhost --dport 8118 -j ACCEPT
 sudo iptables -A INPUT -p tcp --dport 8118 -j DROP
 
 echo "Starting supervisor (Docker)"
+ulimit -n 524288
+ulimit -Hn 524288
 sudo service docker start
 
 #bash

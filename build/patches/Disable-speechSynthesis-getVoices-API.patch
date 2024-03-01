@@ -31,7 +31,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer/chrome_content_renderer_client.cc
 --- a/chrome/renderer/chrome_content_renderer_client.cc
 +++ b/chrome/renderer/chrome_content_renderer_client.cc
-@@ -1603,7 +1603,7 @@ ChromeContentRendererClient::CreateWorkerContentSettingsClient(
+@@ -1622,7 +1622,7 @@ ChromeContentRendererClient::CreateWorkerContentSettingsClient(
  std::unique_ptr<media::SpeechRecognitionClient>
  ChromeContentRendererClient::CreateSpeechRecognitionClient(
      content::RenderFrame* render_frame) {
@@ -43,7 +43,7 @@ diff --git a/chrome/renderer/chrome_content_renderer_client.cc b/chrome/renderer
 diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc b/components/content_settings/renderer/content_settings_agent_impl.cc
 --- a/components/content_settings/renderer/content_settings_agent_impl.cc
 +++ b/components/content_settings/renderer/content_settings_agent_impl.cc
-@@ -475,6 +475,14 @@ bool ContentSettingsAgentImpl::IsAllowlistedForContentSettings() const {
+@@ -473,6 +473,14 @@ bool ContentSettingsAgentImpl::IsAllowlistedForContentSettings() const {
    return false;
  }
  
@@ -58,7 +58,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc
  bool ContentSettingsAgentImpl::UpdateOverrides() {
    // Evaluate the content setting rules
    ContentSetting setting = CONTENT_SETTING_ALLOW;
-@@ -485,7 +493,6 @@ bool ContentSettingsAgentImpl::UpdateOverrides() {
+@@ -483,7 +491,6 @@ bool ContentSettingsAgentImpl::UpdateOverrides() {
    }
    return UpdateTimeZoneOverride(
        setting, content_setting_rules_->timezone_override_value);
@@ -69,7 +69,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc
 diff --git a/components/content_settings/renderer/content_settings_agent_impl.h b/components/content_settings/renderer/content_settings_agent_impl.h
 --- a/components/content_settings/renderer/content_settings_agent_impl.h
 +++ b/components/content_settings/renderer/content_settings_agent_impl.h
-@@ -116,6 +116,8 @@ class ContentSettingsAgentImpl
+@@ -117,6 +117,8 @@ class ContentSettingsAgentImpl
    void SetRendererContentSettingRulesForTest(
        const RendererContentSettingRules& rules);
  
@@ -139,7 +139,7 @@ new file mode 100644
 diff --git a/third_party/blink/public/platform/web_content_settings_client.h b/third_party/blink/public/platform/web_content_settings_client.h
 --- a/third_party/blink/public/platform/web_content_settings_client.h
 +++ b/third_party/blink/public/platform/web_content_settings_client.h
-@@ -115,6 +115,8 @@ class WebContentSettingsClient {
+@@ -111,6 +111,8 @@ class WebContentSettingsClient {
    // frame.
    virtual bool ShouldAutoupgradeMixedContent() { return true; }
  

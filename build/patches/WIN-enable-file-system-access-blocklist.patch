@@ -10,9 +10,9 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/content/browser/file_system_access/features.cc b/content/browser/file_system_access/features.cc
 --- a/content/browser/file_system_access/features.cc
 +++ b/content/browser/file_system_access/features.cc
-@@ -33,4 +33,5 @@ BASE_FEATURE(kFileSystemAccessDirectoryIterationSymbolicLinkCheck,
-              "FileSystemAccessDirectoryIterationSymbolicLinkCheck",
-              base::FEATURE_DISABLED_BY_DEFAULT);
+@@ -39,4 +39,5 @@ BASE_FEATURE(kFileSystemAccessDirectoryIterationBlocklistCheck,
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ #endif  // BUILDFLAG(IS_WIN)
  
 +SET_CROMITE_FEATURE_ENABLED(kFileSystemAccessDragAndDropCheckBlocklist);
  }  // namespace content::features

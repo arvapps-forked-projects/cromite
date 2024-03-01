@@ -174,7 +174,6 @@ Partition-blobs-by-top-frame-URL.patch
 Override-Navigator-Language.patch
 Disable-add-to-home-screen-prompt.patch
 Remove-HTTP-referrals-in-cross-origin-navigation.patch
-Enable-ECH-by-default.patch
 Disable-StartSurface-feature.patch
 Enable-PermuteTLSExtensions-by-default.patch
 Enable-third-party-storage-partitioning.patch
@@ -216,11 +215,9 @@ Remove-ChromiumNetworkAdapter.patch
 Internal-firewall.patch
 Disable-devtools-remote-and-custom-protocols.patch
 Remove-detection-of-captive-portals.patch
-Disable-SHA1-Server-Signature.patch
 Remove-auth-header-upon-cross-origin-redirect.patch
 Clear-CORS-Preflight-Cache-on-clearing-data.patch
 Multi-Screen-Window-Placement-API-fix.patch
-Remove-https-connection-from-chrome-discards.patch
 Add-a-flag-to-disable-GamePad-API.patch
 Disable-WebGPU.patch
 Disable-FirstPartySets-and-StorageAccessAPI.patch
@@ -281,6 +278,10 @@ Customize-selection-popup.patch
 Enables-deactivation-of-the-js-debugger-statement.patch
 Enable-gwp-asan-on-Android.patch
 Disable-Read-Aloud-by-default.patch
+Disable-Compose-feature.patch
+Disable-offline-autofetch-flag.patch
+Enable-percent-based-scrolling-on-Windows.patch
+Show-NTP-at-startup.patch
 
 Temp-PerformanceNavigationTiming-privacy-fix.patch
 Temp-disable-predictive-back-gesture.patch
@@ -296,5 +297,3 @@ eyeo-beta-118.0.5993.48-extension_api.patch
 Eyeo-Adblock-Remove-Privacy-Issues.patch
 AdblockPlus-add-blocking-in-service-workers.patch
 AdblockPlus-connect-popup-blocker.patch
-
-Temp-FIXUP-Content-settings-infrastructure.patch

@@ -11,7 +11,7 @@ License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 diff --git a/gpu/config/gpu_finch_features.cc b/gpu/config/gpu_finch_features.cc
 --- a/gpu/config/gpu_finch_features.cc
 +++ b/gpu/config/gpu_finch_features.cc
-@@ -300,7 +300,7 @@ BASE_FEATURE(kForceGpuMainThreadToNormalPriorityDrDc,
+@@ -295,7 +295,7 @@ BASE_FEATURE(kForceGpuMainThreadToNormalPriorityDrDc,
  // enabled by default on supported platforms.
  #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
      BUILDFLAG(IS_ANDROID)
@@ -23,7 +23,7 @@ diff --git a/gpu/config/gpu_finch_features.cc b/gpu/config/gpu_finch_features.cc
 diff --git a/third_party/blink/renderer/modules/webgpu/gpu.cc b/third_party/blink/renderer/modules/webgpu/gpu.cc
 --- a/third_party/blink/renderer/modules/webgpu/gpu.cc
 +++ b/third_party/blink/renderer/modules/webgpu/gpu.cc
-@@ -369,6 +369,7 @@ ScriptPromise GPU::requestAdapter(ScriptState* script_state,
+@@ -368,6 +368,7 @@ ScriptPromise GPU::requestAdapter(ScriptState* script_state,
          "WebGPU is experimental on this platform. See "
          "https://github.com/gpuweb/gpuweb/wiki/"
          "Implementation-Status#implementation-status"));

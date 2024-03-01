@@ -21,10 +21,14 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../inline/BromiteInlineUpdateController.java | 272 ++++++++++++++++++
  .../omaha/inline/InlineUpdateController.java  |  51 ++++
  .../inline/InlineUpdateControllerFactory.java |  21 ++
- chrome/browser/endpoint_fetcher/BUILD.gn      |   2 +
- .../endpoint_fetcher_android.cc               |  50 ++++
- .../endpoint_fetcher/EndpointFetcher.java     |  27 ++
+ chrome/browser/BUILD.gn                       |   2 +
+ chrome/browser/endpoint_fetcher/BUILD.gn      |  32 +++
+ chrome/browser/endpoint_fetcher/DEPS          |   3 +
+ chrome/browser/endpoint_fetcher/OWNERS        |   1 +
+ .../endpoint_fetcher_android.cc               | 183 ++++++++++++
+ .../endpoint_fetcher/EndpointFetcher.java     | 165 +++++++++++
  .../EndpointHeaderResponse.java               |  31 ++
+ .../endpoint_fetcher/EndpointResponse.java    |  30 ++
  .../flags/android/chrome_feature_list.cc      |   1 +
  .../browser/flags/ChromeFeatureList.java      |   1 +
  .../strings/android_chrome_strings.grd        |  23 +-
@@ -32,11 +36,17 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../endpoint_fetcher/endpoint_fetcher.h       |  23 +-
  .../Bromite-auto-updater.inc                  |   3 +
  .../Bromite-auto-updater.inc                  |   1 +
- 24 files changed, 932 insertions(+), 52 deletions(-)
+ 28 files changed, 1269 insertions(+), 52 deletions(-)
  create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/omaha/inline/BromiteInlineUpdateController.java
  create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/omaha/inline/InlineUpdateController.java
  create mode 100644 chrome/android/java/src/org/chromium/chrome/browser/omaha/inline/InlineUpdateControllerFactory.java
+ create mode 100644 chrome/browser/endpoint_fetcher/BUILD.gn
+ create mode 100644 chrome/browser/endpoint_fetcher/DEPS
+ create mode 100644 chrome/browser/endpoint_fetcher/OWNERS
+ create mode 100644 chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc
+ create mode 100644 chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java
  create mode 100644 chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointHeaderResponse.java
+ create mode 100644 chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/Bromite-auto-updater.inc
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_h/Bromite-auto-updater.inc
 
@@ -55,7 +65,7 @@ diff --git a/build/android/java/templates/BuildConfig.template b/build/android/j
 diff --git a/build/config/android/rules.gni b/build/config/android/rules.gni
 --- a/build/config/android/rules.gni
 +++ b/build/config/android/rules.gni
-@@ -1908,6 +1908,9 @@ if (enable_java_templates && is_android) {
+@@ -1910,6 +1910,9 @@ if (enable_java_templates && is_android) {
        sources = [ "//build/android/java/templates/BuildConfig.template" ]
        defines = []
  
@@ -68,7 +78,7 @@ diff --git a/build/config/android/rules.gni b/build/config/android/rules.gni
 diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
 --- a/chrome/android/chrome_java_sources.gni
 +++ b/chrome/android/chrome_java_sources.gni
-@@ -872,6 +872,9 @@ chrome_java_sources = [
+@@ -875,6 +875,9 @@ chrome_java_sources = [
    "java/src/org/chromium/chrome/browser/omaha/UpdateConfigs.java",
    "java/src/org/chromium/chrome/browser/omaha/UpdateMenuItemHelper.java",
    "java/src/org/chromium/chrome/browser/omaha/UpdateStatusProvider.java",
@@ -76,8 +86,8 @@ diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java
 +  "java/src/org/chromium/chrome/browser/omaha/inline/InlineUpdateControllerFactory.java",
 +  "java/src/org/chromium/chrome/browser/omaha/inline/BromiteInlineUpdateController.java",
    "java/src/org/chromium/chrome/browser/omaha/VersionNumberGetter.java",
-   "java/src/org/chromium/chrome/browser/omaha/metrics/HistogramUtils.java",
    "java/src/org/chromium/chrome/browser/omaha/metrics/TrackingProvider.java",
+   "java/src/org/chromium/chrome/browser/omaha/metrics/UpdateSuccessMetrics.java",
 diff --git a/chrome/android/java/res/xml/about_chrome_preferences.xml b/chrome/android/java/res/xml/about_chrome_preferences.xml
 --- a/chrome/android/java/res/xml/about_chrome_preferences.xml
 +++ b/chrome/android/java/res/xml/about_chrome_preferences.xml
@@ -318,7 +328,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateMen
  
  import org.chromium.base.BuildInfo;
  import org.chromium.base.Callback;
-@@ -138,8 +139,21 @@ public class UpdateMenuItemHelper {
+@@ -146,8 +147,21 @@ public class UpdateMenuItemHelper {
                      Log.e(TAG, "Failed to launch Activity for: %s", mStatus.updateUrl);
                  }
                  break;
@@ -340,7 +350,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateMen
              default:
                  return;
          }
-@@ -188,7 +202,7 @@ public class UpdateMenuItemHelper {
+@@ -196,7 +210,7 @@ public class UpdateMenuItemHelper {
  
          mMenuUiState = new MenuUiState();
          switch (mStatus.updateState) {
@@ -349,7 +359,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/omaha/UpdateMen
                  // The badge is hidden if the update menu item has been clicked until there is an
                  // even newer version of Chrome available.
                  showBadge |=
-@@ -247,6 +261,72 @@ public class UpdateMenuItemHelper {
+@@ -255,6 +269,72 @@ public class UpdateMenuItemHelper {
                  mMenuUiState.itemState.icon = R.drawable.ic_error_24dp_filled;
                  mMenuUiState.itemState.enabled = false;
                  break;
@@ -1100,39 +1110,115 @@ new file mode 100644
 +        return new BromiteInlineUpdateController(callback);
 +    }
 +}
+diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
+--- a/chrome/browser/BUILD.gn
++++ b/chrome/browser/BUILD.gn
+@@ -3094,6 +3094,7 @@ static_library("browser") {
+       "download/android/service/download_task_scheduler.h",
+       "download/android/string_utils.cc",
+       "download/download_crx_util_android.cc",
++      "endpoint_fetcher/endpoint_fetcher_android.cc",
+       "enterprise/reporting/browser_report_generator_android.cc",
+       "enterprise/reporting/browser_report_generator_android.h",
+       "enterprise/reporting/profile_report_generator_android.cc",
+@@ -3431,6 +3432,7 @@ static_library("browser") {
+       "//chrome/browser/consent_auditor/android:jni_headers",
+       "//chrome/browser/device_reauth/android:jni_headers",
+       "//chrome/browser/download/internal/android",
++      "//chrome/browser/endpoint_fetcher:jni_headers",
+       "//chrome/browser/feed/android:jni_headers",
+       "//chrome/browser/feedback/android",
+       "//chrome/browser/feedback/android:jni_headers",
 diff --git a/chrome/browser/endpoint_fetcher/BUILD.gn b/chrome/browser/endpoint_fetcher/BUILD.gn
---- a/chrome/browser/endpoint_fetcher/BUILD.gn
+new file mode 100644
+--- /dev/null
 +++ b/chrome/browser/endpoint_fetcher/BUILD.gn
-@@ -19,6 +19,7 @@ android_library("java") {
-   sources = [
-     "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java",
-     "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java",
+@@ -0,0 +1,32 @@
++# Copyright 2020 The Chromium Authors
++# Use of this source code is governed by a BSD-style license that can be
++# found in the LICENSE file.
++
++import("//build/config/android/rules.gni")
++import("//third_party/jni_zero/jni_zero.gni")
++
++android_library("java") {
++  deps = [
++    ":jni_headers",
++    "//base:base_java",
++    "//build/android:build_java",
++    "//chrome/browser/profiles/android:java",
++    "//net/android:net_java",
++    "//third_party/androidx:androidx_annotation_annotation_java",
++    "//third_party/jni_zero:jni_zero_java",
++  ]
++  srcjar_deps = [ ":jni_headers" ]
++  sources = [
++    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java",
++    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java",
 +    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointHeaderResponse.java",
-   ]
- }
- 
-@@ -26,5 +27,6 @@ generate_jni("jni_headers") {
-   sources = [
-     "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java",
-     "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java",
++  ]
++}
++
++generate_jni("jni_headers") {
++  sources = [
++    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java",
++    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java",
 +    "java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointHeaderResponse.java",
-   ]
- }
++  ]
++}
+diff --git a/chrome/browser/endpoint_fetcher/DEPS b/chrome/browser/endpoint_fetcher/DEPS
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/endpoint_fetcher/DEPS
+@@ -0,0 +1,3 @@
++include_rules = [
++  "+components/endpoint_fetcher",
++]
+diff --git a/chrome/browser/endpoint_fetcher/OWNERS b/chrome/browser/endpoint_fetcher/OWNERS
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/endpoint_fetcher/OWNERS
+@@ -0,0 +1 @@
++file://chrome/browser/complex_tasks/OWNERS
 diff --git a/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc b/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc
---- a/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc
+new file mode 100644
+--- /dev/null
 +++ b/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc
-@@ -9,6 +9,7 @@
- #include "base/android/jni_string.h"
- #include "chrome/browser/endpoint_fetcher/jni_headers/EndpointFetcher_jni.h"
- #include "chrome/browser/endpoint_fetcher/jni_headers/EndpointResponse_jni.h"
+@@ -0,0 +1,183 @@
++// Copyright 2019 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "components/endpoint_fetcher/endpoint_fetcher.h"
++
++#include "base/android/callback_android.h"
++#include "base/android/jni_array.h"
++#include "base/android/jni_string.h"
++#include "chrome/browser/endpoint_fetcher/jni_headers/EndpointFetcher_jni.h"
++#include "chrome/browser/endpoint_fetcher/jni_headers/EndpointResponse_jni.h"
 +#include "chrome/browser/endpoint_fetcher/jni_headers/EndpointHeaderResponse_jni.h"
- #include "chrome/browser/profiles/profile_android.h"
- #include "chrome/browser/signin/identity_manager_factory.h"
- #include "chrome/common/channel_info.h"
-@@ -31,6 +32,24 @@ static void OnEndpointFetcherComplete(
-                        base::android::AttachCurrentThread(),
-                        std::move(endpoint_response->response))));
- }
++#include "chrome/browser/profiles/profile_android.h"
++#include "chrome/browser/signin/identity_manager_factory.h"
++#include "chrome/common/channel_info.h"
++#include "components/signin/public/base/consent_level.h"
++#include "components/version_info/channel.h"
++#include "content/public/browser/storage_partition.h"
++
++namespace {
++static void OnEndpointFetcherComplete(
++    const base::android::JavaRef<jobject>& jcaller,
++    // Passing the endpoint_fetcher ensures the endpoint_fetcher's
++    // lifetime extends to the callback and is not destroyed
++    // prematurely (which would result in cancellation of the request).
++    std::unique_ptr<EndpointFetcher> endpoint_fetcher,
++    std::unique_ptr<EndpointResponse> endpoint_response) {
++  base::android::RunObjectCallbackAndroid(
++      jcaller, Java_EndpointResponse_createEndpointResponse(
++                   base::android::AttachCurrentThread(),
++                   base::android::ConvertUTF8ToJavaString(
++                       base::android::AttachCurrentThread(),
++                       std::move(endpoint_response->response))));
++}
 +
 +static void OnEndpointFetcherHeadComplete(
 +    const base::android::JavaRef<jobject>& jcaller,
@@ -1151,31 +1237,110 @@ diff --git a/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc b/chrom
 +                       base::android::AttachCurrentThread(),
 +                       std::move(endpoint_response->redirect_url))));
 +}
- }  // namespace
- 
- // TODO(crbug.com/1077537) Create a KeyProvider so
-@@ -113,6 +132,7 @@ static void JNI_EndpointFetcher_NativeFetchWithNoAuth(
-     JNIEnv* env,
-     const base::android::JavaParamRef<jobject>& jprofile,
-     const base::android::JavaParamRef<jstring>& jurl,
++}  // namespace
++
++// TODO(crbug.com/1077537) Create a KeyProvider so
++// we can have one centralized API.
++
++static void JNI_EndpointFetcher_NativeFetchOAuth(
++    JNIEnv* env,
++    const base::android::JavaParamRef<jobject>& jprofile,
++    const base::android::JavaParamRef<jstring>& joauth_consumer_name,
++    const base::android::JavaParamRef<jstring>& jurl,
++    const base::android::JavaParamRef<jstring>& jhttps_method,
++    const base::android::JavaParamRef<jstring>& jcontent_type,
++    const base::android::JavaParamRef<jobjectArray>& jscopes,
++    const base::android::JavaParamRef<jstring>& jpost_data,
++    jlong jtimeout,
++    jint jannotation_hash_code,
++    const base::android::JavaParamRef<jobject>& jcallback) {
++  std::vector<std::string> scopes;
++  base::android::AppendJavaStringArrayToStringVector(env, jscopes, &scopes);
++  auto endpoint_fetcher = std::make_unique<EndpointFetcher>(
++      ProfileAndroid::FromProfileAndroid(jprofile)
++          ->GetDefaultStoragePartition()
++          ->GetURLLoaderFactoryForBrowserProcess(),
++      base::android::ConvertJavaStringToUTF8(env, joauth_consumer_name),
++      GURL(base::android::ConvertJavaStringToUTF8(env, jurl)),
++      base::android::ConvertJavaStringToUTF8(env, jhttps_method),
++      base::android::ConvertJavaStringToUTF8(env, jcontent_type), scopes,
++      jtimeout, base::android::ConvertJavaStringToUTF8(env, jpost_data),
++      net::NetworkTrafficAnnotationTag::FromJavaAnnotation(
++          jannotation_hash_code),
++      IdentityManagerFactory::GetForProfile(
++          ProfileAndroid::FromProfileAndroid(jprofile)),
++      // TODO(crbug.com/1466445): ConsentLevel::kSync is deprecated and should
++      //     be removed. See ConsentLevel::kSync documentation for details.
++      signin::ConsentLevel::kSync);
++  auto* const endpoint_fetcher_ptr = endpoint_fetcher.get();
++  endpoint_fetcher_ptr->Fetch(
++      base::BindOnce(&OnEndpointFetcherComplete,
++                     base::android::ScopedJavaGlobalRef<jobject>(jcallback),
++                     // unique_ptr endpoint_fetcher is passed until the callback
++                     // to ensure its lifetime across the request.
++                     std::move(endpoint_fetcher)));
++}
++
++static void JNI_EndpointFetcher_NativeFetchChromeAPIKey(
++    JNIEnv* env,
++    const base::android::JavaParamRef<jobject>& jprofile,
++    const base::android::JavaParamRef<jstring>& jurl,
++    const base::android::JavaParamRef<jstring>& jhttps_method,
++    const base::android::JavaParamRef<jstring>& jcontent_type,
++    const base::android::JavaParamRef<jstring>& jpost_data,
++    jlong jtimeout,
++    const base::android::JavaParamRef<jobjectArray>& jheaders,
++    jint jannotation_hash_code,
++    const base::android::JavaParamRef<jobject>& jcallback) {
++  std::vector<std::string> headers;
++  base::android::AppendJavaStringArrayToStringVector(env, jheaders, &headers);
++  auto endpoint_fetcher = std::make_unique<EndpointFetcher>(
++      ProfileAndroid::FromProfileAndroid(jprofile)
++          ->GetDefaultStoragePartition()
++          ->GetURLLoaderFactoryForBrowserProcess(),
++      GURL(base::android::ConvertJavaStringToUTF8(env, jurl)),
++      base::android::ConvertJavaStringToUTF8(env, jhttps_method),
++      base::android::ConvertJavaStringToUTF8(env, jcontent_type), jtimeout,
++      base::android::ConvertJavaStringToUTF8(env, jpost_data), headers,
++      net::NetworkTrafficAnnotationTag::FromJavaAnnotation(
++          jannotation_hash_code),
++      chrome::GetChannel() == version_info::Channel::STABLE);
++  auto* const endpoint_fetcher_ptr = endpoint_fetcher.get();
++  endpoint_fetcher_ptr->PerformRequest(
++      base::BindOnce(&OnEndpointFetcherComplete,
++                     base::android::ScopedJavaGlobalRef<jobject>(jcallback),
++                     // unique_ptr endpoint_fetcher is passed until the callback
++                     // to ensure its lifetime across the request.
++                     std::move(endpoint_fetcher)),
++      nullptr);
++}
++
++static void JNI_EndpointFetcher_NativeFetchWithNoAuth(
++    JNIEnv* env,
++    const base::android::JavaParamRef<jobject>& jprofile,
++    const base::android::JavaParamRef<jstring>& jurl,
 +    jlong jtimeout, jboolean intercept_redirect,
-     jint jannotation_hash_code,
-     const base::android::JavaParamRef<jobject>& jcallback) {
-   auto endpoint_fetcher = std::make_unique<EndpointFetcher>(
-@@ -120,6 +140,9 @@ static void JNI_EndpointFetcher_NativeFetchWithNoAuth(
-           ->GetDefaultStoragePartition()
-           ->GetURLLoaderFactoryForBrowserProcess(),
-       GURL(base::android::ConvertJavaStringToUTF8(env, jurl)),
++    jint jannotation_hash_code,
++    const base::android::JavaParamRef<jobject>& jcallback) {
++  auto endpoint_fetcher = std::make_unique<EndpointFetcher>(
++      ProfileAndroid::FromProfileAndroid(jprofile)
++          ->GetDefaultStoragePartition()
++          ->GetURLLoaderFactoryForBrowserProcess(),
++      GURL(base::android::ConvertJavaStringToUTF8(env, jurl)),
 +      "GET",
 +      jtimeout,
 +      intercept_redirect,
-       net::NetworkTrafficAnnotationTag::FromJavaAnnotation(
-           jannotation_hash_code));
-   auto* const endpoint_fetcher_ptr = endpoint_fetcher.get();
-@@ -131,3 +154,30 @@ static void JNI_EndpointFetcher_NativeFetchWithNoAuth(
-                      std::move(endpoint_fetcher)),
-       nullptr);
- }
++      net::NetworkTrafficAnnotationTag::FromJavaAnnotation(
++          jannotation_hash_code));
++  auto* const endpoint_fetcher_ptr = endpoint_fetcher.get();
++  endpoint_fetcher_ptr->PerformRequest(
++      base::BindOnce(&OnEndpointFetcherComplete,
++                     base::android::ScopedJavaGlobalRef<jobject>(jcallback),
++                     // unique_ptr endpoint_fetcher is passed until the callback
++                     // to ensure its lifetime across the request.
++                     std::move(endpoint_fetcher)),
++      nullptr);
++}
 +
 +static void JNI_EndpointFetcher_NativeHeadWithNoAuth(
 +    JNIEnv* env,
@@ -1204,12 +1369,116 @@ diff --git a/chrome/browser/endpoint_fetcher/endpoint_fetcher_android.cc b/chrom
 +      nullptr);
 +}
 diff --git a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java b/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java
---- a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java
+new file mode 100644
+--- /dev/null
 +++ b/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointFetcher.java
-@@ -104,6 +104,24 @@ public final class EndpointFetcher {
-                         callback);
-     }
- 
+@@ -0,0 +1,165 @@
++// Copyright 2019 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++package org.chromium.chrome.browser.endpoint_fetcher;
++
++import androidx.annotation.MainThread;
++
++import org.jni_zero.NativeMethods;
++
++import org.chromium.base.Callback;
++import org.chromium.chrome.browser.profiles.Profile;
++import org.chromium.net.NetworkTrafficAnnotationTag;
++
++/**
++ * EndpointFetcher uses native EndpointFetcher to call a HTTPS endpoint and return
++ * the response. The call to native EndpointFetcher is achieved over a static call
++ * over JNI. The native EndpointFetcher is created during the static call and
++ * destroyed in the callback function.
++ * EndpointFetcher currently doesn't support incognito mode.
++ * If the request times out an empty response will be returned. There will also
++ * be an error code indicating timeout once more detailed error messaging is added
++ * TODO(crbug.com/993393).
++ */
++public final class EndpointFetcher {
++    private EndpointFetcher() {}
++
++    /**
++     * Calls an endpoint using OAuth and returns the response via a callback
++     * @param callback callback function response is returned in
++     * @param profile profile via which the endpoint is called
++     * @param oathConsumerName consumer name for OAuth
++     * @param url endpoint URL called
++     * @param httpsMethod the HTTPS method used e.g. "GET" or "POST"
++     * @param contentType the content type e.g. "application/json"
++     * @param scopes scopes used as part of authentication
++     * @param postData data for a "POST" request
++     * @param timeout time after which the request will terminate in the event a response hasn't
++     *         been received
++     */
++    @MainThread
++    public static void fetchUsingOAuth(
++            Callback<EndpointResponse> callback,
++            Profile profile,
++            String oathConsumerName,
++            String url,
++            String httpsMethod,
++            String contentType,
++            String[] scopes,
++            String postData,
++            long timeout,
++            NetworkTrafficAnnotationTag annotation) {
++        // EndpointFetcher currently does not support incognito mode
++        assert !profile.isOffTheRecord();
++        EndpointFetcherJni.get()
++                .nativeFetchOAuth(
++                        profile,
++                        oathConsumerName,
++                        url,
++                        httpsMethod,
++                        contentType,
++                        scopes,
++                        postData,
++                        timeout,
++                        annotation.getHashCode(),
++                        callback);
++    }
++
++    /**
++     * Calls an endpoint using Chrome API Key returns the response via a callback
++     * @param callback to pass the response back in
++     * @param profile via which the endpoint is called
++     * @param url endpoint URL called
++     * @param httpsMethod the HTTPS method used e.g. "GET" or "POST"
++     * @param contentType the content type e.g. "application/json"
++     * @param postData data for a "POST" request
++     * @param timeout time after which the request will terminate in the event a response hasn't
++     *         been received
++     * @param headers headers for the request. Key/value pairs are stored sequentially in the array.
++     */
++    @MainThread
++    public static void fetchUsingChromeAPIKey(
++            Callback<EndpointResponse> callback,
++            Profile profile,
++            String url,
++            String httpsMethod,
++            String contentType,
++            String postData,
++            long timeout,
++            String[] headers,
++            NetworkTrafficAnnotationTag annotation) {
++        // EndpointFetcher currently does not support incognito mode
++        // assert !profile.isOffTheRecord();
++        EndpointFetcherJni.get()
++                .nativeFetchChromeAPIKey(
++                        profile,
++                        url,
++                        httpsMethod,
++                        contentType,
++                        postData,
++                        timeout,
++                        headers,
++                        annotation.getHashCode(),
++                        callback);
++    }
++
 +    @MainThread
 +    public static void nativeHeadWithNoAuth(
 +            Callback<EndpointHeaderResponse> callback, Profile profile,
@@ -1228,17 +1497,38 @@ diff --git a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browse
 +                profile, url, timeout, allow_redirect, annotation.getHashCode(), callback);
 +    }
 +
-     @NativeMethods
-     public interface Natives {
-         void nativeFetchOAuth(
-@@ -132,7 +150,16 @@ public final class EndpointFetcher {
-         void nativeFetchWithNoAuth(
-                 Profile profile,
-                 String url,
++    @NativeMethods
++    public interface Natives {
++        void nativeFetchOAuth(
++                Profile profile,
++                String oathConsumerName,
++                String url,
++                String httpsMethod,
++                String contentType,
++                String[] scopes,
++                String postData,
++                long timeout,
++                int annotationHashCode,
++                Callback<EndpointResponse> callback);
++
++        void nativeFetchChromeAPIKey(
++                Profile profile,
++                String url,
++                String httpsMethod,
++                String contentType,
++                String postData,
++                long timeout,
++                String[] headers,
++                int annotationHashCode,
++                Callback<EndpointResponse> callback);
++
++        void nativeFetchWithNoAuth(
++                Profile profile,
++                String url,
 +                long timeout,
 +                boolean allow_redirect,
-                 int annotationHashCode,
-                 Callback<EndpointResponse> callback);
++                int annotationHashCode,
++                Callback<EndpointResponse> callback);
 +        void nativeHeadWithNoAuth(
 +                Profile profile,
 +                String url,
@@ -1246,8 +1536,8 @@ diff --git a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browse
 +                boolean allow_redirect,
 +                int annotationHashCode,
 +                Callback<EndpointHeaderResponse> callback);
-     }
- }
++    }
++}
 diff --git a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointHeaderResponse.java b/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointHeaderResponse.java
 new file mode 100644
 --- /dev/null
@@ -1284,32 +1574,67 @@ new file mode 100644
 +        return new EndpointHeaderResponse(response, redirectUrl);
 +    }
 +}
+diff --git a/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java b/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/endpoint_fetcher/java/src/org/chromium/chrome/browser/endpoint_fetcher/EndpointResponse.java
+@@ -0,0 +1,30 @@
++// Copyright 2019 The Chromium Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++package org.chromium.chrome.browser.endpoint_fetcher;
++
++import org.jni_zero.CalledByNative;
++
++/** Encapsulates the response from the {@Link EndpointFetcher} */
++public class EndpointResponse {
++    private final String mResponseString;
++
++    /**
++     * Create the EndpointResponse
++     * @param responseString the response string acquired from the endpoint
++     */
++    public EndpointResponse(String responseString) {
++        mResponseString = responseString;
++    }
++
++    /** Response string acquired from calling an endpoint */
++    public String getResponseString() {
++        return mResponseString;
++    }
++
++    @CalledByNative
++    private static EndpointResponse createEndpointResponse(String response) {
++        return new EndpointResponse(response);
++    }
++}
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -264,6 +264,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -235,6 +235,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &kPreconnectOnTabCreation,
      &kPriceChangeModule,
      &kPwaRestoreUi,
 +    &kInlineUpdateFlow,
-     &kBookmarksImprovedSaveFlow,
-     &kBookmarksRefresh,
+     &kPwaUniversalInstallUi,
      &kOmahaMinSdkVersionAndroid,
+     &kShortCircuitUnfocusAnimation,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -303,6 +303,7 @@ public abstract class ChromeFeatureList {
+@@ -315,6 +315,7 @@ public abstract class ChromeFeatureList {
              "IncognitoReauthenticationForAndroid";
      public static final String INCOGNITO_SCREENSHOT = "IncognitoScreenshot";
-     public static final String INFOBAR_SCROLL_OPTIMIZATION = "InfobarScrollOptimization";
-+    public static final String INLINE_UPDATE_FLOW = "InlineUpdateFlow";
-     public static final String INSTALLABLE_AMBIENT_BADGE_MESSAGE = "InstallableAmbientBadgeMessage";
-     public static final String INSTANCE_SWITCHER = "InstanceSwitcher";
      public static final String INSTANT_START = "InstantStart";
++    public static final String INLINE_UPDATE_FLOW = "InlineUpdateFlow";
+     public static final String INTEREST_FEED_V2_HEARTS = "InterestFeedV2Hearts";
+     public static final String KID_FRIENDLY_CONTENT_FEED = "KidFriendlyContentFeed";
+     public static final String LENS_CAMERA_ASSISTED_SEARCH = "LensCameraAssistedSearch";
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -2012,6 +2012,12 @@ Your Google account may have other forms of browsing history like searches and a
+@@ -2038,6 +2038,12 @@ Your Google account may have other forms of browsing history like searches and a
        <message name="IDS_DEPRECATION_WARNING" desc="Warning about Chrome updates no longer being supported">
          Chrome updates are no longer supported for this version of Android
        </message>
@@ -1322,7 +1647,7 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
  
        <!-- Account management UI strings. -->
        <message name="IDS_ACCOUNT_MANAGEMENT_TITLE" desc="Header title for the account management screen. [CHAR_LIMIT=32]">
-@@ -3640,7 +3646,10 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -3663,7 +3669,10 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
  
        <!-- Main menu items -->
        <message name="IDS_MENU_UPDATE" desc="Menu item for updating chrome. [CHAR_LIMIT=24]">
@@ -1334,7 +1659,7 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
        </message>
        <message name="IDS_MENU_UPDATE_SUMMARY_DEFAULT" desc="Summary string for update menu item explaining that a newer version of Chrome is available. [CHAR_LIMIT=30]">
          Newer version is available
-@@ -3651,6 +3660,18 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
+@@ -3674,6 +3683,18 @@ To change this setting, <ph name="BEGIN_LINK">&lt;resetlink&gt;</ph>reset sync<p
        <message name="IDS_MENU_UPDATE_UNSUPPORTED_SUMMARY_DEFAULT" desc="Summary string for update menu item explaining that the Android version on the device is unsupported. [CHAR_LIMIT=30]">
          Android version is unsupported
        </message>

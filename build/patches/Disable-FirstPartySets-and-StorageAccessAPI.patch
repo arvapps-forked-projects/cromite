@@ -4,21 +4,66 @@ Subject: Disable FirstPartySets and StorageAccessAPI
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
+ .../first_party_sets/first_party_sets_navigation_throttle.cc  | 2 +-
+ .../first_party_sets/first_party_sets_policy_service.cc       | 3 ++-
+ .../browser/privacy_sandbox/privacy_sandbox_service_impl.cc   | 2 +-
  components/privacy_sandbox/privacy_sandbox_prefs.cc           | 2 +-
  components/privacy_sandbox/tracking_protection_prefs.cc       | 4 ++--
- .../Disable-FirstPartySets-and-StorageAccessAPI.inc           | 1 +
- 3 files changed, 4 insertions(+), 3 deletions(-)
- create mode 100644 cromite_flags/content/public/common/content_features_cc/Disable-FirstPartySets-and-StorageAccessAPI.inc
+ 5 files changed, 7 insertions(+), 6 deletions(-)
 
+diff --git a/chrome/browser/first_party_sets/first_party_sets_navigation_throttle.cc b/chrome/browser/first_party_sets/first_party_sets_navigation_throttle.cc
+--- a/chrome/browser/first_party_sets/first_party_sets_navigation_throttle.cc
++++ b/chrome/browser/first_party_sets/first_party_sets_navigation_throttle.cc
+@@ -77,7 +77,7 @@ FirstPartySetsNavigationThrottle::MaybeCreateNavigationThrottle(
+   // The `service` might be null for some irregular profiles.
+   // TODO(https://crbug.com/1348572): regular profiles and guest sessions
+   // aren't mutually exclusive on ChromeOS.
+-  if (!profile->IsRegularProfile() || profile->IsGuestSession())
++  if (((true)) || !profile->IsRegularProfile() || profile->IsGuestSession())
+     return nullptr;
+ 
+   FirstPartySetsPolicyService* service =
+diff --git a/chrome/browser/first_party_sets/first_party_sets_policy_service.cc b/chrome/browser/first_party_sets/first_party_sets_policy_service.cc
+--- a/chrome/browser/first_party_sets/first_party_sets_policy_service.cc
++++ b/chrome/browser/first_party_sets/first_party_sets_policy_service.cc
+@@ -58,6 +58,7 @@ const base::Value::Dict* GetOverridesPolicyForProfile(
+ }
+ 
+ ServiceState GetServiceState(Profile* profile, bool pref_enabled) {
++  if ((true)) return ServiceState::kPermanentlyDisabled;
+   if (profile->IsSystemProfile() || profile->IsGuestSession() ||
+       profile->IsOffTheRecord()) {
+     return ServiceState::kPermanentlyDisabled;
+@@ -107,7 +108,7 @@ void FirstPartySetsPolicyService::Init() {
+       profile, profile->GetPrefs() &&
+                    profile->GetPrefs()->GetBoolean(
+                        prefs::kPrivacySandboxRelatedWebsiteSetsEnabled));
+-
++  service_state_ = ServiceState::kPermanentlyDisabled;
+   if (service_state_ == ServiceState::kPermanentlyDisabled) {
+     OnReadyToNotifyDelegates(net::FirstPartySetsContextConfig(),
+                              net::FirstPartySetsCacheFilter());
+diff --git a/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc b/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
+--- a/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
++++ b/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
+@@ -418,7 +418,7 @@ bool PrivacySandboxServiceImpl::IsRestrictedNoticeEnabled() {
+ void PrivacySandboxServiceImpl::SetFirstPartySetsDataAccessEnabled(
+     bool enabled) {
+   pref_service_->SetBoolean(prefs::kPrivacySandboxRelatedWebsiteSetsEnabled,
+-                            enabled);
++                            false);
+ }
+ 
+ bool PrivacySandboxServiceImpl::IsFirstPartySetsDataAccessEnabled() const {
 diff --git a/components/privacy_sandbox/privacy_sandbox_prefs.cc b/components/privacy_sandbox/privacy_sandbox_prefs.cc
 --- a/components/privacy_sandbox/privacy_sandbox_prefs.cc
 +++ b/components/privacy_sandbox/privacy_sandbox_prefs.cc
-@@ -55,7 +55,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+@@ -51,7 +51,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
    registry->RegisterBooleanPref(
        prefs::kPrivacySandboxFirstPartySetsDataAccessAllowedInitialized, false);
    registry->RegisterBooleanPref(
 -      prefs::kPrivacySandboxRelatedWebsiteSetsEnabled, true,
-+      prefs::kPrivacySandboxRelatedWebsiteSetsEnabled, false,
++      prefs::kPrivacySandboxRelatedWebsiteSetsEnabled, false,  // must be disabled
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
  
    registry->RegisterBooleanPref(prefs::kPrivacySandboxTopicsConsentGiven,
@@ -39,12 +84,6 @@ diff --git a/components/privacy_sandbox/tracking_protection_prefs.cc b/component
 -  registry->RegisterBooleanPref(prefs::kTrackingProtection3pcdEnabled, false);
 +  registry->RegisterBooleanPref(prefs::kTrackingProtection3pcdEnabled, false); // with true enables FPS
    registry->RegisterBooleanPref(
-       prefs::kEnableDoNotTrack, false,
+       prefs::kIpProtectionEnabled, false,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
-diff --git a/cromite_flags/content/public/common/content_features_cc/Disable-FirstPartySets-and-StorageAccessAPI.inc b/cromite_flags/content/public/common/content_features_cc/Disable-FirstPartySets-and-StorageAccessAPI.inc
-new file mode 100644
---- /dev/null
-+++ b/cromite_flags/content/public/common/content_features_cc/Disable-FirstPartySets-and-StorageAccessAPI.inc
-@@ -0,0 +1 @@
-+SET_CROMITE_FEATURE_DISABLED(kFirstPartySets);
 --

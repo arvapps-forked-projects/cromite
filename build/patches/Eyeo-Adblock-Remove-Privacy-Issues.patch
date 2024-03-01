@@ -26,7 +26,6 @@ suit Bromite logic
  .../adblock_internals_page_handler_impl.cc    |   20 +-
  .../extensions/api/_permission_features.json  |    8 -
  .../common/extensions/api/adblock_private.idl |    8 +
- chrome/test/BUILD.gn                          |    5 -
  components/adblock/android/BUILD.gn           |    3 +-
  components/adblock/android/adblock_jni.cc     |   53 +-
  .../adblock/android/adblock_strings.grd       |   54 +-
@@ -71,6 +70,7 @@ suit Bromite logic
  .../core/converter/parser/url_filter.cc       |   10 +-
  .../converter/parser/url_filter_options.cc    |   21 +-
  .../serializer/flatbuffer_serializer.cc       |   75 +-
+ components/adblock/core/hash/schema_hash.h    |   10 +
  .../adblock/core/sitekey_storage_impl.cc      |    7 +
  .../core/subscription/conversion_executors.h  |    1 +
  .../filtering_configuration_maintainer.h      |    4 +
@@ -108,7 +108,7 @@ suit Bromite logic
  .../blink/renderer/core/css/style_engine.h    |    1 +
  .../renderer/core/exported/web_document.cc    |   15 +-
  .../definitions/adblock_private.d.ts          |   14 +
- 103 files changed, 8856 insertions(+), 1165 deletions(-)
+ 103 files changed, 8866 insertions(+), 1160 deletions(-)
  create mode 100644 chrome/browser/resources/settings/adblock_page/adblock_page.html
  create mode 100644 chrome/browser/resources/settings/adblock_page/adblock_page.ts
  rename components/adblock/android/java/res/xml/{adblock_preferences.xml => eyeo_adblock_preferences.xml} (56%)
@@ -117,6 +117,7 @@ suit Bromite logic
  delete mode 100644 components/adblock/core/adblock_telemetry_service.cc
  delete mode 100644 components/adblock/core/adblock_telemetry_service.h
  create mode 100644 components/adblock/core/converter/parser/test/test_rules.txt
+ create mode 100644 components/adblock/core/hash/schema_hash.h
  create mode 100644 components/content_settings/core/browser/bromite_content_settings/ads.inc
  create mode 100644 components/resources/adblocking/snippets/dist/isolated-first-xpath3.jst
  create mode 100644 components/resources/adblocking/snippets/dist/isolated-first-xpath3.source.jst
@@ -140,7 +141,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
  <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
      xmlns:app="http://schemas.android.com/apk/res-auto"
      android:orderingFromXml="false">
-@@ -75,6 +66,11 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
+@@ -81,6 +72,11 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
          android:key="adblock"
          android:order="13"
          android:title="@string/prefs_adblock"/>
@@ -151,10 +152,10 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 +        android:title="@string/adblock_settings_title" />
      <Preference
          android:key="notifications"
-         android:order="13"
-@@ -104,11 +100,6 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
+         android:order="14"
+@@ -115,11 +111,6 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
          android:key="accessibility"
-         android:order="18"
+         android:order="20"
          android:title="@string/prefs_accessibility"/>
 -    <Preference
 -        android:fragment="org.chromium.components.adblock.settings.AdblockSettingsFragment"
@@ -167,7 +168,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -157,8 +157,6 @@ static_library("browser") {
+@@ -156,8 +156,6 @@ static_library("browser") {
      "adblock/adblock_content_browser_client.h",
      "adblock/adblock_controller_factory.cc",
      "adblock/adblock_controller_factory.h",
@@ -469,7 +470,7 @@ diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
  #include "chrome/browser/adblock/content_security_policy_injector_factory.h"
  #include "chrome/browser/adblock/element_hider_factory.h"
  #include "chrome/browser/adblock/resource_classification_runner_factory.h"
-@@ -823,7 +822,6 @@ void ChromeBrowserMainExtraPartsProfiles::
+@@ -824,7 +823,6 @@ void ChromeBrowserMainExtraPartsProfiles::
    FakeSmartCardDeviceServiceFactory::GetInstance();
  #endif
    adblock::AdblockControllerFactory::GetInstance();
@@ -488,7 +489,7 @@ diff --git a/chrome/browser/resources/settings/BUILD.gn b/chrome/browser/resourc
      "appearance_page/appearance_fonts_page.ts",
      "appearance_page/appearance_page.ts",
      "appearance_page/home_url_input.ts",
-@@ -371,6 +372,7 @@ build_webui("build") {
+@@ -375,6 +376,7 @@ build_webui("build") {
    ts_composite = true
    ts_definitions = [
      "//tools/typescript/definitions/autofill_private.d.ts",
@@ -1002,7 +1003,7 @@ new file mode 100644
 diff --git a/chrome/browser/resources/settings/basic_page/basic_page.html b/chrome/browser/resources/settings/basic_page/basic_page.html
 --- a/chrome/browser/resources/settings/basic_page/basic_page.html
 +++ b/chrome/browser/resources/settings/basic_page/basic_page.html
-@@ -32,6 +32,13 @@
+@@ -31,6 +31,13 @@
              <settings-ai-page prefs="{{prefs}}"></settings-ai-page>
            </settings-section>
          </template>
@@ -1041,7 +1042,7 @@ diff --git a/chrome/browser/resources/settings/page_visibility.ts b/chrome/brows
 diff --git a/chrome/browser/resources/settings/route.ts b/chrome/browser/resources/settings/route.ts
 --- a/chrome/browser/resources/settings/route.ts
 +++ b/chrome/browser/resources/settings/route.ts
-@@ -192,6 +192,10 @@ function createBrowserSettingsRoutes(): SettingsRoutes {
+@@ -196,6 +196,10 @@ function createBrowserSettingsRoutes(): SettingsRoutes {
      r.FONTS = r.APPEARANCE.createChild('/fonts');
    }
  
@@ -1100,7 +1101,7 @@ diff --git a/chrome/browser/ui/tab_helpers.cc b/chrome/browser/ui/tab_helpers.cc
  #include "chrome/browser/bookmarks/bookmark_model_factory.h"
  #include "chrome/browser/breadcrumbs/breadcrumb_manager_tab_helper.h"
  #include "chrome/browser/browser_process.h"
-@@ -364,6 +365,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
+@@ -369,6 +370,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
      }
    }
  
@@ -1109,7 +1110,7 @@ diff --git a/chrome/browser/ui/tab_helpers.cc b/chrome/browser/ui/tab_helpers.cc
    AdblockWebContentObserver::CreateForWebContents(
        web_contents,
        adblock::SubscriptionServiceFactory::GetForBrowserContext(
-@@ -372,7 +375,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
+@@ -377,7 +380,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
            web_contents->GetBrowserContext()),
        adblock::SitekeyStorageFactory::GetForBrowserContext(
            web_contents->GetBrowserContext()),
@@ -1220,28 +1221,6 @@ diff --git a/chrome/common/extensions/api/adblock_private.idl b/chrome/common/ex
    // Allows to turn Adblock on or off.
    static void setEnabled(boolean enabled);
    // Returns whether Adblock is on.
-diff --git a/chrome/test/BUILD.gn b/chrome/test/BUILD.gn
---- a/chrome/test/BUILD.gn
-+++ b/chrome/test/BUILD.gn
-@@ -27,7 +27,6 @@ import("//chrome/test/include_js_tests.gni")
- import("//chrome/version.gni")
- import("//chromeos/ash/components/assistant/assistant.gni")
- import("//components/allocation_recorder/testing/testing.gni")
--import("//components/adblock/features.gni")
- import("//components/captive_portal/core/features.gni")
- import("//components/compose/features.gni")
- import("//components/enterprise/buildflags/buildflags.gni")
-@@ -2958,10 +2957,6 @@ if (!is_android) {
-       sources += [ "../browser/chrome_for_testing/chrome_for_testing_info_bar_browsertest.cc" ]
-     }
- 
--    if (eyeo_intercept_debug_url) {
--      sources += [ "../browser/adblock/test/adblock_debug_url_browsertest.cc" ]
--    }
--
-     if (enable_reporting) {
-       sources += [ "../browser/net/reporting_browsertest.cc" ]
-     }
 diff --git a/components/adblock/android/BUILD.gn b/components/adblock/android/BUILD.gn
 --- a/components/adblock/android/BUILD.gn
 +++ b/components/adblock/android/BUILD.gn
@@ -3597,6 +3576,21 @@ diff --git a/components/adblock/core/converter/serializer/flatbuffer_serializer.
      return;
    }
  
+diff --git a/components/adblock/core/hash/schema_hash.h b/components/adblock/core/hash/schema_hash.h
+new file mode 100644
+--- /dev/null
++++ b/components/adblock/core/hash/schema_hash.h
+@@ -0,0 +1,10 @@
++#include <stdint.h>
++
++#include <array>
++
++#ifndef GEN_COMPONENTS_ADBLOCK_CORE_HASH_SCHEMA_HASH_H_
++#define GEN_COMPONENTS_ADBLOCK_CORE_HASH_SCHEMA_HASH_H_
++
++extern const std::array<uint8_t, 32> kSha256_filter_list_schema_generated_h;
++
++#endif  // GEN_COMPONENTS_ADBLOCK_CORE_HASH_SCHEMA_HASH_H_
 diff --git a/components/adblock/core/sitekey_storage_impl.cc b/components/adblock/core/sitekey_storage_impl.cc
 --- a/components/adblock/core/sitekey_storage_impl.cc
 +++ b/components/adblock/core/sitekey_storage_impl.cc
@@ -4395,7 +4389,7 @@ new file mode 100644
 diff --git a/components/resources/BUILD.gn b/components/resources/BUILD.gn
 --- a/components/resources/BUILD.gn
 +++ b/components/resources/BUILD.gn
-@@ -80,7 +80,6 @@ grit("components_resources") {
+@@ -79,7 +79,6 @@ grit("components_resources") {
  
    deps += [
      "//components/resources/adblocking:copy_snippets_lib",
@@ -11981,7 +11975,7 @@ diff --git a/third_party/blink/renderer/core/css/style_engine.cc b/third_party/b
 diff --git a/third_party/blink/renderer/core/css/style_engine.h b/third_party/blink/renderer/core/css/style_engine.h
 --- a/third_party/blink/renderer/core/css/style_engine.h
 +++ b/third_party/blink/renderer/core/css/style_engine.h
-@@ -246,6 +246,7 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
+@@ -249,6 +249,7 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
        const ComputedStyle* embedder_style) const;
    void ViewportStyleSettingChanged();
  
@@ -11992,7 +11986,7 @@ diff --git a/third_party/blink/renderer/core/css/style_engine.h b/third_party/bl
 diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_party/blink/renderer/core/exported/web_document.cc
 --- a/third_party/blink/renderer/core/exported/web_document.cc
 +++ b/third_party/blink/renderer/core/exported/web_document.cc
-@@ -274,6 +274,16 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -276,6 +276,16 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
    Document* document = Unwrap<Document>();
    DCHECK(document);
  
@@ -12009,7 +12003,7 @@ diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_pa
    auto* parsed_sheet = MakeGarbageCollected<StyleSheetContents>(
        MakeGarbageCollected<CSSParserContext>(*document));
    parsed_sheet->ParseString(source_code);
-@@ -283,7 +293,7 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -285,7 +295,7 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
      if (IsValidAbpRule(parsed_sheet->RuleAt(n)))
        ++n;
      else {
@@ -12018,7 +12012,7 @@ diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_pa
        parsed_sheet->WrapperDeleteRule(n);
        LOG(WARNING) << "[eyeo] Broken rule";
      }
-@@ -295,9 +305,6 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -297,9 +307,6 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
          {SchedulingPolicy::DisableBackForwardCache()});
    }
  

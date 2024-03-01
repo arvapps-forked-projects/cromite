@@ -1,0 +1,200 @@
+From: uazo <uazo@users.noreply.github.com>
+Date: Tue, 27 Feb 2024 16:20:43 +0000
+Subject: Show NTP at startup
+
+Adds an active option by default to automatically open the
+NTP at each reboot and allows the user to continue the old browsing.
+Until the real tab is opened, no data is retrieved.
+
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
+---
+ .../java/res/layout/single_tab_view_layout.xml      | 11 +++++++++--
+ .../tasks/SingleTabSwitcherOnNtpMediator.java       |  8 ++++----
+ .../android/java/res/xml/homepage_preferences.xml   |  6 ++++++
+ .../chrome/browser/ChromeInactivityTracker.java     | 13 +++++++++++++
+ .../chrome/browser/ChromeTabbedActivity.java        |  2 ++
+ .../chrome/browser/tasks/ReturnToChromeUtil.java    |  6 ++++++
+ .../browser/preferences/ChromePreferenceKeys.java   |  2 ++
+ .../preferences/LegacyChromePreferenceKeys.java     |  1 +
+ .../show-ntp-at-startup.grdp                        |  9 +++++++++
+ .../chrome_feature_list_cc/show-ntp-at-startup.inc  |  2 ++
+ 10 files changed, 54 insertions(+), 6 deletions(-)
+ create mode 100644 chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
+ create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
+
+diff --git a/chrome/android/features/start_surface/java/res/layout/single_tab_view_layout.xml b/chrome/android/features/start_surface/java/res/layout/single_tab_view_layout.xml
+--- a/chrome/android/features/start_surface/java/res/layout/single_tab_view_layout.xml
++++ b/chrome/android/features/start_surface/java/res/layout/single_tab_view_layout.xml
+@@ -36,7 +36,7 @@ found in the LICENSE file.
+       <LinearLayout
+           android:id="@+id/continue_browsing"
+           android:layout_width="wrap_content"
+-          android:layout_height="match_parent"
++          android:layout_height="wrap_content"
+           android:layout_toEndOf="@+id/tab_favicon_view"
+           android:layout_toStartOf="@+id/chevron_right_view"
+           android:orientation="vertical">
+@@ -57,11 +57,18 @@ found in the LICENSE file.
+             android:layout_width="wrap_content"
+             android:layout_height="wrap_content"
+             android:layout_weight="1.0"
+-            android:layout_marginBottom="10dp"
+             android:layout_gravity="center_vertical"
+             android:gravity="center_vertical"
+             android:singleLine="true"
+             android:textAppearance="@style/TextAppearance.TextMedium" />
++        <TextView
++            android:id="@+id/tab_url_view"
++            android:layout_width="wrap_content"
++            android:layout_height="wrap_content"
++            android:layout_marginBottom="10dp"
++            android:gravity="start"
++            android:singleLine="false"
++            android:textAppearance="@style/TextAppearance.TextSmall.Secondary"/>
+       </LinearLayout>
+ 
+       <ImageView
+diff --git a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
+--- a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
++++ b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
+@@ -292,8 +292,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+                         public void onPageLoadFinished(Tab tab, GURL url) {
+                             super.onPageLoadFinished(tab, url);
+                             mPropertyModel.set(TITLE, tab.getTitle());
+-                            if (mIsSurfacePolishEnabled) {
+-                                mPropertyModel.set(URL, tab.getUrl().getHost());
++                            if ((true)) {
++                                mPropertyModel.set(URL, tab.getUrl().getPossiblyInvalidSpec());
+                             }
+                             tab.removeObserver(this);
+                         }
+@@ -301,8 +301,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+             mMostRecentTab.addObserver(tabObserver);
+         } else {
+             mPropertyModel.set(TITLE, mMostRecentTab.getTitle());
+-            if (mIsSurfacePolishEnabled) {
+-                mPropertyModel.set(URL, mMostRecentTab.getUrl().getHost());
++            if ((true)) {
++                mPropertyModel.set(URL, mMostRecentTab.getUrl().getPossiblyInvalidSpec());
+             }
+         }
+     }
+diff --git a/chrome/android/java/res/xml/homepage_preferences.xml b/chrome/android/java/res/xml/homepage_preferences.xml
+--- a/chrome/android/java/res/xml/homepage_preferences.xml
++++ b/chrome/android/java/res/xml/homepage_preferences.xml
+@@ -19,6 +19,12 @@ found in the LICENSE file.
+         android:summaryOn="@string/options_ntp_is_homepage_label"
+         android:summaryOff="@string/options_ntp_is_homepage_label" />
+ 
++    <org.chromium.components.browser_ui.settings.ChromeSwitchPreference
++        android:title="@string/show_ntp_at_startup_title"
++        android:summary="@string/show_ntp_at_startup_summary"
++        app:featureName="enable-show-ntp-at-startup"
++        app:needRestart="true" />
++
+     <org.chromium.chrome.browser.homepage.settings.RadioButtonGroupHomepagePreference
+         android:key="homepage_radio_group"
+         android:selectable="false"
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivityTracker.java
+@@ -12,6 +12,7 @@ import org.chromium.chrome.browser.lifecycle.ActivityLifecycleDispatcher;
+ import org.chromium.chrome.browser.lifecycle.DestroyObserver;
+ import org.chromium.chrome.browser.lifecycle.PauseResumeWithNativeObserver;
+ import org.chromium.chrome.browser.lifecycle.StartStopWithNativeObserver;
++import org.chromium.chrome.browser.flags.ChromeFeatureList;
+ import org.chromium.chrome.browser.preferences.ChromePreferenceKeys;
+ import org.chromium.chrome.browser.preferences.ChromeSharedPreferences;
+ 
+@@ -55,6 +56,18 @@ public class ChromeInactivityTracker
+         mLifecycleDispatcher.register(this);
+     }
+ 
++    public void setIsStartup(boolean newStartup) {
++        ChromeSharedPreferences.getInstance().writeBoolean(
++            ChromePreferenceKeys.TABBED_ACTIVITY_IS_STARTUP, newStartup);
++    }
++
++    public boolean isNewStartup() {
++        return
++            ChromeFeatureList.sShowNtpAtStartupAndroid.isEnabled()
++            && ChromeSharedPreferences.getInstance().readBoolean(
++                ChromePreferenceKeys.TABBED_ACTIVITY_IS_STARTUP, false);
++    }
++
+     /**
+      * Updates the shared preferences to contain the given time. Used internally and for tests.
+      * @param timeInMillis the time to record.
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -2269,6 +2269,8 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+         mInactivityTracker =
+                 new ChromeInactivityTracker(
+                         ChromePreferenceKeys.TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF);
++        mInactivityTracker.setIsStartup(
++            !CipherFactory.getInstance().restoreFromBundle(getSavedInstanceState()));
+         TabUsageTracker.initialize(this.getLifecycleDispatcher(), tabModelSelector);
+ 
+         assert getActivityTabStartupMetricsTracker() != null;
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
+@@ -649,6 +649,12 @@ public final class ReturnToChromeUtil {
+             }
+         }
+ 
++        if (IntentUtils.isMainIntentFromLauncher(intent)
++                && inactivityTracker.isNewStartup()) {
++            inactivityTracker.setIsStartup(false);
++            return true;
++        }
++
+         // Checks whether to show the Start surface due to feature flag TAB_SWITCHER_ON_RETURN_MS.
+         long lastVisibleTimeMs = inactivityTracker.getLastVisibleTimeMs();
+         long lastBackgroundTimeMs = inactivityTracker.getLastBackgroundedTimeMs();
+diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
+--- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
++++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
+@@ -797,6 +797,8 @@ public final class ChromePreferenceKeys {
+ 
+     public static final String TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF =
+             "ChromeTabbedActivity.BackgroundTimeMs";
++    public static final String TABBED_ACTIVITY_IS_STARTUP =
++            "ChromeTabbedActivity.IsStartup";
+ 
+     public static final String TABBED_ACTIVITY_LAST_VISIBLE_TIME_MS =
+             "Chrome.StartSurface.LastVisibleTimeMs";
+diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
+--- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
++++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/LegacyChromePreferenceKeys.java
+@@ -119,6 +119,7 @@ public class LegacyChromePreferenceKeys {
+                 ChromePreferenceKeys.SNAPSHOT_DATABASE_REMOVED,
+                 ChromePreferenceKeys.SYNC_ERROR_MESSAGE_SHOWN_AT_TIME,
+                 ChromePreferenceKeys.TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF,
++                ChromePreferenceKeys.TABBED_ACTIVITY_IS_STARTUP,
+                 ChromePreferenceKeys.TABMODEL_ACTIVE_TAB_ID,
+                 ChromePreferenceKeys.TABMODEL_HAS_COMPUTED_MAX_ID,
+                 ChromePreferenceKeys.TABMODEL_HAS_RUN_FILE_MIGRATION,
+diff --git a/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp b/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
+@@ -0,0 +1,9 @@
++<?xml version="1.0" encoding="utf-8"?>
++<grit-part>
++    <message name="IDS_SHOW_NTP_AT_STARTUP_TITLE" desc="Text for 'Show NTP at startup' settings option.">
++        Show NTP at startup
++    </message>
++    <message name="IDS_SHOW_NTP_AT_STARTUP_SUMMARY" desc="Summary text for 'Show NTP at startup' settings option.">
++        Enable showing a NewTabPage at startup and allows selection of the last open tab
++    </message>
++</grit-part>
+diff --git a/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
+@@ -0,0 +1,2 @@
++SET_CROMITE_FEATURE_ENABLED(kStartSurfaceReturnTime);
++SET_CROMITE_FEATURE_ENABLED(kShowNtpAtStartupAndroid);
+--

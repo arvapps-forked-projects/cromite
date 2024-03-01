@@ -37,18 +37,18 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../content/renderer/autofill_agent.cc        |  6 ++
  .../renderer/password_autofill_agent.cc       |  5 +-
  .../autofill/core/browser/autofill_driver.h   |  2 +
- .../autofill/core/common/autofill_prefs.cc    |  6 ++
- .../autofill/core/common/autofill_prefs.h     |  2 +
+ .../autofill/core/common/autofill_prefs.cc    |  2 +
+ .../autofill/core/common/autofill_prefs.h     |  5 ++
  .../embedder_support/view/ContentView.java    | 46 +++++++++++
  .../selection/FloatingPastePopupMenu.java     |  3 +-
  .../chromium/ui/base/ViewAndroidDelegate.java |  8 ++
- 27 files changed, 416 insertions(+), 10 deletions(-)
+ 27 files changed, 415 insertions(+), 10 deletions(-)
  create mode 100644 components/android_autofill/browser/java/src/org/chromium/components/autofill/BrowserSelectionActionMenuDelegate.java
 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -424,6 +424,7 @@ if (current_toolchain == default_toolchain) {
+@@ -428,6 +428,7 @@ if (current_toolchain == default_toolchain) {
        "//chrome/browser/ui/android/hats:message_ui_delegate_java",
        "//chrome/browser/ui/android/layouts:java",
        "//chrome/browser/ui/android/layouts/glue:java",
@@ -185,7 +185,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/password_manage
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.java b/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.java
-@@ -74,6 +74,18 @@ import org.chromium.url.GURL;
+@@ -71,6 +71,18 @@ import org.chromium.url.GURL;
  
  import java.nio.ByteBuffer;
  
@@ -204,16 +204,16 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.jav
  /**
   * Implementation of the interface {@link Tab}. Contains and manages a {@link ContentView}. This
   * class is not intended to be extended.
-@@ -224,6 +236,8 @@ class TabImpl implements Tab {
-      */
-     private @Nullable @TabLaunchType Integer mTabLaunchTypeAtCreation;
+@@ -230,6 +242,8 @@ class TabImpl implements Tab {
+ 
+     private String mPendingNativePageHost;
  
 +    AutofillProvider mAutofillProvider;
 +
      /**
       * Creates an instance of a {@link TabImpl}. Package-private. Use {@link TabBuilder} to create
       * an instance.
-@@ -844,6 +858,11 @@ class TabImpl implements Tab {
+@@ -850,6 +864,11 @@ class TabImpl implements Tab {
          for (TabObserver observer : mObservers) observer.onDestroyed(this);
          mObservers.clear();
  
@@ -225,7 +225,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.jav
          mUserDataHost.destroy();
          mTabViewManager.destroy();
          hideNativePage(false, null);
-@@ -1424,6 +1443,16 @@ class TabImpl implements Tab {
+@@ -1446,6 +1465,16 @@ class TabImpl implements Tab {
          return mWebContentsState == null ? -1 : mWebContentsState.version();
      }
  
@@ -242,7 +242,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.jav
      /**
       * Initializes the {@link WebContents}. Completes the browser content components initialization
       * around a native WebContents pointer.
-@@ -1491,6 +1520,30 @@ class TabImpl implements Tab {
+@@ -1513,6 +1542,30 @@ class TabImpl implements Tab {
                                      this));
  
              mWebContents.notifyRendererPreferenceUpdate();
@@ -273,7 +273,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabImpl.jav
              TabHelpers.initWebContentsHelpers(this);
              notifyContentChanged();
          } finally {
-@@ -1954,6 +2007,8 @@ class TabImpl implements Tab {
+@@ -1968,6 +2021,8 @@ class TabImpl implements Tab {
  
          boolean handleNonNavigationAboutURL(GURL url);
  
@@ -316,7 +316,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tab/TabViewAndr
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -2664,6 +2664,13 @@ static_library("browser") {
+@@ -2647,6 +2647,13 @@ static_library("browser") {
      deps += [ "//chrome/browser/error_reporting" ]
    }
  
@@ -333,7 +333,7 @@ diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 diff --git a/chrome/browser/android/tab_android.cc b/chrome/browser/android/tab_android.cc
 --- a/chrome/browser/android/tab_android.cc
 +++ b/chrome/browser/android/tab_android.cc
-@@ -53,6 +53,13 @@
+@@ -52,6 +52,13 @@
  #include "url/android/gurl_android.h"
  #include "url/gurl.h"
  
@@ -347,7 +347,7 @@ diff --git a/chrome/browser/android/tab_android.cc b/chrome/browser/android/tab_
  using base::android::AttachCurrentThread;
  using base::android::ConvertUTF8ToJavaString;
  using base::android::JavaParamRef;
-@@ -513,3 +520,11 @@ static void JNI_TabImpl_Init(JNIEnv* env,
+@@ -507,3 +514,11 @@ static void JNI_TabImpl_Init(JNIEnv* env,
    // This will automatically bind to the Java object and pass ownership there.
    new TabAndroid(env, obj, profile, id);
  }
@@ -362,7 +362,7 @@ diff --git a/chrome/browser/android/tab_android.cc b/chrome/browser/android/tab_
 diff --git a/chrome/browser/android/tab_android.h b/chrome/browser/android/tab_android.h
 --- a/chrome/browser/android/tab_android.h
 +++ b/chrome/browser/android/tab_android.h
-@@ -173,6 +173,8 @@ class TabAndroid : public base::SupportsUserData {
+@@ -172,6 +172,8 @@ class TabAndroid : public base::SupportsUserData {
  
    void SetDevToolsAgentHost(scoped_refptr<content::DevToolsAgentHost> host);
  
@@ -374,7 +374,7 @@ diff --git a/chrome/browser/android/tab_android.h b/chrome/browser/android/tab_a
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -634,6 +634,12 @@ CHAR_LIMIT guidelines:
+@@ -637,6 +637,12 @@ CHAR_LIMIT guidelines:
        <message name="IDS_PASSWORD_SETTINGS_SAVE_PASSWORDS" desc="Title for the checkbox toggling whether passwords are saved or not. [CHAR_LIMIT=32]">
          Save passwords
        </message>
@@ -390,7 +390,7 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
 diff --git a/chrome/browser/ui/autofill/chrome_autofill_client.cc b/chrome/browser/ui/autofill/chrome_autofill_client.cc
 --- a/chrome/browser/ui/autofill/chrome_autofill_client.cc
 +++ b/chrome/browser/ui/autofill/chrome_autofill_client.cc
-@@ -1359,7 +1359,13 @@ ChromeAutofillClient::ChromeAutofillClient(content::WebContents* web_contents)
+@@ -1338,7 +1338,13 @@ ChromeAutofillClient::ChromeAutofillClient(content::WebContents* web_contents)
            web_contents,
            base::BindRepeating(&BrowserDriverInitHook,
                                this,
@@ -431,9 +431,9 @@ diff --git a/components/android_autofill/browser/android_autofill_manager.cc b/c
 diff --git a/components/android_autofill/browser/android_autofill_manager.h b/components/android_autofill/browser/android_autofill_manager.h
 --- a/components/android_autofill/browser/android_autofill_manager.h
 +++ b/components/android_autofill/browser/android_autofill_manager.h
-@@ -91,12 +91,12 @@ class AndroidAutofillManager : public AutofillManager,
-                           const std::u16string& value,
-                           PopupItemId popup_item_id) override;
+@@ -84,12 +84,12 @@ class AndroidAutofillManager : public AutofillManager,
+                          const FieldTypeGroup field_type_group,
+                          const url::Origin& triggered_origin);
  
 +  AndroidAutofillManager(AutofillDriver* driver, AutofillClient* client);
 +
@@ -583,7 +583,7 @@ new file mode 100644
 diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/components/autofill/content/browser/content_autofill_driver.cc
 --- a/components/autofill/content/browser/content_autofill_driver.cc
 +++ b/components/autofill/content/browser/content_autofill_driver.cc
-@@ -455,6 +455,10 @@ void ContentAutofillDriver::FormsSeen(
+@@ -447,6 +447,10 @@ void ContentAutofillDriver::FormsSeen(
                          const std::vector<FormGlobalId>& removed_forms) {
                         target->GetAutofillManager().OnFormsSeen(
                             WithNewVersion(updated_forms), removed_forms);
@@ -594,7 +594,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
                       });
  }
  
-@@ -482,6 +486,10 @@ void ContentAutofillDriver::FormSubmitted(
+@@ -474,6 +478,10 @@ void ContentAutofillDriver::FormSubmitted(
          }
          target->GetAutofillManager().OnFormSubmitted(
              WithNewVersion(form), known_success, submission_source);
@@ -605,7 +605,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -503,6 +511,10 @@ void ContentAutofillDriver::TextFieldDidChange(const FormData& raw_form,
+@@ -495,6 +503,10 @@ void ContentAutofillDriver::TextFieldDidChange(const FormData& raw_form,
           base::TimeTicks timestamp) {
          target->GetAutofillManager().OnTextFieldDidChange(
              WithNewVersion(form), field, bounding_box, timestamp);
@@ -616,7 +616,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -522,6 +534,10 @@ void ContentAutofillDriver::TextFieldDidScroll(const FormData& raw_form,
+@@ -514,6 +526,10 @@ void ContentAutofillDriver::TextFieldDidScroll(const FormData& raw_form,
           const FormFieldData& field, const gfx::RectF& bounding_box) {
          target->GetAutofillManager().OnTextFieldDidScroll(WithNewVersion(form),
                                                            field, bounding_box);
@@ -627,7 +627,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -542,6 +558,10 @@ void ContentAutofillDriver::SelectControlDidChange(
+@@ -534,6 +550,10 @@ void ContentAutofillDriver::SelectControlDidChange(
           const FormFieldData& field, const gfx::RectF& bounding_box) {
          target->GetAutofillManager().OnSelectControlDidChange(
              WithNewVersion(form), field, bounding_box);
@@ -638,7 +638,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -564,6 +584,10 @@ void ContentAutofillDriver::AskForValuesToFill(
+@@ -556,6 +576,10 @@ void ContentAutofillDriver::AskForValuesToFill(
           AutofillSuggestionTriggerSource trigger_source) {
          target->GetAutofillManager().OnAskForValuesToFill(
              WithNewVersion(form), field, bounding_box, trigger_source);
@@ -649,7 +649,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -575,6 +599,8 @@ void ContentAutofillDriver::HidePopup() {
+@@ -567,6 +591,8 @@ void ContentAutofillDriver::HidePopup() {
      DCHECK(!target->IsPrerendering())
          << "We should never affect UI while prerendering";
      target->GetAutofillManager().OnHidePopup();
@@ -658,7 +658,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
    });
  }
  
-@@ -586,6 +612,8 @@ void ContentAutofillDriver::FocusNoLongerOnForm(bool had_interacted_form) {
+@@ -578,6 +604,8 @@ void ContentAutofillDriver::FocusNoLongerOnForm(bool had_interacted_form) {
        this, had_interacted_form,
        [](autofill::AutofillDriver* target, bool had_interacted_form) {
          target->GetAutofillManager().OnFocusNoLongerOnForm(had_interacted_form);
@@ -667,7 +667,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -605,9 +633,16 @@ void ContentAutofillDriver::FocusOnFormField(const FormData& raw_form,
+@@ -597,9 +625,16 @@ void ContentAutofillDriver::FocusOnFormField(const FormData& raw_form,
           const FormFieldData& field, const gfx::RectF& bounding_box) {
          target->GetAutofillManager().OnFocusOnFormField(WithNewVersion(form),
                                                          field, bounding_box);
@@ -684,7 +684,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -622,6 +657,10 @@ void ContentAutofillDriver::DidFillAutofillFormData(const FormData& raw_form,
+@@ -614,6 +649,10 @@ void ContentAutofillDriver::DidFillAutofillFormData(const FormData& raw_form,
           base::TimeTicks timestamp) {
          target->GetAutofillManager().OnDidFillAutofillFormData(
              WithNewVersion(form), timestamp);
@@ -695,7 +695,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -631,6 +670,8 @@ void ContentAutofillDriver::DidEndTextFieldEditing() {
+@@ -623,6 +662,8 @@ void ContentAutofillDriver::DidEndTextFieldEditing() {
    }
    router().DidEndTextFieldEditing(this, [](autofill::AutofillDriver* target) {
      target->GetAutofillManager().OnDidEndTextFieldEditing();
@@ -704,7 +704,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
    });
  }
  
-@@ -645,6 +686,10 @@ void ContentAutofillDriver::SelectOrSelectListFieldOptionsDidChange(
+@@ -637,6 +678,10 @@ void ContentAutofillDriver::SelectOrSelectListFieldOptionsDidChange(
          cast(target)
              ->GetAutofillManager()
              .OnSelectOrSelectListFieldOptionsDidChange(WithNewVersion(form));
@@ -715,7 +715,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -664,6 +709,10 @@ void ContentAutofillDriver::JavaScriptChangedAutofilledValue(
+@@ -656,6 +701,10 @@ void ContentAutofillDriver::JavaScriptChangedAutofilledValue(
           const FormFieldData& field, const std::u16string& old_value) {
          target->GetAutofillManager().OnJavaScriptChangedAutofilledValue(
              WithNewVersion(form), field, old_value);
@@ -726,7 +726,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -676,6 +725,8 @@ void ContentAutofillDriver::OnContextMenuShownInField(
+@@ -668,6 +717,8 @@ void ContentAutofillDriver::OnContextMenuShownInField(
           const FieldGlobalId& field_global_id) {
          target->GetAutofillManager().OnContextMenuShownInField(form_global_id,
                                                                 field_global_id);
@@ -735,7 +735,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
        });
  }
  
-@@ -686,6 +737,8 @@ void ContentAutofillDriver::Reset() {
+@@ -678,6 +729,8 @@ void ContentAutofillDriver::Reset() {
    owner_->router().UnregisterDriver(this,
                                      /*driver_is_dying=*/false);
    autofill_manager_->Reset();
@@ -744,7 +744,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.cc b/co
  }
  
  const mojo::AssociatedRemote<mojom::AutofillAgent>&
-@@ -698,6 +751,10 @@ ContentAutofillDriver::GetAutofillAgent() {
+@@ -690,6 +743,10 @@ ContentAutofillDriver::GetAutofillAgent() {
    return autofill_agent_;
  }
  
@@ -772,7 +772,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.h b/com
  
    content::RenderFrameHost* render_frame_host() { return &*render_frame_host_; }
    const content::RenderFrameHost* render_frame_host() const {
-@@ -351,6 +354,10 @@ class ContentAutofillDriver : public AutofillDriver,
+@@ -349,6 +352,10 @@ class ContentAutofillDriver : public AutofillDriver,
  
    std::unique_ptr<AutofillManager> autofill_manager_ = nullptr;
  
@@ -786,15 +786,15 @@ diff --git a/components/autofill/content/browser/content_autofill_driver.h b/com
 diff --git a/components/autofill/content/browser/content_autofill_driver_factory.cc b/components/autofill/content/browser/content_autofill_driver_factory.cc
 --- a/components/autofill/content/browser/content_autofill_driver_factory.cc
 +++ b/components/autofill/content/browser/content_autofill_driver_factory.cc
-@@ -13,6 +13,7 @@
- #include "components/autofill/content/browser/content_autofill_driver.h"
+@@ -14,6 +14,7 @@
+ #include "components/autofill/core/browser/autofill_experiments.h"
  #include "components/autofill/core/browser/browser_autofill_manager.h"
  #include "components/autofill/core/common/autofill_features.h"
 +#include "components/android_autofill/browser/android_autofill_manager.h"
  #include "content/public/browser/global_routing_id.h"
  #include "content/public/browser/navigation_handle.h"
  #include "content/public/browser/render_frame_host.h"
-@@ -44,9 +45,17 @@ bool ShouldEnableHeavyFormDataScraping(const version_info::Channel channel) {
+@@ -45,9 +46,17 @@ bool ShouldEnableHeavyFormDataScraping(const version_info::Channel channel) {
  
  void BrowserDriverInitHook(AutofillClient* client,
                             const std::string& app_locale,
@@ -827,7 +827,7 @@ diff --git a/components/autofill/content/browser/content_autofill_driver_factory
 diff --git a/components/autofill/content/renderer/autofill_agent.cc b/components/autofill/content/renderer/autofill_agent.cc
 --- a/components/autofill/content/renderer/autofill_agent.cc
 +++ b/components/autofill/content/renderer/autofill_agent.cc
-@@ -1024,14 +1024,18 @@ void AutofillAgent::ShowSuggestions(
+@@ -1008,14 +1008,18 @@ void AutofillAgent::ShowSuggestions(
          password_generation_agent_->ShowPasswordGenerationSuggestions(
              input_element)) {
        is_popup_possibly_visible_ = true;
@@ -846,7 +846,7 @@ diff --git a/components/autofill/content/renderer/autofill_agent.cc b/components
      }
    }
  
-@@ -1043,11 +1047,13 @@ void AutofillAgent::ShowSuggestions(
+@@ -1027,11 +1031,13 @@ void AutofillAgent::ShowSuggestions(
    // match a regex). In this specific case we are actually interested in whether
    // the field is currently a password field, not whether it has ever been a
    // password field.
@@ -863,7 +863,7 @@ diff --git a/components/autofill/content/renderer/autofill_agent.cc b/components
 diff --git a/components/autofill/content/renderer/password_autofill_agent.cc b/components/autofill/content/renderer/password_autofill_agent.cc
 --- a/components/autofill/content/renderer/password_autofill_agent.cc
 +++ b/components/autofill/content/renderer/password_autofill_agent.cc
-@@ -827,7 +827,10 @@ void PasswordAutofillAgent::UpdatePasswordStateForTextChange(
+@@ -828,7 +828,10 @@ void PasswordAutofillAgent::UpdatePasswordStateForTextChange(
  
  void PasswordAutofillAgent::TrackAutofilledElement(
      const blink::WebFormControlElement& element) {
@@ -878,7 +878,7 @@ diff --git a/components/autofill/content/renderer/password_autofill_agent.cc b/c
 diff --git a/components/autofill/core/browser/autofill_driver.h b/components/autofill/core/browser/autofill_driver.h
 --- a/components/autofill/core/browser/autofill_driver.h
 +++ b/components/autofill/core/browser/autofill_driver.h
-@@ -69,6 +69,8 @@ class AutofillDriver {
+@@ -70,6 +70,8 @@ class AutofillDriver {
    // Returns the AutofillManager owned by the AutofillDriver.
    virtual AutofillManager& GetAutofillManager() = 0;
  
@@ -890,18 +890,7 @@ diff --git a/components/autofill/core/browser/autofill_driver.h b/components/aut
 diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/autofill/core/common/autofill_prefs.cc
 --- a/components/autofill/core/common/autofill_prefs.cc
 +++ b/components/autofill/core/common/autofill_prefs.cc
-@@ -141,6 +141,10 @@ const char kAutofillUsingVirtualViewStructure[] =
-     "autofill.using_virtual_view_structure";
- #endif  // BUILDFLAG(IS_ANDROID)
- 
-+// Boolean that is true to enable native Android Autofill
-+const char kAutofillAndroidEnabled[] = "autofill.android_autofill_enabled";
-+const char kAutofillAndroidIncognitoEnabled[] = "autofill.android_autofill_incognito_enabled";
-+
- void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
-   // Synced prefs. Used for cross-device choices, e.g., credit card Autofill.
-   registry->RegisterBooleanPref(
-@@ -166,6 +170,8 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+@@ -61,6 +61,8 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
    registry->RegisterBooleanPref(
        prefs::kAutofillCreditCardFidoAuthOfferCheckboxState, true);
  #endif
@@ -913,15 +902,18 @@ diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/auto
 diff --git a/components/autofill/core/common/autofill_prefs.h b/components/autofill/core/common/autofill_prefs.h
 --- a/components/autofill/core/common/autofill_prefs.h
 +++ b/components/autofill/core/common/autofill_prefs.h
-@@ -42,6 +42,8 @@ extern const char kAutofillUploadEncodingSeed[];
- extern const char kAutofillUploadEvents[];
- extern const char kAutofillUploadEventsLastResetTimestamp[];
- extern const char kAutocompleteLastVersionRetentionPolicy[];
-+extern const char kAutofillAndroidEnabled[];
-+extern const char kAutofillAndroidIncognitoEnabled[];
+@@ -84,6 +84,11 @@ inline constexpr char kAutofillUploadEventsLastResetTimestamp[] =
+ // retention policy was run.
+ inline constexpr char kAutocompleteLastVersionRetentionPolicy[] =
+     "autocomplete.retention_policy_last_version";
++// Boolean that is true to enable native Android Autofill
++inline constexpr char kAutofillAndroidEnabled[] =
++    "autofill.android_autofill_enabled";
++inline constexpr char kAutofillAndroidIncognitoEnabled[] =
++    "autofill.android_autofill_incognito_enabled";
  #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_ANDROID) || \
      BUILDFLAG(IS_IOS)
- extern const char kAutofillPaymentMethodsMandatoryReauth[];
+ // Boolean that is set when payment methods mandatory re-auth is enabled by the
 diff --git a/components/embedder_support/android/java/src/org/chromium/components/embedder_support/view/ContentView.java b/components/embedder_support/android/java/src/org/chromium/components/embedder_support/view/ContentView.java
 --- a/components/embedder_support/android/java/src/org/chromium/components/embedder_support/view/ContentView.java
 +++ b/components/embedder_support/android/java/src/org/chromium/components/embedder_support/view/ContentView.java
