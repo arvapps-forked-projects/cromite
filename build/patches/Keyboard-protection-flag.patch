@@ -8,15 +8,15 @@ keyboard events.
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- .../Keyboard-protection-flag.inc              | 10 +++
- .../renderer/core/events/keyboard_event.cc    | 77 +++++++++++++++++++
- .../renderer/core/events/keyboard_event.h     |  3 +
- ui/base/ui_base_features.cc                   |  8 ++
- ui/base/ui_base_features.h                    |  2 +
- .../dom/dom_keyboard_layout_map_win.cc        | 13 ++++
- .../keycodes/keyboard_code_conversion.cc      | 10 ++-
- ui/events/keycodes/keyboard_code_conversion.h |  2 +-
- 8 files changed, 122 insertions(+), 3 deletions(-)
+ .../Keyboard-protection-flag.inc              |  10 ++
+ .../renderer/core/events/keyboard_event.cc    | 136 ++++++++++++++++++
+ .../renderer/core/events/keyboard_event.h     |   3 +
+ ui/base/ui_base_features.cc                   |   8 ++
+ ui/base/ui_base_features.h                    |   2 +
+ .../dom/dom_keyboard_layout_map_win.cc        |  13 ++
+ .../keycodes/keyboard_code_conversion.cc      |  10 +-
+ ui/events/keycodes/keyboard_code_conversion.h |   2 +-
+ 8 files changed, 181 insertions(+), 3 deletions(-)
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Keyboard-protection-flag.inc
 
 diff --git a/cromite_flags/chrome/browser/about_flags_cc/Keyboard-protection-flag.inc b/cromite_flags/chrome/browser/about_flags_cc/Keyboard-protection-flag.inc
@@ -37,33 +37,26 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/core/events/keyboard_event.cc b/third_party/blink/renderer/core/events/keyboard_event.cc
 --- a/third_party/blink/renderer/core/events/keyboard_event.cc
 +++ b/third_party/blink/renderer/core/events/keyboard_event.cc
-@@ -23,9 +23,12 @@
- #include "third_party/blink/renderer/core/events/keyboard_event.h"
+@@ -36,6 +36,18 @@
+ #include "third_party/blink/renderer/platform/windows_keyboard_codes.h"
+ #include "ui/events/keycodes/dom/keycode_converter.h"
  
- #include "build/build_config.h"
 +#include "base/feature_list.h"
- #include "third_party/blink/public/common/input/web_input_event.h"
- #include "third_party/blink/public/platform/platform.h"
- #include "third_party/blink/renderer/bindings/core/v8/v8_keyboard_event_init.h"
++#include "third_party/blink/renderer/core/dom/element.h"
 +#include "third_party/blink/renderer/core/dom/events/event_dispatch_result.h"
 +#include "third_party/blink/renderer/core/dom/events/event_dispatcher.h"
- #include "third_party/blink/renderer/core/editing/ime/input_method_controller.h"
- #include "third_party/blink/renderer/core/event_interface_names.h"
- #include "third_party/blink/renderer/core/frame/local_dom_window.h"
-@@ -33,8 +36,12 @@
- #include "third_party/blink/renderer/core/input/input_device_capabilities.h"
- #include "third_party/blink/renderer/platform/bindings/dom_wrapper_world.h"
- #include "third_party/blink/renderer/platform/bindings/script_state.h"
++#include "third_party/blink/renderer/core/editing/editing_utilities.h"
++#include "third_party/blink/renderer/core/html/forms/text_control_element.h"
 +#include "third_party/blink/renderer/platform/weborigin/scheme_registry.h"
- #include "third_party/blink/renderer/platform/windows_keyboard_codes.h"
 +#include "ui/base/ui_base_features.h"
- #include "ui/events/keycodes/dom/keycode_converter.h"
++#include "ui/events/event_constants.h"
 +#include "ui/events/keycodes/dom/dom_codes_array.h"
 +#include "ui/events/keycodes/keyboard_code_conversion.h"
- 
++
  namespace blink {
  
-@@ -133,6 +140,70 @@ KeyboardEvent::KeyboardEvent(const WebKeyboardEvent& key,
+ namespace {
+@@ -133,6 +145,124 @@ KeyboardEvent::KeyboardEvent(const WebKeyboardEvent& key,
    else
      key_code_ = char_code_;
  
@@ -80,12 +73,37 @@ diff --git a/third_party/blink/renderer/core/events/keyboard_event.cc b/third_pa
 +  if (keyboard_protection) {
 +    // we need character for transformation
 +    ui::DomKey ascii_key;
-+    ui::DomKey original_dom_key = static_cast<ui::DomKey>(key.dom_key);
++    ui::DomKey original_dom_key =
++      static_cast<ui::DomKey>(key.dom_key);
 +    // 1 <= char_code <= 26: exclude ctrl-a ... control-z
 +    if (char_code_ > 26 && original_dom_key.IsCharacter())
 +      ascii_key = ui::DomKey::FromCharacter(key.text[0]);
 +    else
 +      ascii_key = original_dom_key;
++
++    // if there is an element with focus, do not transform
++    // the characters into the English layout, since the
++    // recalculated character in the html innerText could
++    // be used to reconstruct the user's layout.
++    // if there is no focus, the event will contain the English
++    // layout information, since the real character will not be
++    // available for a textbox or content-editable element
++    // for comparision.
++    bool is_editable;
++    if (modifiers_ & WebInputEvent::kControlKey) {
++      // special case for ctrl keys
++      is_editable = false;
++    } else if (Document* document = dom_window->document()) {
++      if (Node* node = EventTargetNodeForDocument(document)) {
++        auto* text_control = ToTextControlOrNull(node);
++        auto* element = DynamicTo<Element>(node);
++        is_editable = IsEditable(*node) ||
++          (text_control && !text_control->IsDisabledOrReadOnly()) ||
++          (element &&
++           EqualIgnoringASCIICase(
++               element->FastGetAttribute(html_names::kRoleAttr), "textbox"));
++      }
++    }
 +
 +    // get domcode of us layout keyboard
 +    // we transform the character pressed by the user into
@@ -96,6 +114,31 @@ diff --git a/third_party/blink/renderer/core/events/keyboard_event.cc b/third_pa
 +    //    in us keybord       --> shift + Quote
 +    int shift_needed = 0;
 +    ui::DomCode us_code = ui::UsLayoutDomKeyToDomCode(ascii_key, &shift_needed);
++    if (us_code == ui::DomCode::NONE && !is_editable) {
++      // the keyboard may have non latin characters
++      // we have to traslate the DomCode to us layout DomCode
++      // but do not recalculate if there is an element with
++      // focus (or is a contenteditable)
++      ui::KeyboardCode ignored;
++      int flags = ui::EF_NONE;
++      if (modifiers_ & WebInputEvent::kAltKey)
++        flags |= ui::EF_ALT_DOWN;
++      if (modifiers_ & WebInputEvent::kControlKey)
++        flags |= ui::EF_CONTROL_DOWN;
++      if (modifiers_& WebInputEvent::kMetaKey)
++        flags |= ui::EF_COMMAND_DOWN;
++      if (modifiers_ & WebInputEvent::kShiftKey ||
++          modifiers_ & WebInputEvent::kCapsLockOn)
++        flags |= ui::EF_SHIFT_DOWN;
++      if (modifiers_ & WebInputEvent::kNumLockOn)
++        flags |= ui::EF_NUM_LOCK_ON;
++      if (ui::DomCodeToUsLayoutDomKey(
++            static_cast<ui::DomCode>(key.dom_code), flags, &ascii_key, &ignored)) {
++        us_code = ui::UsLayoutDomKeyToDomCode(ascii_key, &shift_needed);
++      }
++    }
++
++    // adjust the shift modifier
 +    if (shift_needed == 0)
 +      modifiers_ &= ~WebInputEvent::kShiftKey;
 +    else if (shift_needed == 1)
@@ -109,24 +152,28 @@ diff --git a/third_party/blink/renderer/core/events/keyboard_event.cc b/third_pa
 +    }
 +
 +    // regenerate key_ and code_ for us keyboard
++    // if the value is not recalculated, or a key is not found
++    // in the English layout, the value is empty
 +    key_ = FromUTF8(ui::KeycodeConverter::DomKeyToKeyString(ascii_key));
 +    code_ = FromUTF8(ui::KeycodeConverter::DomCodeToCodeString(us_code));
 +
++    // suppress event if is ctrl/shift/alt... otherwise key_code of
++    // the next character can be stolen
++    // and do not send dead keys
++    // we cannot do otherwise because some characters are generated
++    // with the shift or without depending on the keyboard
 +    if (ui::KeycodeConverter::IsDomKeyForModifier(original_dom_key) ||
 +        original_dom_key.IsDeadKey()) {
-+      // suppress event if is ctrl/shift/alt... otherwise key_code of
-+      // the next character can be stolen
-+      // and do not send dead keys
-+      // we cannot do otherwise because some characters are generated
-+      // with the shift or without depending on the keyboard
 +      suppress_event_ = true;
 +    }
++
 +    // do not leak status of numlock/capslock/scrolllock/etc
 +    modifiers_ &= ~(WebInputEvent::kSymbolKey | WebInputEvent::kFnKey |
 +                    WebInputEvent::kAltGrKey | WebInputEvent::kMetaKey |
 +                    WebInputEvent::kAltKey | WebInputEvent::kIsKeyPad |
 +                    WebInputEvent::kSymbolKey | WebInputEvent::kScrollLockOn |
 +                    WebInputEvent::kCapsLockOn | WebInputEvent::kNumLockOn);
++
 +    // always clear location
 +    location_ = KeyboardEvent::kDomKeyLocationStandard;
 +  }
@@ -134,7 +181,7 @@ diff --git a/third_party/blink/renderer/core/events/keyboard_event.cc b/third_pa
  #if BUILDFLAG(IS_ANDROID)
    // FIXME: Check to see if this applies to other OS.
    // If the key event belongs to IME composition then propagate to JS.
-@@ -205,6 +276,12 @@ unsigned KeyboardEvent::which() const {
+@@ -205,6 +335,12 @@ unsigned KeyboardEvent::which() const {
    return (unsigned)keyCode();
  }
  
@@ -170,7 +217,7 @@ diff --git a/third_party/blink/renderer/core/events/keyboard_event.h b/third_par
 diff --git a/ui/base/ui_base_features.cc b/ui/base/ui_base_features.cc
 --- a/ui/base/ui_base_features.cc
 +++ b/ui/base/ui_base_features.cc
-@@ -185,6 +185,14 @@ BASE_FEATURE(kSystemKeyboardLock,
+@@ -196,6 +196,14 @@ BASE_FEATURE(kSystemKeyboardLock,
               "SystemKeyboardLock",
               base::FEATURE_ENABLED_BY_DEFAULT);
  

@@ -279,7 +279,7 @@ new file mode 100644
 diff --git a/components/content_settings/core/browser/content_settings_registry.cc b/components/content_settings/core/browser/content_settings_registry.cc
 --- a/components/content_settings/core/browser/content_settings_registry.cc
 +++ b/components/content_settings/core/browser/content_settings_registry.cc
-@@ -255,7 +255,7 @@ void ContentSettingsRegistry::Init() {
+@@ -245,7 +245,7 @@ void ContentSettingsRegistry::Init() {
             ContentSettingsInfo::INHERIT_IN_INCOGNITO,
             ContentSettingsInfo::EXCEPTIONS_ON_SECURE_ORIGINS_ONLY);
  
@@ -299,7 +299,7 @@ diff --git a/third_party/blink/renderer/core/html/media/autoplay_policy.cc b/thi
  #include "third_party/blink/public/platform/web_media_player.h"
  #include "third_party/blink/public/web/web_local_frame.h"
  #include "third_party/blink/public/web/web_local_frame_client.h"
-@@ -332,6 +333,8 @@ void AutoplayPolicy::TryUnlockingUserGesture() {
+@@ -330,6 +331,8 @@ void AutoplayPolicy::TryUnlockingUserGesture() {
  }
  
  bool AutoplayPolicy::IsGestureNeededForPlayback() const {
@@ -308,7 +308,7 @@ diff --git a/third_party/blink/renderer/core/html/media/autoplay_policy.cc b/thi
    if (!IsLockedPendingUserGesture())
      return false;
  
-@@ -430,6 +433,17 @@ void AutoplayPolicy::MaybeSetAutoplayInitiated() {
+@@ -428,6 +431,17 @@ void AutoplayPolicy::MaybeSetAutoplayInitiated() {
    }
  }
  
@@ -329,7 +329,7 @@ diff --git a/third_party/blink/renderer/core/html/media/autoplay_policy.cc b/thi
 diff --git a/third_party/blink/renderer/core/html/media/autoplay_policy.h b/third_party/blink/renderer/core/html/media/autoplay_policy.h
 --- a/third_party/blink/renderer/core/html/media/autoplay_policy.h
 +++ b/third_party/blink/renderer/core/html/media/autoplay_policy.h
-@@ -137,6 +137,10 @@ class CORE_EXPORT AutoplayPolicy final
+@@ -142,6 +142,10 @@ class CORE_EXPORT AutoplayPolicy final
    // should use, if checking to see if an action is allowed.
    bool IsLockedPendingUserGesture() const;
  

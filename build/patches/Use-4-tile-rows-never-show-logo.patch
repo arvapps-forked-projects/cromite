@@ -13,7 +13,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageLayout.java
-@@ -119,7 +119,7 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -110,7 +110,7 @@ public class NewTabPageLayout extends LinearLayout {
       */
      private boolean mHasShownView;
  
@@ -22,7 +22,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
      private boolean mSearchProviderIsGoogle;
      private boolean mShowingNonStandardLogo;
  
-@@ -518,7 +518,7 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -514,7 +514,7 @@ public class NewTabPageLayout extends LinearLayout {
              boolean searchProviderIsGoogle) {
          assert mMvTilesContainerLayout != null;
  
@@ -31,7 +31,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ntp/NewTabPageL
  
          mMostVisitedTilesCoordinator =
                  new MostVisitedTilesCoordinator(
-@@ -752,7 +752,7 @@ public class NewTabPageLayout extends LinearLayout {
+@@ -748,7 +748,7 @@ public class NewTabPageLayout extends LinearLayout {
                  && mInitialized) {
              return;
          }

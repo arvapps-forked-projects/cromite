@@ -6,7 +6,7 @@ Based on Chromium 118.0.5993.48
 
 Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API Module
 ---
- chrome/android/BUILD.gn                       |   7 +
+ chrome/android/BUILD.gn                       |   8 +
  .../android/java/res/xml/main_preferences.xml |   8 +
  chrome/browser/adblock/android/BUILD.gn       |  10 +
  .../adblock/AdblockFilterFragmentTest.java    |  63 +++++
@@ -124,7 +124,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API 
  .../translations/adblock_strings_zh-HK.xtb    |   4 +
  .../translations/adblock_strings_zh-TW.xtb    |  13 +
  .../translations/adblock_strings_zu.xtb       |   4 +
- 118 files changed, 2440 insertions(+)
+ 118 files changed, 2441 insertions(+)
  create mode 100644 chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockFilterFragmentTest.java
  create mode 100644 chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockPopupInfoBarTest.java
  create mode 100644 chrome/browser/adblock/android/javatests/src/org/chromium/chrome/browser/adblock/AdblockPopupMessageTest.java
@@ -243,7 +243,7 @@ Pre-requisites: eyeo Browser Ad filtering Solution: Base Module and Android API 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -244,6 +244,10 @@ if (current_toolchain == default_toolchain) {
+@@ -273,6 +273,10 @@ if (current_toolchain == default_toolchain) {
        "//third_party/androidx:androidx_preference_preference_java",
      ]
  
@@ -254,16 +254,17 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
      if (plus_addresses_use_internal_android_resources) {
        deps += [ "//clank/components/plus_addresses:java_resources" ]
      } else {
-@@ -683,6 +687,9 @@ if (current_toolchain == default_toolchain) {
+@@ -722,6 +726,10 @@ if (current_toolchain == default_toolchain) {
        "//url/mojom:url_mojom_gurl_java",
      ]
  
 +    ### Android UI module start
 +    deps += [ "//components/adblock/android:adblock_ui_java" ]
 +    ### Android UI module end
- 
++
      deps += feed_deps
  
+     srcjar_deps = [
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
 --- a/chrome/android/java/res/xml/main_preferences.xml
 +++ b/chrome/android/java/res/xml/main_preferences.xml
@@ -277,9 +278,9 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
  -->
  
  <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
-@@ -112,6 +115,11 @@ found in the LICENSE file.
+@@ -117,6 +120,11 @@ found in the LICENSE file.
          android:key="accessibility"
-         android:order="20"
+         android:order="21"
          android:title="@string/prefs_accessibility"/>
 +    <Preference
 +        android:fragment="org.chromium.components.adblock.settings.AdblockSettingsFragment"

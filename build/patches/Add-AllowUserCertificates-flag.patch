@@ -20,7 +20,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
-@@ -227,6 +227,7 @@ import org.chromium.content_public.browser.ScreenOrientationProvider;
+@@ -232,6 +232,7 @@ import org.chromium.content_public.browser.ScreenOrientationProvider;
  import org.chromium.content_public.browser.SelectionPopupController;
  import org.chromium.content_public.browser.WebContents;
  import org.chromium.content_public.common.ContentSwitches;
@@ -28,7 +28,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActiv
  import org.chromium.printing.PrintManagerDelegateImpl;
  import org.chromium.printing.PrintingController;
  import org.chromium.printing.PrintingControllerImpl;
-@@ -1105,6 +1106,8 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+@@ -1060,6 +1061,8 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
          super.onStartWithNative();
          ChromeActivitySessionTracker.getInstance().onStartWithNative();
          ChromeCachedFlags.getInstance().cacheNativeFlags();
@@ -40,7 +40,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActiv
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -136,6 +136,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -134,6 +134,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &feed::kFeedShowSignInCommand,
      &feed::kFeedSignedOutViewDemotion,
      &feed::kFeedUserInteractionReliabilityReport,
@@ -59,16 +59,16 @@ diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/f
      public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_TRANSLATE =
              "AdaptiveButtonInTopToolbarTranslate";
      public static final String ADAPTIVE_BUTTON_IN_TOP_TOOLBAR_ADD_TO_BOOKMARKS =
-@@ -523,6 +524,8 @@ public abstract class ChromeFeatureList {
-             newCachedFlag(ANDROID_ELEGANT_TEXT_HEIGHT, false);
- 
-     public static final CachedFlag sAndroidHub = newCachedFlag(ANDROID_HUB, false);
+@@ -533,6 +534,8 @@ public abstract class ChromeFeatureList {
+     public static final CachedFlag sAndroidTabGroupStableIds =
+             newCachedFlag(ANDROID_TAB_GROUP_STABLE_IDS, false);
+     public static final CachedFlag sAppSpecificHistory = newCachedFlag(APP_SPECIFIC_HISTORY, false);
 +    public static final CachedFlag sAllowUserCertificates =
 +            newCachedFlag(ALLOW_USER_CERTIFICATES, false);
      public static final CachedFlag sArchiveTabService = newCachedFlag(ARCHIVE_TAB_SERVICE, false);
-     public static final CachedFlag sBackGestureActivityTabProvider =
-             newCachedFlag(BACK_GESTURE_ACTIVITY_TAB_PROVIDER, false);
-@@ -657,6 +660,7 @@ public abstract class ChromeFeatureList {
+     public static final CachedFlag sAsyncNotificationManager =
+             newCachedFlag(ASYNC_NOTIFICATION_MANAGER, false);
+@@ -684,6 +687,7 @@ public abstract class ChromeFeatureList {
  
      public static final List<CachedFlag> sFlagsCachedFullBrowser =
              List.of(

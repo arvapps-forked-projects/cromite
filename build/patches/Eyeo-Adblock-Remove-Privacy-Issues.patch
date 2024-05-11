@@ -3,17 +3,25 @@ Date: Thu, 29 Sep 2022 11:27:35 +0000
 Subject: Eyeo Adblock for Bromite
 
 Change the normal behaviour of Eyeo Chromium SDK to
-suit Bromite logic
+suit Bromite logic.
+Add blocking in service workers
+Activates the pop-up blocking management present in adblockplus
+but not active in upstream.
+Added "enable-stricter-popup-blocker" flag for the global
+deactivation of all pop-ups (default disabled)
 ---
  .../android/java/res/xml/main_preferences.xml |   19 +-
  chrome/browser/BUILD.gn                       |    2 -
- .../adblock/adblock_content_browser_client.cc |   26 +-
+ .../adblock/adblock_content_browser_client.cc |  284 +-
+ .../adblock/adblock_content_browser_client.h  |   47 +-
+ .../browser/chrome_content_browser_client.cc  |    6 +-
+ .../browser/chrome_content_browser_client.h   |    6 +-
  .../adblock_private/adblock_private_api.cc    |   74 +-
  .../api/adblock_private/adblock_private_api.h |   49 +
  .../eyeo_filtering_private_api.cc             |   25 +-
  ...hrome_browser_main_extra_parts_profiles.cc |    2 -
  chrome/browser/resources/settings/BUILD.gn    |    2 +
- .../settings/adblock_page/adblock_page.html   |  207 +
+ .../settings/adblock_page/adblock_page.html   |  212 +
  .../settings/adblock_page/adblock_page.ts     |  286 ++
  .../settings/basic_page/basic_page.html       |    7 +
  .../settings/basic_page/basic_page.ts         |    1 +
@@ -38,13 +46,19 @@ suit Bromite logic
  .../AdblockCustomFiltersFragment.java         |    7 +-
  .../settings/AdblockCustomItemFragment.java   |   20 +-
  .../settings/AdblockFilterListsAdapter.java   |    6 +
- .../settings/AdblockSettingsFragment.java     |   45 +-
+ .../settings/AdblockSettingsFragment.java     |   50 +-
  components/adblock/content/browser/BUILD.gn   |   18 +-
  .../adblock_controller_factory_base.cc        |    5 +-
+ .../browser/adblock_url_loader_factory.cc     |   17 +-
+ .../browser/adblock_url_loader_factory.h      |    7 +-
  .../browser/adblock_webcontents_observer.cc   |   25 +-
  .../browser/adblock_webcontents_observer.h    |    5 +-
  .../content_security_policy_injector_impl.cc  |    1 +
  .../content/browser/element_hider_impl.cc     |    2 +-
+ .../browser/frame_hierarchy_builder.cc        |    3 +-
+ .../browser/resource_classification_runner.h  |    8 +
+ .../resource_classification_runner_impl.cc    |   30 +-
+ .../resource_classification_runner_impl.h     |    8 +
  .../subscription_service_factory_base.cc      |   11 +-
  .../subscription_service_factory_base.h       |    1 +
  components/adblock/core/BUILD.gn              |   39 -
@@ -93,6 +107,8 @@ suit Bromite logic
  .../subscription/subscription_service_impl.h  |    9 +
  .../subscription/subscription_updater_impl.cc |    8 +-
  .../subscription_validator_impl.cc            |    4 +-
+ components/blocked_content/popup_blocker.cc   |    9 +-
+ components/blocked_content/popup_blocker.h    |    3 +
  .../browser/bromite_content_settings/ads.inc  |    3 +
  components/resources/BUILD.gn                 |    1 -
  components/resources/adblock_resources.grdp   |    3 -
@@ -104,11 +120,15 @@ suit Bromite logic
  .../dist/isolated-first-xpath3.source.jst     | 3696 +++++++++++++++++
  .../snippets/dist/isolated-first.jst          |   65 +
  .../snippets/dist/isolated-first.source.jst   | 3624 ++++++++++++++++
+ .../websockets/websocket_connector_impl.cc    |    6 +-
+ .../public/browser/content_browser_client.cc  |    4 +-
+ .../public/browser/content_browser_client.h   |    4 +-
+ .../about_flags_cc/Stricter-popup-blocker.inc |   14 +
  .../blink/renderer/core/css/style_engine.cc   |    8 +
  .../blink/renderer/core/css/style_engine.h    |    1 +
  .../renderer/core/exported/web_document.cc    |   15 +-
  .../definitions/adblock_private.d.ts          |   14 +
- 103 files changed, 8866 insertions(+), 1160 deletions(-)
+ 118 files changed, 9200 insertions(+), 1266 deletions(-)
  create mode 100644 chrome/browser/resources/settings/adblock_page/adblock_page.html
  create mode 100644 chrome/browser/resources/settings/adblock_page/adblock_page.ts
  rename components/adblock/android/java/res/xml/{adblock_preferences.xml => eyeo_adblock_preferences.xml} (56%)
@@ -123,6 +143,7 @@ suit Bromite logic
  create mode 100644 components/resources/adblocking/snippets/dist/isolated-first-xpath3.source.jst
  create mode 100755 components/resources/adblocking/snippets/dist/isolated-first.jst
  create mode 100755 components/resources/adblocking/snippets/dist/isolated-first.source.jst
+ create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Stricter-popup-blocker.inc
 
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
 --- a/chrome/android/java/res/xml/main_preferences.xml
@@ -141,7 +162,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
  <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
      xmlns:app="http://schemas.android.com/apk/res-auto"
      android:orderingFromXml="false">
-@@ -81,6 +72,11 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
+@@ -86,6 +77,11 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
          android:key="adblock"
          android:order="13"
          android:title="@string/prefs_adblock"/>
@@ -152,10 +173,10 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 +        android:title="@string/adblock_settings_title" />
      <Preference
          android:key="notifications"
-         android:order="14"
-@@ -115,11 +111,6 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
+         android:order="15"
+@@ -120,11 +116,6 @@ Use of this source code is governed by the GPLv3 that can be found in the compon
          android:key="accessibility"
-         android:order="20"
+         android:order="21"
          android:title="@string/prefs_accessibility"/>
 -    <Preference
 -        android:fragment="org.chromium.components.adblock.settings.AdblockSettingsFragment"
@@ -168,7 +189,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 diff --git a/chrome/browser/BUILD.gn b/chrome/browser/BUILD.gn
 --- a/chrome/browser/BUILD.gn
 +++ b/chrome/browser/BUILD.gn
-@@ -156,8 +156,6 @@ static_library("browser") {
+@@ -160,8 +160,6 @@ static_library("browser") {
      "adblock/adblock_content_browser_client.h",
      "adblock/adblock_controller_factory.cc",
      "adblock/adblock_controller_factory.h",
@@ -189,21 +210,86 @@ diff --git a/chrome/browser/adblock/adblock_content_browser_client.cc b/chrome/b
  #include "chrome/browser/profiles/profile.h"
  #include "chrome/browser/ui/browser_navigator_params.h"
  #include "components/adblock/content/browser/adblock_url_loader_factory.h"
-@@ -59,6 +61,13 @@ bool IsFilteringNeeded(content::RenderFrameHost* frame) {
+@@ -41,6 +43,7 @@
+ #include "content/public/browser/web_contents.h"
+ #include "mojo/public/cpp/bindings/self_owned_receiver.h"
+ #include "services/network/public/mojom/websocket.mojom.h"
++#include "services/network/public/mojom/web_transport.mojom.h"
+ #include "services/service_manager/public/cpp/binder_registry.h"
+ #include "third_party/blink/public/common/loader/url_loader_throttle.h"
+ 
+@@ -54,17 +57,41 @@
+ 
+ namespace {
+ 
++bool IsFilteringNeeded(Profile* profile, const GURL& embedder_url) {
++  DCHECK(profile);
++
++  if(embedder_url.is_empty()) {
++    // in android can be empty because it was created by
++    // RenderFrameHostImpl::CreateSubresourceLoaderFactoriesForInitialEmptyDocument
++    return true;
++  }
++
++  if (embedder_url.SchemeIs(content_settings::kChromeUIScheme)) {
++    return false;
++  }
++
++  HostContentSettingsMap* settings_map = HostContentSettingsMapFactory::GetForProfile(profile);
++  if (settings_map && settings_map->GetContentSetting(embedder_url, GURL(), ContentSettingsType::ADS)
++        == CONTENT_SETTING_ALLOW) {
++      return false;
++  }
++  // Filtering may be needed if there's at least one enabled
++  // FilteringConfiguration.
++  bool ret = base::ranges::any_of(
++      adblock::SubscriptionServiceFactory::GetForBrowserContext(profile)
++          ->GetInstalledFilteringConfigurations(),
++      &adblock::FilteringConfiguration::IsEnabled);
++  return ret;
++}
++
+ bool IsFilteringNeeded(content::RenderFrameHost* frame) {
+   if (frame) {
      auto* profile =
          Profile::FromBrowserContext(frame->GetProcess()->GetBrowserContext());
      if (profile) {
+-      // Filtering may be needed if there's at least one enabled
+-      // FilteringConfiguration.
+-      return base::ranges::any_of(
+-          adblock::SubscriptionServiceFactory::GetForBrowserContext(profile)
+-              ->GetInstalledFilteringConfigurations(),
+-          &adblock::FilteringConfiguration::IsEnabled);
 +      content::RenderFrameHost* embedder = frame->GetOutermostMainFrameOrEmbedder();
 +      const auto& embedder_url = embedder->GetLastCommittedURL();
-+      HostContentSettingsMap* settings_map = HostContentSettingsMapFactory::GetForProfile(profile);
-+      if (settings_map && settings_map->GetContentSetting(embedder_url, GURL(), ContentSettingsType::ADS)
-+            == CONTENT_SETTING_ALLOW) {
-+          return false;
-+      }
-       // Filtering may be needed if there's at least one enabled
-       // FilteringConfiguration.
-       return base::ranges::any_of(
-@@ -102,23 +111,6 @@ class AdblockContextData : public base::SupportsUserData::Data {
++      return IsFilteringNeeded(profile, embedder_url);
+     }
+   }
+   return false;
+@@ -79,10 +106,11 @@ class AdblockContextData : public base::SupportsUserData::Data {
+ 
+   static void StartProxying(
+       Profile* profile,
++      content::BrowserContext* browser_context,
++      const url::Origin& request_initiator,
+       content::RenderFrameHost* frame,
+       int render_process_id,
+-      mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
+-      mojo::PendingRemote<network::mojom::URLLoaderFactory> target_factory,
++      network::URLLoaderFactoryBuilder& factory_builder,
+       bool use_test_loader) {
+     const void* const kAdblockContextUserDataKey = &kAdblockContextUserDataKey;
+     auto* self = static_cast<AdblockContextData*>(
+@@ -91,8 +119,6 @@ class AdblockContextData : public base::SupportsUserData::Data {
+       self = new AdblockContextData();
+       profile->SetUserData(kAdblockContextUserDataKey, base::WrapUnique(self));
+     }
+-    auto* browser_context =
+-        content::WebContents::FromRenderFrameHost(frame)->GetBrowserContext();
+     adblock::AdblockURLLoaderFactoryConfig config{
+         adblock::SubscriptionServiceFactory::GetForBrowserContext(
+             browser_context),
+@@ -102,28 +128,12 @@ class AdblockContextData : public base::SupportsUserData::Data {
          adblock::SitekeyStorageFactory::GetForBrowserContext(browser_context),
          adblock::ContentSecurityPolicyInjectorFactory::GetForBrowserContext(
              browser_context)};
@@ -226,7 +312,460 @@ diff --git a/chrome/browser/adblock/adblock_content_browser_client.cc b/chrome/b
 -#endif
      auto proxy = std::make_unique<adblock::AdblockURLLoaderFactory>(
          std::move(config),
++        request_initiator.GetURL(),
          content::GlobalRenderFrameHostId(render_process_id,
+-                                         frame->GetRoutingID()),
+-        std::move(receiver), std::move(target_factory),
++              frame ? frame->GetRoutingID() : MSG_ROUTING_NONE),
++        factory_builder,
+         embedder_support::GetUserAgent(),
+         base::BindOnce(&AdblockContextData::RemoveProxy,
+                        self->weak_factory_.GetWeakPtr()));
+@@ -163,47 +173,50 @@ void AdblockContentBrowserClient::ForceAdblockProxyForTesting() {
+ #endif
+ 
+ bool AdblockContentBrowserClient::WillInterceptWebSocket(
+-    content::RenderFrameHost* frame) {
++    content::RenderFrameHost* frame,
++    content::RenderProcessHost* process,
++    const url::Origin& origin) {
+   if (IsFilteringNeeded(frame)) {
+     return true;
++  } else {
++    auto* browser_context = process->GetBrowserContext();
++    auto* profile = Profile::FromBrowserContext(browser_context);
++    if (IsFilteringNeeded(profile, origin.GetURL().GetAsReferrer())) {
++      return true;
++    }
+   }
+ 
+-  return ChromeContentBrowserClient::WillInterceptWebSocket(frame);
++  return ChromeContentBrowserClient::WillInterceptWebSocket(frame, process, origin);
+ }
+ 
+ void AdblockContentBrowserClient::CreateWebSocket(
++    content::RenderProcessHost* process,
+     content::RenderFrameHost* frame,
+     WebSocketFactory factory,
+     const GURL& url,
++    const url::Origin& initiator_origin,
+     const net::SiteForCookies& site_for_cookies,
+     const absl::optional<std::string>& user_agent,
+     mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+         handshake_client) {
+-  if (IsFilteringNeeded(frame)) {
+-    CreateWebSocketInternal(frame->GetGlobalId(), std::move(factory), url,
+-                            site_for_cookies, user_agent,
+-                            std::move(handshake_client));
+-  } else {
+-    DCHECK(ChromeContentBrowserClient::WillInterceptWebSocket(frame));
+-    ChromeContentBrowserClient::CreateWebSocket(frame, std::move(factory), url,
+-                                                site_for_cookies, user_agent,
+-                                                std::move(handshake_client));
+-  }
++  CreateWebSocketInternal(process,
++                          frame ? frame->GetGlobalId() : content::GlobalRenderFrameHostId(),
++                          std::move(factory), url, initiator_origin,
++                          site_for_cookies, user_agent,
++                          std::move(handshake_client));
+ }
+ 
+ void AdblockContentBrowserClient::CreateWebSocketInternal(
++    content::RenderProcessHost* process,
+     content::GlobalRenderFrameHostId render_frame_host_id,
+     WebSocketFactory factory,
+     const GURL& url,
++    const url::Origin& initiator_origin,
+     const net::SiteForCookies& site_for_cookies,
+     const absl::optional<std::string>& user_agent,
+     mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+         handshake_client) {
+-  auto* frame = content::RenderFrameHost::FromID(render_frame_host_id);
+-  if (!frame) {
+-    return;
+-  }
+-  auto* browser_context = frame->GetProcess()->GetBrowserContext();
++  auto* browser_context = process->GetBrowserContext();
+   auto* subscription_service =
+       adblock::SubscriptionServiceFactory::GetForBrowserContext(
+           browser_context);
+@@ -211,33 +224,33 @@ void AdblockContentBrowserClient::CreateWebSocketInternal(
+       adblock::ResourceClassificationRunnerFactory::GetForBrowserContext(
+           browser_context);
+   classification_runner->CheckRequestFilterMatchForWebSocket(
+-      subscription_service->GetCurrentSnapshot(), url, render_frame_host_id,
++      subscription_service->GetCurrentSnapshot(), url,
++      std::move(initiator_origin.GetURL().GetAsReferrer()), render_frame_host_id,
+       base::BindOnce(
+           &AdblockContentBrowserClient::OnWebSocketFilterCheckCompleted,
+-          weak_factory_.GetWeakPtr(), render_frame_host_id, std::move(factory),
+-          url, site_for_cookies, user_agent, std::move(handshake_client)));
++          weak_factory_.GetWeakPtr(), process, render_frame_host_id, std::move(factory),
++          url, initiator_origin, site_for_cookies, user_agent, std::move(handshake_client)));
+ }
+ 
+ void AdblockContentBrowserClient::OnWebSocketFilterCheckCompleted(
++    content::RenderProcessHost* process,
+     content::GlobalRenderFrameHostId render_frame_host_id,
+     ChromeContentBrowserClient::WebSocketFactory factory,
+     const GURL& url,
++    const url::Origin& initiator_origin,
+     const net::SiteForCookies& site_for_cookies,
+     const absl::optional<std::string>& user_agent,
+     mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+         handshake_client,
+     adblock::FilterMatchResult result) {
+   auto* frame = content::RenderFrameHost::FromID(render_frame_host_id);
+-  if (!frame) {
+-    return;
+-  }
+   const bool has_blocking_filter =
+       result == adblock::FilterMatchResult::kBlockRule;
+   if (!has_blocking_filter) {
+     VLOG(1) << "[eyeo] Web socket allowed for " << url;
+-    if (ChromeContentBrowserClient::WillInterceptWebSocket(frame)) {
++    if (ChromeContentBrowserClient::WillInterceptWebSocket(frame, process, initiator_origin)) {
+       ChromeContentBrowserClient::CreateWebSocket(
+-          frame, std::move(factory), url, site_for_cookies, user_agent,
++          process, frame, std::move(factory), url, initiator_origin, site_for_cookies, user_agent,
+           std::move(handshake_client));
+       return;
+     }
+@@ -254,15 +267,133 @@ void AdblockContentBrowserClient::OnWebSocketFilterCheckCompleted(
+   VLOG(1) << "[eyeo] Web socket blocked for " << url;
+ }
+ 
+-bool AdblockContentBrowserClient::WillCreateURLLoaderFactory(
++void AdblockContentBrowserClient::WillCreateWebTransport(
++    int process_id,
++    int frame_routing_id,
++    const GURL& url,
++    const url::Origin& initiator_origin,
++    mojo::PendingRemote<network::mojom::WebTransportHandshakeClient>
++        handshake_client,
++    WillCreateWebTransportCallback callback) {
++  auto* process = content::RenderProcessHost::FromID(process_id);
++  DCHECK(process);
++
++  auto* browser_context = process->GetBrowserContext();
++  auto* profile = Profile::FromBrowserContext(browser_context);
++  if (IsFilteringNeeded(profile, initiator_origin.GetURL().GetAsReferrer())) {
++    auto* subscription_service =
++        adblock::SubscriptionServiceFactory::GetForBrowserContext(
++            browser_context);
++    auto* classification_runner =
++        adblock::ResourceClassificationRunnerFactory::GetForBrowserContext(
++            browser_context);
++
++    classification_runner->CheckRequestFilterMatchForWebTransport(
++        subscription_service->GetCurrentSnapshot(), url,
++        std::move(initiator_origin.GetURL().GetAsReferrer()),
++        content::GlobalRenderFrameHostId(),
++        base::BindOnce(
++            &AdblockContentBrowserClient::OnWebTransportFilterCheckCompleted,
++            weak_factory_.GetWeakPtr(),
++            process_id, frame_routing_id, url,
++            std::move(initiator_origin), std::move(handshake_client),
++            std::move(callback)));
++    return;
++  }
++
++  ChromeContentBrowserClient::WillCreateWebTransport(
++      process_id, frame_routing_id,
++      url, std::move(initiator_origin),
++      std::move(handshake_client), std::move(callback));
++}
++
++void AdblockContentBrowserClient::OnWebTransportFilterCheckCompleted(
++    int process_id,
++    int frame_routing_id,
++    const GURL& url,
++    const url::Origin& initiator_origin,
++    mojo::PendingRemote<network::mojom::WebTransportHandshakeClient>
++        handshake_client,
++    WillCreateWebTransportCallback callback,
++    adblock::FilterMatchResult result) {
++  const bool has_blocking_filter =
++      result == adblock::FilterMatchResult::kBlockRule;
++  if (!has_blocking_filter) {
++    VLOG(1) << "[eyeo] Web transport allowed for " << url;
++    ChromeContentBrowserClient::WillCreateWebTransport(
++        process_id, frame_routing_id,
++        url, std::move(initiator_origin),
++        std::move(handshake_client), std::move(callback));
++    return;
++  }
++  VLOG(1) << "[eyeo] Web transport blocked for " << url;
++  std::move(callback).Run(std::move(handshake_client),
++                            network::mojom::WebTransportError::New(
++                                net::ERR_BLOCKED_BY_ADMINISTRATOR, quic::QUIC_INTERNAL_ERROR,
++                                "Blocked", false));
++}
++
++bool AdblockContentBrowserClient::CanCreateWindow(
++    content::RenderFrameHost* opener,
++    const GURL& opener_url,
++    const GURL& opener_top_level_frame_url,
++    const url::Origin& source_origin,
++    content::mojom::WindowContainerType container_type,
++    const GURL& target_url,
++    const content::Referrer& referrer,
++    const std::string& frame_name,
++    WindowOpenDisposition disposition,
++    const blink::mojom::WindowFeatures& features,
++    bool user_gesture,
++    bool opener_suppressed,
++    bool* no_javascript_access) {
++  DCHECK_CURRENTLY_ON(content::BrowserThread::UI);
++  DCHECK(opener);
++
++  if (IsFilteringNeeded(opener)) {
++    content::WebContents* web_contents =
++        content::WebContents::FromRenderFrameHost(opener);
++    auto* subscription_service =
++        adblock::SubscriptionServiceFactory::GetForBrowserContext(
++            web_contents->GetBrowserContext());
++
++    GURL popup_url(target_url);
++    web_contents->GetPrimaryMainFrame()->GetProcess()->FilterURL(false,
++                                                                 &popup_url);
++    auto* classification_runner =
++        adblock::ResourceClassificationRunnerFactory::GetForBrowserContext(
++            web_contents->GetBrowserContext());
++    const auto popup_blocking_decision =
++        classification_runner->ShouldBlockPopup(
++            subscription_service->GetCurrentSnapshot(), popup_url, opener);
++    if (popup_blocking_decision == adblock::FilterMatchResult::kAllowRule) {
++      return true;
++    }
++    if (popup_blocking_decision == adblock::FilterMatchResult::kBlockRule) {
++      return false;
++    }
++    // Otherwise, if eyeo adblocking is disabled or there is no rule that
++    // explicitly allows or blocks a popup, fall back on Chromium's built-in
++    // popup blocker.
++    DCHECK(popup_blocking_decision == adblock::FilterMatchResult::kDisabled ||
++           popup_blocking_decision == adblock::FilterMatchResult::kNoRule);
++  }
++
++  return ChromeContentBrowserClient::CanCreateWindow(
++      opener, opener_url, opener_top_level_frame_url, source_origin,
++      container_type, target_url, referrer, frame_name, disposition, features,
++      user_gesture, opener_suppressed, no_javascript_access);
++}
++
++void AdblockContentBrowserClient::WillCreateURLLoaderFactory(
+     content::BrowserContext* browser_context,
+     content::RenderFrameHost* frame,
+     int render_process_id,
+     URLLoaderFactoryType type,
+     const url::Origin& request_initiator,
+-    absl::optional<int64_t> navigation_id,
++    std::optional<int64_t> navigation_id,
+     ukm::SourceIdObj ukm_source_id,
+-    mojo::PendingReceiver<network::mojom::URLLoaderFactory>* factory_receiver,
++    network::URLLoaderFactoryBuilder& factory_builder,
+     mojo::PendingRemote<network::mojom::TrustedURLLoaderHeaderClient>*
+         header_client,
+     bool* bypass_redirect_checks,
+@@ -271,30 +402,17 @@ bool AdblockContentBrowserClient::WillCreateURLLoaderFactory(
+     scoped_refptr<base::SequencedTaskRunner> navigation_response_task_runner) {
+   // Create Chromium proxy first as WebRequestProxyingURLLoaderFactory logic
+   // depends on being first proxy
+-  bool use_chrome_proxy =
+-      ChromeContentBrowserClient::WillCreateURLLoaderFactory(
+-          browser_context, frame, render_process_id, type, request_initiator,
+-          navigation_id, ukm_source_id, factory_receiver, header_client,
+-          bypass_redirect_checks, disable_secure_dns, factory_override,
+-          navigation_response_task_runner);
+-  auto* profile = frame ? Profile::FromBrowserContext(
+-                              frame->GetProcess()->GetBrowserContext())
+-                        : nullptr;
+-
+-#if BUILDFLAG(ENABLE_EXTENSIONS)
+-  if (!force_adblock_proxy_for_testing_ &&
+-      request_initiator.scheme() == extensions::kExtensionScheme) {
+-    VLOG(1) << "[eyeo] Do not use adblock proxy for extensions requests "
+-               "[extension id:"
+-            << request_initiator.host() << "].";
+-    return use_chrome_proxy;
+-  }
+-#endif
++  ChromeContentBrowserClient::WillCreateURLLoaderFactory(
++      browser_context, frame, render_process_id, type, request_initiator,
++      navigation_id, ukm_source_id, factory_builder, header_client,
++      bypass_redirect_checks, disable_secure_dns, factory_override,
++      navigation_response_task_runner);
++  auto* profile = Profile::FromBrowserContext(browser_context);
+ 
+   bool use_adblock_proxy =
+-      (type == URLLoaderFactoryType::kDocumentSubResource ||
+-       type == URLLoaderFactoryType::kNavigation) &&
+-      IsFilteringNeeded(frame);
++      type != URLLoaderFactoryType::kDownload &&
++      (frame ? IsFilteringNeeded(frame)
++             : IsFilteringNeeded(profile, request_initiator.GetURL().GetAsReferrer()));
+ 
+   bool use_test_loader = false;
+ #ifdef EYEO_INTERCEPT_DEBUG_URL
+@@ -309,12 +427,8 @@ bool AdblockContentBrowserClient::WillCreateURLLoaderFactory(
+ #endif
+ 
+   if (use_adblock_proxy) {
+-    auto proxied_receiver = std::move(*factory_receiver);
+-    mojo::PendingRemote<network::mojom::URLLoaderFactory> target_factory_remote;
+-    *factory_receiver = target_factory_remote.InitWithNewPipeAndPassReceiver();
+     AdblockContextData::StartProxying(
+-        profile, frame, render_process_id, std::move(proxied_receiver),
+-        std::move(target_factory_remote), use_test_loader);
++        profile, browser_context, request_initiator, frame, render_process_id,
++        factory_builder, use_test_loader);
+   }
+-  return use_adblock_proxy || use_chrome_proxy;
+ }
+diff --git a/chrome/browser/adblock/adblock_content_browser_client.h b/chrome/browser/adblock/adblock_content_browser_client.h
+--- a/chrome/browser/adblock/adblock_content_browser_client.h
++++ b/chrome/browser/adblock/adblock_content_browser_client.h
+@@ -44,25 +44,36 @@ class AdblockContentBrowserClient : public ChromeContentBrowserClient {
+   static void ForceAdblockProxyForTesting();
+ #endif
+ 
+-  bool WillInterceptWebSocket(content::RenderFrameHost* frame) override;
++  bool WillInterceptWebSocket(content::RenderFrameHost* frame, content::RenderProcessHost* process, const url::Origin& origin) override;
+   void CreateWebSocket(
++      content::RenderProcessHost* process,
+       content::RenderFrameHost* frame,
+       WebSocketFactory factory,
+       const GURL& url,
++      const url::Origin& initiator_origin,
+       const net::SiteForCookies& site_for_cookies,
+       const absl::optional<std::string>& user_agent,
+       mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+           handshake_client) override;
+ 
+-  bool WillCreateURLLoaderFactory(
++  void WillCreateWebTransport(
++      int process_id,
++      int frame_routing_id,
++      const GURL& url,
++      const url::Origin& initiator_origin,
++      mojo::PendingRemote<network::mojom::WebTransportHandshakeClient>
++          handshake_client,
++      WillCreateWebTransportCallback callback) override;
++
++  void WillCreateURLLoaderFactory(
+       content::BrowserContext* browser_context,
+       content::RenderFrameHost* frame,
+       int render_process_id,
+       URLLoaderFactoryType type,
+       const url::Origin& request_initiator,
+-      absl::optional<int64_t> navigation_id,
++      std::optional<int64_t> navigation_id,
+       ukm::SourceIdObj ukm_source_id,
+-      mojo::PendingReceiver<network::mojom::URLLoaderFactory>* factory_receiver,
++      network::URLLoaderFactoryBuilder& factory_builder,
+       mojo::PendingRemote<network::mojom::TrustedURLLoaderHeaderClient>*
+           header_client,
+       bool* bypass_redirect_checks,
+@@ -71,25 +82,51 @@ class AdblockContentBrowserClient : public ChromeContentBrowserClient {
+       scoped_refptr<base::SequencedTaskRunner> navigation_response_task_runner)
+       override;
+ 
++  bool CanCreateWindow(content::RenderFrameHost* opener,
++      const GURL& opener_url,
++      const GURL& opener_top_level_frame_url,
++      const url::Origin& source_origin,
++      content::mojom::WindowContainerType container_type,
++      const GURL& target_url,
++      const content::Referrer& referrer,
++      const std::string& frame_name,
++      WindowOpenDisposition disposition,
++      const blink::mojom::WindowFeatures& features,
++      bool user_gesture,
++      bool opener_suppressed,
++      bool* no_javascript_access) override;
++
+  private:
+   void CreateWebSocketInternal(
++      content::RenderProcessHost* process,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       WebSocketFactory factory,
+       const GURL& url,
++      const url::Origin& initiator_origin,
+       const net::SiteForCookies& site_for_cookies,
+       const absl::optional<std::string>& user_agent,
+       mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+           handshake_client);
+   void OnWebSocketFilterCheckCompleted(
++      content::RenderProcessHost* process,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       ChromeContentBrowserClient::WebSocketFactory factory,
+       const GURL& url,
++      const url::Origin& initiator_origin,
+       const net::SiteForCookies& site_for_cookies,
+       const absl::optional<std::string>& user_agent,
+       mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+           handshake_client,
+       adblock::FilterMatchResult result);
+-
++  void OnWebTransportFilterCheckCompleted(
++      int process_id,
++      int frame_routing_id,
++      const GURL& url,
++      const url::Origin& initiator_origin,
++      mojo::PendingRemote<network::mojom::WebTransportHandshakeClient>
++          handshake_client,
++      WillCreateWebTransportCallback callback,
++      adblock::FilterMatchResult result);
+   base::WeakPtrFactory<AdblockContentBrowserClient> weak_factory_{this};
+ 
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
+--- a/chrome/browser/chrome_content_browser_client.cc
++++ b/chrome/browser/chrome_content_browser_client.cc
+@@ -6230,7 +6230,9 @@ ChromeContentBrowserClient::
+ }
+ 
+ bool ChromeContentBrowserClient::WillInterceptWebSocket(
+-    content::RenderFrameHost* frame) {
++    content::RenderFrameHost* frame,
++    content::RenderProcessHost* process,
++    const url::Origin& origin) {
+ #if BUILDFLAG(ENABLE_EXTENSIONS)
+   if (!frame) {
+     return false;
+@@ -6253,9 +6255,11 @@ bool ChromeContentBrowserClient::WillInterceptWebSocket(
+ }
+ 
+ void ChromeContentBrowserClient::CreateWebSocket(
++    content::RenderProcessHost* process,
+     content::RenderFrameHost* frame,
+     WebSocketFactory factory,
+     const GURL& url,
++    const url::Origin& initiator_origin,
+     const net::SiteForCookies& site_for_cookies,
+     const std::optional<std::string>& user_agent,
+     mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+diff --git a/chrome/browser/chrome_content_browser_client.h b/chrome/browser/chrome_content_browser_client.h
+--- a/chrome/browser/chrome_content_browser_client.h
++++ b/chrome/browser/chrome_content_browser_client.h
+@@ -648,11 +648,15 @@ class ChromeContentBrowserClient : public content::ContentBrowserClient {
+   CreateURLLoaderHandlerForServiceWorkerNavigationPreload(
+       int frame_tree_node_id,
+       const network::ResourceRequest& resource_request) override;
+-  bool WillInterceptWebSocket(content::RenderFrameHost* frame) override;
++  bool WillInterceptWebSocket(content::RenderFrameHost* frame,
++                              content::RenderProcessHost* process,
++                              const url::Origin& origin) override;
+   void CreateWebSocket(
++      content::RenderProcessHost* process,
+       content::RenderFrameHost* frame,
+       WebSocketFactory factory,
+       const GURL& url,
++      const url::Origin& initiator_origin,
+       const net::SiteForCookies& site_for_cookies,
+       const std::optional<std::string>& user_agent,
+       mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
 diff --git a/chrome/browser/extensions/api/adblock_private/adblock_private_api.cc b/chrome/browser/extensions/api/adblock_private/adblock_private_api.cc
 --- a/chrome/browser/extensions/api/adblock_private/adblock_private_api.cc
 +++ b/chrome/browser/extensions/api/adblock_private/adblock_private_api.cc
@@ -462,15 +1001,15 @@ diff --git a/chrome/browser/extensions/api/eyeo_filtering_private/eyeo_filtering
 diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 --- a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 +++ b/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
-@@ -17,7 +17,6 @@
- #include "chrome/browser/accessibility/accessibility_labels_service_factory.h"
+@@ -18,7 +18,6 @@
  #include "chrome/browser/accessibility/page_colors_factory.h"
+ #include "chrome/browser/affiliations/affiliation_service_factory.h"
  #include "chrome/browser/adblock/adblock_controller_factory.h"
 -#include "chrome/browser/adblock/adblock_telemetry_service_factory.h"
  #include "chrome/browser/adblock/content_security_policy_injector_factory.h"
  #include "chrome/browser/adblock/element_hider_factory.h"
  #include "chrome/browser/adblock/resource_classification_runner_factory.h"
-@@ -824,7 +823,6 @@ void ChromeBrowserMainExtraPartsProfiles::
+@@ -840,7 +839,6 @@ void ChromeBrowserMainExtraPartsProfiles::
    FakeSmartCardDeviceServiceFactory::GetInstance();
  #endif
    adblock::AdblockControllerFactory::GetInstance();
@@ -481,7 +1020,7 @@ diff --git a/chrome/browser/profiles/chrome_browser_main_extra_parts_profiles.cc
 diff --git a/chrome/browser/resources/settings/BUILD.gn b/chrome/browser/resources/settings/BUILD.gn
 --- a/chrome/browser/resources/settings/BUILD.gn
 +++ b/chrome/browser/resources/settings/BUILD.gn
-@@ -74,6 +74,7 @@ build_webui("build") {
+@@ -70,6 +70,7 @@ build_webui("build") {
      "a11y_page/a11y_page.ts",
      "about_page/about_page.ts",
      "ai_page/ai_page.ts",
@@ -489,10 +1028,10 @@ diff --git a/chrome/browser/resources/settings/BUILD.gn b/chrome/browser/resourc
      "appearance_page/appearance_fonts_page.ts",
      "appearance_page/appearance_page.ts",
      "appearance_page/home_url_input.ts",
-@@ -375,6 +376,7 @@ build_webui("build") {
-   ts_composite = true
+@@ -386,6 +387,7 @@ build_webui("build") {
    ts_definitions = [
      "//tools/typescript/definitions/autofill_private.d.ts",
+     "//tools/typescript/definitions/chrome_event.d.ts",
 +    "//tools/typescript/definitions/adblock_private.d.ts",
      "//tools/typescript/definitions/chrome_send.d.ts",
      "//tools/typescript/definitions/language_settings_private.d.ts",
@@ -501,7 +1040,7 @@ diff --git a/chrome/browser/resources/settings/adblock_page/adblock_page.html b/
 new file mode 100644
 --- /dev/null
 +++ b/chrome/browser/resources/settings/adblock_page/adblock_page.html
-@@ -0,0 +1,207 @@
+@@ -0,0 +1,212 @@
 +<!--
 +    This file is part of Bromite.
 +
@@ -522,6 +1061,11 @@ new file mode 100644
 +<style include="settings-shared cr-shared-style settings-shared action-link iron-flex">
 +    #languagesCollapse .list-item.selected {
 +        min-height: var(--settings-row-two-line-min-height);
++    }
++    .ad-fixed-width {
++        width: 80%;
++        text-overflow: ellipsis;
++        word-wrap: break-word;
 +    }
 +</style>
 +<settings-toggle-button class="hr" pref="{{prefs.adblock.enabled}}"
@@ -643,7 +1187,7 @@ new file mode 100644
 +            <div class="list-frame vertical-list">
 +                <template is="dom-repeat" items="{{customSubscriptions}}">
 +                    <div class="list-item">
-+                        <div class="start cr-padded-text">
++                        <div class="start cr-padded-text ad-fixed-width">
 +                            <div data-qa="custom-subscriptions-list-item">
 +                                [[item.url]]
 +                                <div style="margin-left: 20px; margin-top: 5px;">
@@ -740,7 +1284,7 @@ new file mode 100644
 +import { I18nMixin } from 'chrome://resources/cr_elements/i18n_mixin.js';
 +import { BaseMixin } from '../base_mixin.js';
 +import { PolymerElement } from 'chrome://resources/polymer/v3_0/polymer/polymer_bundled.min.js';
-+import { SettingsToggleButtonElement } from '/shared/settings/controls/settings_toggle_button.js';
++import { SettingsToggleButtonElement } from '../controls/settings_toggle_button.js';
 +import { PrefsMixin } from 'chrome://resources/cr_components/settings_prefs/prefs_mixin.js';
 +import { CrCheckboxElement } from 'chrome://resources/cr_elements/cr_checkbox/cr_checkbox.js';
 +import { getTemplate } from './adblock_page.html.js';
@@ -1026,8 +1570,8 @@ diff --git a/chrome/browser/resources/settings/basic_page/basic_page.ts b/chrome
  import '../ai_page/ai_page.js';
 +import '../adblock_page/adblock_page.js';
  import '../appearance_page/appearance_page.js';
- import '../privacy_page/preloading_page.js';
  import '../privacy_page/privacy_guide/privacy_guide_promo.js';
+ import '../privacy_page/privacy_page.js';
 diff --git a/chrome/browser/resources/settings/page_visibility.ts b/chrome/browser/resources/settings/page_visibility.ts
 --- a/chrome/browser/resources/settings/page_visibility.ts
 +++ b/chrome/browser/resources/settings/page_visibility.ts
@@ -1042,7 +1586,7 @@ diff --git a/chrome/browser/resources/settings/page_visibility.ts b/chrome/brows
 diff --git a/chrome/browser/resources/settings/route.ts b/chrome/browser/resources/settings/route.ts
 --- a/chrome/browser/resources/settings/route.ts
 +++ b/chrome/browser/resources/settings/route.ts
-@@ -196,6 +196,10 @@ function createBrowserSettingsRoutes(): SettingsRoutes {
+@@ -198,6 +198,10 @@ function createBrowserSettingsRoutes(): SettingsRoutes {
      r.FONTS = r.APPEARANCE.createChild('/fonts');
    }
  
@@ -1056,7 +1600,7 @@ diff --git a/chrome/browser/resources/settings/route.ts b/chrome/browser/resourc
 diff --git a/chrome/browser/resources/settings/router.ts b/chrome/browser/resources/settings/router.ts
 --- a/chrome/browser/resources/settings/router.ts
 +++ b/chrome/browser/resources/settings/router.ts
-@@ -13,6 +13,7 @@ import {dedupingMixin, PolymerElement} from 'chrome://resources/polymer/v3_0/pol
+@@ -14,6 +14,7 @@ import {dedupingMixin} from 'chrome://resources/polymer/v3_0/polymer/polymer_bun
   */
  export interface SettingsRoutes {
    ABOUT: Route;
@@ -1101,7 +1645,7 @@ diff --git a/chrome/browser/ui/tab_helpers.cc b/chrome/browser/ui/tab_helpers.cc
  #include "chrome/browser/bookmarks/bookmark_model_factory.h"
  #include "chrome/browser/breadcrumbs/breadcrumb_manager_tab_helper.h"
  #include "chrome/browser/browser_process.h"
-@@ -369,6 +370,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
+@@ -372,6 +373,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
      }
    }
  
@@ -1110,16 +1654,16 @@ diff --git a/chrome/browser/ui/tab_helpers.cc b/chrome/browser/ui/tab_helpers.cc
    AdblockWebContentObserver::CreateForWebContents(
        web_contents,
        adblock::SubscriptionServiceFactory::GetForBrowserContext(
-@@ -377,7 +380,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
+@@ -380,7 +383,8 @@ void TabHelpers::AttachTabHelpers(WebContents* web_contents) {
            web_contents->GetBrowserContext()),
        adblock::SitekeyStorageFactory::GetForBrowserContext(
            web_contents->GetBrowserContext()),
 -      std::make_unique<adblock::FrameHierarchyBuilder>());
 +      std::make_unique<adblock::FrameHierarchyBuilder>(),
 +      HostContentSettingsMapFactory::GetForProfile(profile));
-   autofill::ChromeAutofillClient::CreateForWebContents(web_contents);
-   if (breadcrumbs::IsEnabled(g_browser_process->local_state())) {
-     BreadcrumbManagerTabHelper::CreateForWebContents(web_contents);
+   autofill::AutofillClientProvider& autofill_client_provider =
+       autofill::AutofillClientProviderFactory::GetForProfile(profile);
+   autofill_client_provider.CreateClientForWebContents(web_contents);
 diff --git a/chrome/browser/ui/webui/adblock_internals/adblock_internals_page_handler_impl.cc b/chrome/browser/ui/webui/adblock_internals/adblock_internals_page_handler_impl.cc
 --- a/chrome/browser/ui/webui/adblock_internals/adblock_internals_page_handler_impl.cc
 +++ b/chrome/browser/ui/webui/adblock_internals/adblock_internals_page_handler_impl.cc
@@ -1840,7 +2384,15 @@ diff --git a/components/adblock/android/java/src/org/chromium/components/adblock
  
  import androidx.preference.Preference;
  import androidx.preference.PreferenceFragmentCompat;
-@@ -32,7 +33,19 @@ public class AdblockSettingsFragment
+@@ -20,6 +21,7 @@ import androidx.preference.PreferenceFragmentCompat;
+ import org.chromium.build.BuildConfig;
+ import org.chromium.chrome.browser.preferences.Pref;
+ import org.chromium.chrome.browser.profiles.Profile;
++import org.chromium.chrome.browser.profiles.ProfileManager;
+ import org.chromium.components.adblock.AdblockController;
+ import org.chromium.components.adblock.R;
+ import org.chromium.components.browser_ui.settings.ChromeSwitchPreference;
+@@ -32,7 +34,19 @@ public class AdblockSettingsFragment
      private Preference mFilterLists;
      private Preference mAllowedDomains;
      private Preference mMoreOptions;
@@ -1861,7 +2413,7 @@ diff --git a/components/adblock/android/java/src/org/chromium/components/adblock
      private static final String SETTINGS_ENABLED_KEY = "fragment_adblock_settings_enabled_key";
      private static final String SETTINGS_FILTER_LISTS_KEY =
              "fragment_adblock_settings_filter_lists_key";
-@@ -49,9 +62,20 @@ public class AdblockSettingsFragment
+@@ -49,27 +63,49 @@ public class AdblockSettingsFragment
      private long mOnOffTogleTimestamp;
  
      private void bindPreferences() {
@@ -1882,7 +2434,11 @@ diff --git a/components/adblock/android/java/src/org/chromium/components/adblock
          mAllowedDomains = findPreference(SETTINGS_ALLOWED_DOMAINS_KEY);
          mMoreOptions = findPreference(SETTINGS_MORE_OPTIONS_KEY);
      }
-@@ -62,14 +86,25 @@ public class AdblockSettingsFragment
+ 
+     private boolean areMoreOptionsEnabled() {
+-        return UserPrefs.get(Profile.getLastUsedRegularProfile())
++        return UserPrefs.get(ProfileManager.getLastUsedRegularProfile())
+                 .getBoolean(Pref.ADBLOCK_MORE_OPTIONS_ENABLED);
      }
  
      private void applyAdblockEnabled(boolean enabledValue) {
@@ -1910,7 +2466,16 @@ diff --git a/components/adblock/android/java/src/org/chromium/components/adblock
          boolean enabled = AdblockController.getInstance().isEnabled();
          mAdblockEnabled.setChecked(enabled);
          mAdblockEnabled.setOnPreferenceChangeListener(this);
-@@ -107,7 +142,7 @@ public class AdblockSettingsFragment
+@@ -95,7 +131,7 @@ public class AdblockSettingsFragment
+ 
+         mOnOffTogleTimestamp = now;
+         if (mOnOffClickCount >= ON_OFF_TOGGLE_COUNT_TO_ENABLE_MORE_OPTIONS) {
+-            UserPrefs.get(Profile.getLastUsedRegularProfile())
++            UserPrefs.get(ProfileManager.getLastUsedRegularProfile())
+                     .setBoolean(Pref.ADBLOCK_MORE_OPTIONS_ENABLED, true);
+         }
+     }
+@@ -107,7 +143,7 @@ public class AdblockSettingsFragment
  
      @Override
      public void onCreatePreferences(Bundle savedInstanceState, String rootKey) {
@@ -1919,7 +2484,7 @@ diff --git a/components/adblock/android/java/src/org/chromium/components/adblock
          bindPreferences();
          synchronizePreferences();
      }
-@@ -126,6 +161,8 @@ public class AdblockSettingsFragment
+@@ -126,6 +162,8 @@ public class AdblockSettingsFragment
              maybeEnableMoreOptions();
  
              applyAdblockEnabled((Boolean) newValue);
@@ -1989,6 +2554,93 @@ diff --git a/components/adblock/content/browser/adblock_controller_factory_base.
    if (base::CommandLine::ForCurrentProcess()->HasSwitch(
            switches::kDisableAdblock) ||
        base::CommandLine::ForCurrentProcess()->HasSwitch(
+diff --git a/components/adblock/content/browser/adblock_url_loader_factory.cc b/components/adblock/content/browser/adblock_url_loader_factory.cc
+--- a/components/adblock/content/browser/adblock_url_loader_factory.cc
++++ b/components/adblock/content/browser/adblock_url_loader_factory.cc
+@@ -344,12 +344,6 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestError(
+ 
+ void AdblockURLLoaderFactory::InProgressRequest::CheckFilterMatch(
+     CheckFilterMatchCallback callback) {
+-  if (!factory_->CheckHostValid()) {
+-    PostFilterMatchCallbackToUI(std::move(callback),
+-                                FilterMatchResult::kNoRule);
+-    return;
+-  }
+-
+   auto subscription_service = factory_->config_.subscription_service;
+   if (is_document_request_) {
+     auto* host = content::RenderFrameHost::FromID(factory_->host_id_);
+@@ -388,7 +382,7 @@ void AdblockURLLoaderFactory::InProgressRequest::CheckFilterMatch(
+   } else {
+     factory_->config_.resource_classifier->CheckRequestFilterMatch(
+         subscription_service->GetCurrentSnapshot(), request_url_,
+-        adblock_resource_type_, factory_->host_id_,
++        factory_->request_initiator_, adblock_resource_type_, factory_->host_id_,
+         base::BindOnce(
+             &AdblockURLLoaderFactory::InProgressRequest::OnRequestUrlClassified,
+             weak_factory_.GetWeakPtr(),
+@@ -677,12 +671,13 @@ void AdblockURLLoaderFactory::InProgressRequest::OnRequestFilterMatchResult(
+ 
+ AdblockURLLoaderFactory::AdblockURLLoaderFactory(
+     AdblockURLLoaderFactoryConfig config,
++    GURL request_initiator,
+     content::GlobalRenderFrameHostId host_id,
+-    mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
+-    mojo::PendingRemote<network::mojom::URLLoaderFactory> target_factory,
++    network::URLLoaderFactoryBuilder& factory_builder,
+     std::string user_agent_string,
+     DisconnectCallback on_disconnect)
+     : config_(std::move(config)),
++      request_initiator_(std::move(request_initiator)),
+       host_id_(host_id),
+       user_agent_string_(std::move(user_agent_string)),
+       on_disconnect_(std::move(on_disconnect)) {
+@@ -691,10 +686,12 @@ AdblockURLLoaderFactory::AdblockURLLoaderFactory(
+   DCHECK(config_.element_hider);
+   DCHECK(config_.sitekey_storage);
+   DCHECK(config_.csp_injector);
++  auto [loader_receiver, target_factory] = factory_builder.Append();
++  DCHECK(!target_factory_.is_bound());
+   target_factory_.Bind(std::move(target_factory));
+   target_factory_.set_disconnect_handler(base::BindOnce(
+       &AdblockURLLoaderFactory::OnTargetFactoryError, base::Unretained(this)));
+-  proxy_receivers_.Add(this, std::move(receiver));
++  proxy_receivers_.Add(this, std::move(loader_receiver));
+   proxy_receivers_.set_disconnect_handler(base::BindRepeating(
+       &AdblockURLLoaderFactory::OnProxyBindingError, base::Unretained(this)));
+ }
+diff --git a/components/adblock/content/browser/adblock_url_loader_factory.h b/components/adblock/content/browser/adblock_url_loader_factory.h
+--- a/components/adblock/content/browser/adblock_url_loader_factory.h
++++ b/components/adblock/content/browser/adblock_url_loader_factory.h
+@@ -25,6 +25,8 @@
+ #include "mojo/public/cpp/bindings/receiver_set.h"
+ #include "mojo/public/cpp/bindings/remote.h"
+ #include "services/network/public/mojom/url_loader_factory.mojom.h"
++#include "services/network/public/cpp/url_loader_factory_builder.h"
++#include "url/gurl.h"
+ 
+ namespace adblock {
+ 
+@@ -57,9 +59,9 @@ class AdblockURLLoaderFactory : public network::mojom::URLLoaderFactory {
+ 
+   AdblockURLLoaderFactory(
+       AdblockURLLoaderFactoryConfig config,
++      GURL request_initiator,
+       content::GlobalRenderFrameHostId host_id,
+-      mojo::PendingReceiver<network::mojom::URLLoaderFactory> receiver,
+-      mojo::PendingRemote<network::mojom::URLLoaderFactory> target_factory,
++      network::URLLoaderFactoryBuilder& factory_builder,
+       std::string user_agent_string,
+       DisconnectCallback on_disconnect);
+   ~AdblockURLLoaderFactory() override;
+@@ -86,6 +88,7 @@ class AdblockURLLoaderFactory : public network::mojom::URLLoaderFactory {
+   void MaybeDestroySelf();
+ 
+   AdblockURLLoaderFactoryConfig config_;
++  const GURL request_initiator_;
+   content::GlobalRenderFrameHostId host_id_;
+   mojo::ReceiverSet<network::mojom::URLLoaderFactory> proxy_receivers_;
+   std::set<std::unique_ptr<InProgressRequest>, base::UniquePtrComparator>
 diff --git a/components/adblock/content/browser/adblock_webcontents_observer.cc b/components/adblock/content/browser/adblock_webcontents_observer.cc
 --- a/components/adblock/content/browser/adblock_webcontents_observer.cc
 +++ b/components/adblock/content/browser/adblock_webcontents_observer.cc
@@ -2106,6 +2758,152 @@ diff --git a/components/adblock/content/browser/element_hider_impl.cc b/componen
      return;
    }
    auto* info = ElementHiderInfo::GetOrCreateForCurrentDocument(frame_host);
+diff --git a/components/adblock/content/browser/frame_hierarchy_builder.cc b/components/adblock/content/browser/frame_hierarchy_builder.cc
+--- a/components/adblock/content/browser/frame_hierarchy_builder.cc
++++ b/components/adblock/content/browser/frame_hierarchy_builder.cc
+@@ -76,9 +76,8 @@ std::vector<GURL> FrameHierarchyBuilder::BuildFrameHierarchy(
+     content::RenderFrameHost* host) const {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+ 
+-  DCHECK(host) << "RenderFrameHost is needed to build frame hierarchy";
+-
+   std::vector<GURL> referrers_chain;
++  if (!host) return referrers_chain;
+   for (auto* iter = host; iter; iter = iter->GetParent()) {
+     auto last_commited_referrer = GetUrlAsReferrer(iter);
+     if (IsValidForFrameHierarchy(last_commited_referrer)) {
+diff --git a/components/adblock/content/browser/resource_classification_runner.h b/components/adblock/content/browser/resource_classification_runner.h
+--- a/components/adblock/content/browser/resource_classification_runner.h
++++ b/components/adblock/content/browser/resource_classification_runner.h
+@@ -81,12 +81,20 @@ class ResourceClassificationRunner : public KeyedService {
+   virtual void CheckRequestFilterMatch(
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& request_url,
++      const GURL& request_initiator,
+       ContentType adblock_resource_type,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       CheckFilterMatchCallback callback) = 0;
+   virtual void CheckRequestFilterMatchForWebSocket(
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& request_url,
++      const GURL& request_initiator,
++      content::GlobalRenderFrameHostId render_frame_host_id,
++      CheckFilterMatchCallback callback) = 0;
++  virtual void CheckRequestFilterMatchForWebTransport(
++      SubscriptionService::Snapshot subscription_collections,
++      const GURL& request_url,
++      const GURL& request_initiator,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       CheckFilterMatchCallback callback) = 0;
+   // No callback, just notify observers
+diff --git a/components/adblock/content/browser/resource_classification_runner_impl.cc b/components/adblock/content/browser/resource_classification_runner_impl.cc
+--- a/components/adblock/content/browser/resource_classification_runner_impl.cc
++++ b/components/adblock/content/browser/resource_classification_runner_impl.cc
+@@ -169,15 +169,28 @@ void ResourceClassificationRunnerImpl::CheckPopupFilterMatch(
+ void ResourceClassificationRunnerImpl::CheckRequestFilterMatchForWebSocket(
+     SubscriptionService::Snapshot subscription_collections,
+     const GURL& request_url,
++    const GURL& request_initiator,
+     content::GlobalRenderFrameHostId render_frame_host_id,
+     CheckFilterMatchCallback callback) {
+   DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
+   DCHECK(request_url.SchemeIsWSOrWSS());
+-  CheckRequestFilterMatch(std::move(subscription_collections), request_url,
++  CheckRequestFilterMatch(std::move(subscription_collections), request_url, request_initiator,
+                           ContentType::Websocket, render_frame_host_id,
+                           std::move(callback));
+ }
+ 
++void ResourceClassificationRunnerImpl::CheckRequestFilterMatchForWebTransport(
++    SubscriptionService::Snapshot subscription_collections,
++    const GURL& request_url,
++    const GURL& request_initiator,
++    content::GlobalRenderFrameHostId render_frame_host_id,
++    CheckFilterMatchCallback callback) {
++  DCHECK_CALLED_ON_VALID_SEQUENCE(sequence_checker_);
++  CheckRequestFilterMatch(std::move(subscription_collections), request_url, request_initiator,
++                          ContentType::Other, render_frame_host_id,
++                          std::move(callback));
++}
++
+ void ResourceClassificationRunnerImpl::CheckDocumentAllowlisted(
+     SubscriptionService::Snapshot subscription_collections,
+     const GURL& request_url,
+@@ -212,6 +225,7 @@ void ResourceClassificationRunnerImpl::ProcessDocumentAllowlistedResponse(
+ void ResourceClassificationRunnerImpl::CheckRequestFilterMatch(
+     SubscriptionService::Snapshot subscription_collections,
+     const GURL& request_url,
++    const GURL& request_initiator,
+     ContentType adblock_resource_type,
+     content::GlobalRenderFrameHostId frame_host_id,
+     CheckFilterMatchCallback callback) {
+@@ -220,14 +234,10 @@ void ResourceClassificationRunnerImpl::CheckRequestFilterMatch(
+   DVLOG(1) << "[eyeo] CheckRequestFilterMatchImpl for " << request_url.spec();
+ 
+   auto* host = content::RenderFrameHost::FromID(frame_host_id);
+-  if (!host) {
+-    // Host has died, likely because this is a deferred execution. It does not
+-    // matter anymore whether the resource is blocked, the page is gone.
+-    std::move(callback).Run(FilterMatchResult::kNoRule);
+-    return;
+-  }
+-  const std::vector<GURL> frame_hierarchy_chain =
++  std::vector<GURL> frame_hierarchy_chain =
+       frame_hierarchy_builder_->BuildFrameHierarchy(host);
++  if (!host && frame_hierarchy_chain.size() == 0)
++    frame_hierarchy_chain.emplace_back(request_initiator.GetAsReferrer());
+ 
+   DVLOG(1) << "[eyeo] Got " << frame_hierarchy_chain.size()
+            << " frame_hierarchy for " << request_url.spec();
+@@ -275,7 +285,8 @@ ResourceClassificationRunnerImpl::CheckRequestFilterMatchInternal(
+       adblock_resource_type, sitekey);
+ 
+   if (classification_result.decision == ClassificationDecision::Allowed) {
+-    VLOG(1) << "[eyeo] Document allowed due to allowing filter " << request_url;
++    VLOG(1) << "[eyeo] Document allowed due to allowing filter " << request_url
++            << " " << classification_result.decisive_subscription.spec();
+     return CheckResourceFilterMatchResult{
+         FilterMatchResult::kAllowRule,
+         classification_result.decisive_subscription,
+@@ -290,6 +301,7 @@ ResourceClassificationRunnerImpl::CheckRequestFilterMatchInternal(
+         classification_result.decisive_configuration_name};
+   }
+ 
++  VLOG(1) << "[eyeo] No Rule for " << request_url;
+   return CheckResourceFilterMatchResult{FilterMatchResult::kNoRule, {}, {}};
+ }
+ 
+diff --git a/components/adblock/content/browser/resource_classification_runner_impl.h b/components/adblock/content/browser/resource_classification_runner_impl.h
+--- a/components/adblock/content/browser/resource_classification_runner_impl.h
++++ b/components/adblock/content/browser/resource_classification_runner_impl.h
+@@ -55,12 +55,14 @@ class ResourceClassificationRunnerImpl final
+   void CheckRequestFilterMatch(
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& request_url,
++      const GURL& request_initiator,
+       ContentType adblock_resource_type,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       CheckFilterMatchCallback callback) final;
+   void CheckRequestFilterMatchForWebSocket(
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& request_url,
++      const GURL& request_initiator,
+       content::GlobalRenderFrameHostId render_frame_host_id,
+       CheckFilterMatchCallback callback) final;
+   // No callback, just notify observers
+@@ -68,6 +70,12 @@ class ResourceClassificationRunnerImpl final
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& request_url,
+       content::GlobalRenderFrameHostId render_frame_host_id) final;
++  void CheckRequestFilterMatchForWebTransport(
++      SubscriptionService::Snapshot subscription_collections,
++      const GURL& request_url,
++      const GURL& request_initiator,
++      content::GlobalRenderFrameHostId render_frame_host_id,
++      CheckFilterMatchCallback callback) final;
+   void CheckResponseFilterMatch(
+       SubscriptionService::Snapshot subscription_collections,
+       const GURL& response_url,
 diff --git a/components/adblock/content/browser/subscription_service_factory_base.cc b/components/adblock/content/browser/subscription_service_factory_base.cc
 --- a/components/adblock/content/browser/subscription_service_factory_base.cc
 +++ b/components/adblock/content/browser/subscription_service_factory_base.cc
@@ -4378,6 +5176,52 @@ diff --git a/components/adblock/core/subscription/subscription_validator_impl.cc
      return false;
    }
    return true;
+diff --git a/components/blocked_content/popup_blocker.cc b/components/blocked_content/popup_blocker.cc
+--- a/components/blocked_content/popup_blocker.cc
++++ b/components/blocked_content/popup_blocker.cc
+@@ -20,6 +20,11 @@
+ #include "third_party/blink/public/mojom/frame/frame.mojom-shared.h"
+ 
+ namespace blocked_content {
++
++CROMITE_FEATURE(kStrictPopupBlocker,
++                "StrictPopupBlocker",
++                base::FEATURE_DISABLED_BY_DEFAULT);
++
+ namespace {
+ 
+ content::Page& GetSourcePageForPopup(
+@@ -91,7 +96,9 @@ PopupBlockType ShouldBlockPopup(content::WebContents* web_contents,
+           GetSourcePageForPopup(open_url_params, web_contents))) {
+     return PopupBlockType::kAbusive;
+   }
+-  return PopupBlockType::kNotBlocked;
++  return base::FeatureList::IsEnabled(kStrictPopupBlocker)
++           ? PopupBlockType::kAbusive
++           : PopupBlockType::kNotBlocked;
+ }
+ 
+ }  // namespace
+diff --git a/components/blocked_content/popup_blocker.h b/components/blocked_content/popup_blocker.h
+--- a/components/blocked_content/popup_blocker.h
++++ b/components/blocked_content/popup_blocker.h
+@@ -5,6 +5,7 @@
+ #ifndef COMPONENTS_BLOCKED_CONTENT_POPUP_BLOCKER_H_
+ #define COMPONENTS_BLOCKED_CONTENT_POPUP_BLOCKER_H_
+ 
++#include "base/feature_list.h"
+ #include "components/content_settings/core/browser/host_content_settings_map.h"
+ #include "third_party/blink/public/mojom/window_features/window_features.mojom-forward.h"
+ #include "ui/base/window_open_disposition.h"
+@@ -18,6 +19,8 @@ struct OpenURLParams;
+ }  // namespace content
+ 
+ namespace blocked_content {
++BASE_DECLARE_FEATURE(kStrictPopupBlocker);
++
+ class PopupNavigationDelegate;
+ 
+ // Classifies what caused a popup to be blocked.
 diff --git a/components/content_settings/core/browser/bromite_content_settings/ads.inc b/components/content_settings/core/browser/bromite_content_settings/ads.inc
 new file mode 100644
 --- /dev/null
@@ -4389,7 +5233,7 @@ new file mode 100644
 diff --git a/components/resources/BUILD.gn b/components/resources/BUILD.gn
 --- a/components/resources/BUILD.gn
 +++ b/components/resources/BUILD.gn
-@@ -79,7 +79,6 @@ grit("components_resources") {
+@@ -81,7 +81,6 @@ grit("components_resources") {
  
    deps += [
      "//components/resources/adblocking:copy_snippets_lib",
@@ -11954,10 +12798,98 @@ new file mode 100755
 +    document.addEventListener("readystatechange", append, {once:true});
 +  }
 +}
+diff --git a/content/browser/websockets/websocket_connector_impl.cc b/content/browser/websockets/websocket_connector_impl.cc
+--- a/content/browser/websockets/websocket_connector_impl.cc
++++ b/content/browser/websockets/websocket_connector_impl.cc
+@@ -89,14 +89,14 @@ void WebSocketConnectorImpl::Connect(
+   const uint32_t options =
+       GetContentClient()->browser()->GetWebSocketOptions(frame);
+ 
+-  if (GetContentClient()->browser()->WillInterceptWebSocket(frame)) {
++  if (GetContentClient()->browser()->WillInterceptWebSocket(frame, process, origin_)) {
+     GetContentClient()->browser()->CreateWebSocket(
+-        frame,
++        process, frame,
+         base::BindOnce(ConnectCalledByContentBrowserClient, requested_protocols,
+                        site_for_cookies, has_storage_access, isolation_info_,
+                        process_id_, frame_id_, origin_, options,
+                        std::move(throttling_profile_id)),
+-        url, site_for_cookies, user_agent, std::move(handshake_client));
++        url, origin_, site_for_cookies, user_agent, std::move(handshake_client));
+     return;
+   }
+   std::vector<network::mojom::HttpHeaderPtr> headers;
+diff --git a/content/public/browser/content_browser_client.cc b/content/public/browser/content_browser_client.cc
+--- a/content/public/browser/content_browser_client.cc
++++ b/content/public/browser/content_browser_client.cc
+@@ -1019,7 +1019,7 @@ void ContentBrowserClient::WillCreateURLLoaderFactory(
+   DCHECK(browser_context);
+ }
+ 
+-bool ContentBrowserClient::WillInterceptWebSocket(RenderFrameHost*) {
++bool ContentBrowserClient::WillInterceptWebSocket(RenderFrameHost*, RenderProcessHost*, const url::Origin& origin) {
+   return false;
+ }
+ 
+@@ -1028,9 +1028,11 @@ uint32_t ContentBrowserClient::GetWebSocketOptions(RenderFrameHost* frame) {
+ }
+ 
+ void ContentBrowserClient::CreateWebSocket(
++    RenderProcessHost* process,
+     RenderFrameHost* frame,
+     WebSocketFactory factory,
+     const GURL& url,
++    const url::Origin& initiator_origin,
+     const net::SiteForCookies& site_for_cookies,
+     const std::optional<std::string>& user_agent,
+     mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+diff --git a/content/public/browser/content_browser_client.h b/content/public/browser/content_browser_client.h
+--- a/content/public/browser/content_browser_client.h
++++ b/content/public/browser/content_browser_client.h
+@@ -1896,7 +1896,7 @@ class CONTENT_EXPORT ContentBrowserClient {
+       scoped_refptr<base::SequencedTaskRunner> navigation_response_task_runner);
+ 
+   // Returns true when the embedder wants to intercept a websocket connection.
+-  virtual bool WillInterceptWebSocket(RenderFrameHost* frame);
++  virtual bool WillInterceptWebSocket(RenderFrameHost* frame, RenderProcessHost* process, const url::Origin& origin);
+ 
+   // Returns the WebSocket creation options.
+   virtual uint32_t GetWebSocketOptions(RenderFrameHost* frame);
+@@ -1918,9 +1918,11 @@ class CONTENT_EXPORT ContentBrowserClient {
+   // Always called on the UI thread and only when the Network Service is
+   // enabled.
+   virtual void CreateWebSocket(
++      RenderProcessHost* process,
+       RenderFrameHost* frame,
+       WebSocketFactory factory,
+       const GURL& url,
++      const url::Origin& initiator_origin,
+       const net::SiteForCookies& site_for_cookies,
+       const std::optional<std::string>& user_agent,
+       mojo::PendingRemote<network::mojom::WebSocketHandshakeClient>
+diff --git a/cromite_flags/chrome/browser/about_flags_cc/Stricter-popup-blocker.inc b/cromite_flags/chrome/browser/about_flags_cc/Stricter-popup-blocker.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/chrome/browser/about_flags_cc/Stricter-popup-blocker.inc
+@@ -0,0 +1,14 @@
++#ifdef ABOUT_FLAG_INCLUDE_SECTION
++
++#include "components/blocked_content/popup_blocker.h"
++
++#endif
++
++#ifdef FLAG_SECTION
++
++    {"enable-stricter-popup-blocker",
++     "Enable Stricter popup blocker",
++     "Blocks all pop-ups, even those with user gestures.", kOsAll,
++     FEATURE_VALUE_TYPE(blocked_content::kStrictPopupBlocker)},
++
++#endif // ifdef FLAG_SECTION
 diff --git a/third_party/blink/renderer/core/css/style_engine.cc b/third_party/blink/renderer/core/css/style_engine.cc
 --- a/third_party/blink/renderer/core/css/style_engine.cc
 +++ b/third_party/blink/renderer/core/css/style_engine.cc
-@@ -627,6 +627,14 @@ void StyleEngine::UpdateActiveStyleSheetsInShadow(
+@@ -633,6 +633,14 @@ void StyleEngine::UpdateActiveStyleSheetsInShadow(
    }
  }
  
@@ -11975,7 +12907,7 @@ diff --git a/third_party/blink/renderer/core/css/style_engine.cc b/third_party/b
 diff --git a/third_party/blink/renderer/core/css/style_engine.h b/third_party/blink/renderer/core/css/style_engine.h
 --- a/third_party/blink/renderer/core/css/style_engine.h
 +++ b/third_party/blink/renderer/core/css/style_engine.h
-@@ -249,6 +249,7 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
+@@ -250,6 +250,7 @@ class CORE_EXPORT StyleEngine final : public GarbageCollected<StyleEngine>,
        const ComputedStyle* embedder_style) const;
    void ViewportStyleSettingChanged();
  
@@ -11986,7 +12918,7 @@ diff --git a/third_party/blink/renderer/core/css/style_engine.h b/third_party/bl
 diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_party/blink/renderer/core/exported/web_document.cc
 --- a/third_party/blink/renderer/core/exported/web_document.cc
 +++ b/third_party/blink/renderer/core/exported/web_document.cc
-@@ -276,6 +276,16 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -288,6 +288,16 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
    Document* document = Unwrap<Document>();
    DCHECK(document);
  
@@ -12003,7 +12935,7 @@ diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_pa
    auto* parsed_sheet = MakeGarbageCollected<StyleSheetContents>(
        MakeGarbageCollected<CSSParserContext>(*document));
    parsed_sheet->ParseString(source_code);
-@@ -285,7 +295,7 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -297,7 +307,7 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
      if (IsValidAbpRule(parsed_sheet->RuleAt(n)))
        ++n;
      else {
@@ -12012,7 +12944,7 @@ diff --git a/third_party/blink/renderer/core/exported/web_document.cc b/third_pa
        parsed_sheet->WrapperDeleteRule(n);
        LOG(WARNING) << "[eyeo] Broken rule";
      }
-@@ -297,9 +307,6 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
+@@ -309,9 +319,6 @@ WebStyleSheetKey WebDocument::InsertAbpElemhideStylesheet(
          {SchedulingPolicy::DisableBackForwardCache()});
    }
  

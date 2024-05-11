@@ -4,13 +4,13 @@ Subject: WIN enable HighEfficiencyMode by default
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- components/performance_manager/user_tuning/prefs.cc | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ components/performance_manager/user_tuning/prefs.cc | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/components/performance_manager/user_tuning/prefs.cc b/components/performance_manager/user_tuning/prefs.cc
 --- a/components/performance_manager/user_tuning/prefs.cc
 +++ b/components/performance_manager/user_tuning/prefs.cc
-@@ -13,12 +13,12 @@
+@@ -23,15 +23,15 @@
  namespace performance_manager::user_tuning::prefs {
  
  void RegisterLocalStatePrefs(PrefRegistrySimple* registry) {
@@ -24,5 +24,9 @@ diff --git a/components/performance_manager/user_tuning/prefs.cc b/components/pe
 +      kMemorySaverModeState, static_cast<int>(MemorySaverModeState::kEnabled));
    registry->RegisterIntegerPref(
        kBatterySaverModeState,
-       static_cast<int>(BatterySaverModeState::kEnabledBelowThreshold));
+-      static_cast<int>(BatterySaverModeState::kEnabledBelowThreshold));
++      static_cast<int>(BatterySaverModeState::kDisabled));
+   registry->RegisterTimePref(kLastBatteryUseTimestamp, base::Time());
+ }
+ 
 --

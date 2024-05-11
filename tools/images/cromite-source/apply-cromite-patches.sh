@@ -26,6 +26,16 @@ mv third_party/devtools-frontend-bis third_party/devtools-frontend
 git add -f third_party/devtools-frontend >/dev/null
 git commit -m ":NOEXPORT: third_party/devtools-frontend repo" >/dev/null
 
+echo -e ${RED} ------- remove skia subrepo ${NC}
+rm -rf third_party/skia/.git 
+cp -r third_party/skia third_party/skia-bis
+git rm -rf third_party/skia || true
+git submodule deinit -f third_party/skia || true
+rm -rf third_party/skia
+mv third_party/skia-bis third_party/skia
+git add -f third_party/skia >/dev/null
+git commit -m ":NOEXPORT: third_party/skia repo" >/dev/null
+
 git prune
 
 echo -e ${RED} ------- patches ${NC}

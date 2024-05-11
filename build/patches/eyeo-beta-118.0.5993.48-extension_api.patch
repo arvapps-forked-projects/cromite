@@ -74,7 +74,7 @@ diff --git a/chrome/browser/extensions/BUILD.gn b/chrome/browser/extensions/BUIL
      "api/favicon/favicon_util.cc",
      "api/favicon/favicon_util.h",
      "api/feedback_private/chrome_feedback_private_delegate.cc",
-@@ -812,6 +820,7 @@ static_library("extensions") {
+@@ -820,6 +828,7 @@ static_library("extensions") {
      "//chrome/browser/safe_browsing:metrics_collector",
      "//chrome/browser/ui/tabs:tab_enums",
      "//chrome/browser/web_applications",
@@ -2134,7 +2134,7 @@ diff --git a/chrome/browser/extensions/api/api_browser_context_keyed_service_fac
  #include "chrome/browser/extensions/api/font_settings/font_settings_api.h"
  #include "chrome/browser/extensions/api/history/history_api.h"
  #include "chrome/browser/extensions/api/identity/identity_api.h"
-@@ -79,6 +85,7 @@ namespace chrome_extensions {
+@@ -80,6 +86,7 @@ namespace chrome_extensions {
  
  void EnsureApiBrowserContextKeyedServiceFactoriesBuilt() {
    extensions::ActivityLogAPI::GetFactoryInstance();
@@ -2142,7 +2142,7 @@ diff --git a/chrome/browser/extensions/api/api_browser_context_keyed_service_fac
    extensions::AutofillPrivateEventRouterFactory::GetInstance();
    extensions::BluetoothLowEnergyAPI::GetFactoryInstance();
    extensions::BookmarksAPI::GetFactoryInstance();
-@@ -91,6 +98,7 @@ void EnsureApiBrowserContextKeyedServiceFactoriesBuilt() {
+@@ -92,6 +99,7 @@ void EnsureApiBrowserContextKeyedServiceFactoriesBuilt() {
    extensions::DocumentScanAPIHandler::GetFactoryInstance();
  #endif
    extensions::ExtensionActionAPI::GetFactoryInstance();
@@ -3472,7 +3472,7 @@ diff --git a/chrome/browser/extensions/api/settings_private/prefs_util.cc b/chro
  #include "chrome/browser/extensions/api/settings_private/prefs_util.h"
  
  #include <memory>
-@@ -27,6 +31,7 @@
+@@ -28,6 +32,7 @@
  #include "chrome/browser/ssl/generated_https_first_mode_pref.h"
  #include "chrome/common/chrome_features.h"
  #include "chrome/common/pref_names.h"
@@ -3480,8 +3480,8 @@ diff --git a/chrome/browser/extensions/api/settings_private/prefs_util.cc b/chro
  #include "components/autofill/core/common/autofill_prefs.h"
  #include "components/bookmarks/common/bookmark_pref_names.h"
  #include "components/browsing_data/core/pref_names.h"
-@@ -175,6 +180,20 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
-     return *s_allowlist;
+@@ -181,6 +186,20 @@ const PrefsUtil::TypedPrefMap& PrefsUtil::GetAllowlistedKeys() {
+   }
    s_allowlist = new PrefsUtil::TypedPrefMap();
  
 +  // Adblock settings
@@ -3529,7 +3529,7 @@ diff --git a/chrome/browser/extensions/extension_function_registration_test.cc b
  
  #include "base/one_shot_event.h"
  #include "chrome/browser/extensions/extension_browsertest.h"
-@@ -56,6 +60,12 @@ IN_PROC_BROWSER_TEST_F(ExtensionFunctionRegistrationTest,
+@@ -57,6 +61,12 @@ IN_PROC_BROWSER_TEST_F(ExtensionFunctionRegistrationTest,
                             base::CompareCase::SENSITIVE)) {
          continue;
        }
@@ -3556,7 +3556,7 @@ diff --git a/chrome/common/extensions/api/_api_features.json b/chrome/common/ext
  
  // This features file defines extension APIs implemented under src/chrome.
  // See chrome/common/extensions/api/_features.md to understand this file, as
-@@ -94,6 +98,16 @@
+@@ -58,6 +62,16 @@
        "chrome://extensions/*"
      ]
    }],
@@ -3573,7 +3573,7 @@ diff --git a/chrome/common/extensions/api/_api_features.json b/chrome/common/ext
    "app": {
      "blocklist": [
        "2FC374607C2DF285634B67C64A2E356C607091C3",  // Quickoffice
-@@ -526,6 +540,14 @@
+@@ -482,6 +496,14 @@
      "channel": "stable",
      "contexts": []
    },
@@ -4146,15 +4146,15 @@ diff --git a/extensions/common/mojom/api_permission_id.mojom b/extensions/common
 diff --git a/tools/metrics/histograms/metadata/extensions/enums.xml b/tools/metrics/histograms/metadata/extensions/enums.xml
 --- a/tools/metrics/histograms/metadata/extensions/enums.xml
 +++ b/tools/metrics/histograms/metadata/extensions/enums.xml
-@@ -750,6 +750,7 @@ Called by update_extension_histograms.py.-->
-   <int value="553" label="PDF_VIEWER_PRIVATE_ON_SAVE"/>
+@@ -752,6 +752,7 @@ Called by update_extension_histograms.py.-->
    <int value="554"
        label="ACCESSIBILITY_PRIVATE_ON_SELECT_TO_SPEAK_FOCUS_CHANGED"/>
-+  <int value="555" label="EYEO_EVENT"/>
+   <int value="555" label="TTS_ON_VOICES_CHANGED"/>
++  <int value="556" label="EYEO_EVENT"/>
  </enum>
  
  <enum name="ExtensionForceInstalledPreInstalledDeprecatedSite">
-@@ -3093,6 +3094,8 @@ Called by update_extension_permission.py.-->
+@@ -3099,6 +3100,8 @@ Called by update_extension_permission.py.-->
    <int value="255" label="kEnterpriseKioskInput"/>
    <int value="256" label="kOdfsConfigPrivate"/>
    <int value="257" label="kChromeOSManagementAudio"/>

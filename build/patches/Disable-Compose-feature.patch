@@ -4,18 +4,28 @@ Subject: Disable Compose feature
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- components/compose/core/browser/compose_features.cc | 3 +++
- 1 file changed, 3 insertions(+)
+ components/compose/core/browser/compose_features.cc | 2 ++
+ components/compose/features.gni                     | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/components/compose/core/browser/compose_features.cc b/components/compose/core/browser/compose_features.cc
 --- a/components/compose/core/browser/compose_features.cc
 +++ b/components/compose/core/browser/compose_features.cc
-@@ -48,4 +48,7 @@ BASE_FEATURE(kEnableComposeSavedStateNotification,
- BASE_FEATURE(kComposeUiParams,
-              "ComposeUiParams",
-              base::FEATURE_DISABLED_BY_DEFAULT);
-+
+@@ -61,4 +61,6 @@ BASE_FEATURE(kComposeRequestLatencyTimeout,
+              "ComposeRequestLatencyTimeout",
+              base::FEATURE_ENABLED_BY_DEFAULT);
+ 
 +SET_CROMITE_FEATURE_DISABLED(kEnableCompose);
 +SET_CROMITE_FEATURE_DISABLED(kComposeEligible);
  }  // namespace compose::features
+diff --git a/components/compose/features.gni b/components/compose/features.gni
+--- a/components/compose/features.gni
++++ b/components/compose/features.gni
+@@ -4,5 +4,5 @@
+ 
+ declare_args() {
+   # Whether Compose is enabled in the build.
+-  enable_compose = is_mac || is_win || is_linux || is_chromeos
++  enable_compose = false
+ }
 --

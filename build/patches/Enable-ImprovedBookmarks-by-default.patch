@@ -62,15 +62,15 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/Bookm
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/BookmarkUtils.java b/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/BookmarkUtils.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/BookmarkUtils.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/BookmarkUtils.java
-@@ -39,6 +39,7 @@ import org.chromium.chrome.browser.app.bookmarks.BookmarkAddEditFolderActivity;
+@@ -39,6 +39,7 @@ import org.chromium.chrome.browser.app.bookmarks.BookmarkActivity;
+ import org.chromium.chrome.browser.app.bookmarks.BookmarkAddEditFolderActivity;
  import org.chromium.chrome.browser.app.bookmarks.BookmarkEditActivity;
- import org.chromium.chrome.browser.app.bookmarks.BookmarkFolderPickerActivity;
  import org.chromium.chrome.browser.app.bookmarks.BookmarkFolderSelectActivity;
 +import org.chromium.chrome.browser.bookmarks.BookmarkFeatures;
  import org.chromium.chrome.browser.bookmarks.BookmarkUiPrefs.BookmarkRowDisplayPref;
  import org.chromium.chrome.browser.commerce.ShoppingServiceFactory;
  import org.chromium.chrome.browser.document.ChromeLauncherActivity;
-@@ -489,7 +490,7 @@ public class BookmarkUtils {
+@@ -528,7 +529,7 @@ public class BookmarkUtils {
              RecordUserAction.record("MobileBookmarkManagerReopenBookmarksInSameSession");
          }
  
@@ -82,15 +82,15 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/bookmarks/Bookm
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -768,7 +768,7 @@ public abstract class ChromeFeatureList {
+@@ -811,7 +811,7 @@ public abstract class ChromeFeatureList {
      public static final MutableFlagWithSafeDefault sAdvancedPeripheralsSupportTabStrip =
              newMutableFlagWithSafeDefault(ADVANCED_PERIPHERALS_SUPPORT_TAB_STRIP, true);
      public static final MutableFlagWithSafeDefault sAndroidImprovedBookmarks =
 -            newMutableFlagWithSafeDefault(ANDROID_IMPROVED_BOOKMARKS, false);
 +            newMutableFlagWithSafeDefault(ANDROID_IMPROVED_BOOKMARKS, true);
-     public static final MutableFlagWithSafeDefault sDeferKeepScreenOnDuringGesture =
-             newMutableFlagWithSafeDefault(DEFER_KEEP_SCREEN_ON_DURING_GESTURE, false);
-     public static final MutableFlagWithSafeDefault sDeferNotifyInMotion =
+     public static final MutableFlagWithSafeDefault sBrowserControlsEarlyResize =
+             newMutableFlagWithSafeDefault(BROWSER_CONTROLS_EARLY_RESIZE, false);
+     public static final MutableFlagWithSafeDefault sIncognitoNtpRevamp =
 diff --git a/components/bookmarks/browser/bookmark_node.cc b/components/bookmarks/browser/bookmark_node.cc
 --- a/components/bookmarks/browser/bookmark_node.cc
 +++ b/components/bookmarks/browser/bookmark_node.cc

@@ -115,7 +115,7 @@ diff --git a/skia/ext/skia_utils_win.h b/skia/ext/skia_utils_win.h
 diff --git a/third_party/blink/public/common/features.h b/third_party/blink/public/common/features.h
 --- a/third_party/blink/public/common/features.h
 +++ b/third_party/blink/public/common/features.h
-@@ -277,6 +277,9 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kCompressParkableStrings);
+@@ -316,6 +316,9 @@ BLINK_COMMON_EXPORT BASE_DECLARE_FEATURE(kCompressParkableStrings);
  BLINK_COMMON_EXPORT extern const base::FeatureParam<int>
      kMaxDiskDataAllocatorCapacityMB;
  
@@ -128,7 +128,7 @@ diff --git a/third_party/blink/public/common/features.h b/third_party/blink/publ
 diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/renderer/platform/BUILD.gn
 --- a/third_party/blink/renderer/platform/BUILD.gn
 +++ b/third_party/blink/renderer/platform/BUILD.gn
-@@ -759,6 +759,7 @@ component("platform") {
+@@ -765,6 +765,7 @@ component("platform") {
      "fonts/simple_font_data.cc",
      "fonts/simple_font_data.h",
      "fonts/skia/font_cache_skia.cc",
@@ -139,7 +139,7 @@ diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/re
 diff --git a/third_party/blink/renderer/platform/fonts/font_cache.h b/third_party/blink/renderer/platform/fonts/font_cache.h
 --- a/third_party/blink/renderer/platform/fonts/font_cache.h
 +++ b/third_party/blink/renderer/platform/fonts/font_cache.h
-@@ -328,7 +328,7 @@ class PLATFORM_EXPORT FontCache final {
+@@ -310,7 +310,7 @@ class PLATFORM_EXPORT FontCache final {
  
    sk_sp<SkTypeface> CreateTypeface(const FontDescription&,
                                     const FontFaceCreationParams&,
@@ -444,16 +444,16 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
    return AtomicString::FromUTF8(str.c_str(), str.size());
  }
  
-+sk_sp<SkTypeface> ReturnIfAllowed(sk_sp<SkTypeface> typeface, bool check_fonts) {
++sk_sp<SkTypeface> ReturnIfAllowed(sk_sp<SkTypeface> typeface, const std::string& name, bool check_fonts) {
 +  if (!check_fonts) return typeface;
-+#if BUILDFLAG(IS_WIN)
 +  if (!typeface) return nullptr;
 +
++#if BUILDFLAG(IS_WIN)
 +  SkString skia_family_name;
 +  skia::DWriteFontTypeface_GetGDIFamilyName(typeface.get(), &skia_family_name);
 +  const AtomicString& family = ToAtomicString(skia_family_name);
-+  std::string name = family.Utf8();
-+  if (!IsFontAllowed(base::UTF8ToUTF16(name)))
++  std::string family_name = family.Utf8();
++  if (!IsFontAllowed(base::UTF8ToUTF16(family_name)))
 +    return nullptr;
 +#endif // BUILDFLAG(IS_WIN)
 +  return typeface;
@@ -462,7 +462,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
  #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
  // This function is called on android or when we are emulating android fonts on
  // linux and the embedder has overriden the default fontManager with
-@@ -202,7 +225,7 @@ scoped_refptr<SimpleFontData> FontCache::GetLastResortFallbackFont(
+@@ -201,7 +224,7 @@ const SimpleFontData* FontCache::GetLastResortFallbackFont(
  sk_sp<SkTypeface> FontCache::CreateTypeface(
      const FontDescription& font_description,
      const FontFaceCreationParams& creation_params,
@@ -471,7 +471,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
  #if !BUILDFLAG(IS_WIN) && !BUILDFLAG(IS_ANDROID) && !BUILDFLAG(IS_FUCHSIA)
    // TODO(fuchsia): Revisit this and other font code for Fuchsia.
  
-@@ -220,6 +243,16 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
+@@ -219,6 +242,16 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
    DCHECK_NE(family, font_family_names::kSystemUi);
    // convert the name to utf8
    name = family.Utf8();
@@ -488,12 +488,12 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
  
  #if BUILDFLAG(IS_ANDROID)
    // If this is a locale-specific family, try looking up locale-specific
-@@ -227,15 +260,15 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
+@@ -226,15 +259,15 @@ sk_sp<SkTypeface> FontCache::CreateTypeface(
    if (const char* locale_family = GetLocaleSpecificFamilyName(family)) {
      if (sk_sp<SkTypeface> typeface =
              CreateLocaleSpecificTypeface(font_description, locale_family))
 -      return typeface;
-+      return ReturnIfAllowed(typeface, check_fonts);
++      return ReturnIfAllowed(typeface, name, check_fonts);
    }
  #endif  // BUILDFLAG(IS_ANDROID)
  
@@ -503,11 +503,11 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
 -  return sk_sp<SkTypeface>(font_manager->matchFamilyStyle(
 -      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle()));
 +  return ReturnIfAllowed(sk_sp<SkTypeface>(font_manager->matchFamilyStyle(
-+      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle())), check_fonts);
++      name.empty() ? nullptr : name.c_str(), font_description.SkiaFontStyle())), name, check_fonts);
  }
  
  #if !BUILDFLAG(IS_WIN)
-@@ -245,6 +278,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -244,6 +277,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
      float font_size,
      AlternateFontName alternate_name) {
    std::string name;
@@ -515,7 +515,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
  
    sk_sp<SkTypeface> typeface;
  #if BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_CHROMEOS)
-@@ -265,7 +299,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -264,7 +298,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
         noto_color_emoji_from_gmscore)) {
      typeface = CreateTypefaceFromUniqueName(creation_params);
    } else {
@@ -527,7 +527,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/skia/font_cache_skia.cc b
 diff --git a/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc b/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
 --- a/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
 +++ b/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.cc
-@@ -427,6 +427,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -426,6 +426,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
    sk_sp<SkTypeface> typeface;
  
    std::string name;
@@ -535,7 +535,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.c
  
    if (alternate_font_name == AlternateFontName::kLocalUniqueFace &&
        RuntimeEnabledFeatures::FontSrcLocalMatchingEnabled()) {
-@@ -438,7 +439,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -437,7 +438,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
        return nullptr;
  
    } else {
@@ -544,7 +544,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.c
  
      // For a family match, Windows will always give us a valid pointer here,
      // even if the face name is non-existent. We have to double-check and see if
-@@ -472,7 +473,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -471,7 +472,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
          FontDescription adjusted_font_description = font_description;
          adjusted_font_description.SetWeight(variant_weight);
          typeface =
@@ -553,7 +553,7 @@ diff --git a/third_party/blink/renderer/platform/fonts/win/font_cache_skia_win.c
          if (!typeface ||
              !TypefacesMatchesFamily(typeface.get(), adjusted_name)) {
            return nullptr;
-@@ -484,7 +485,7 @@ std::unique_ptr<FontPlatformData> FontCache::CreateFontPlatformData(
+@@ -483,7 +484,7 @@ const FontPlatformData* FontCache::CreateFontPlatformData(
          FontDescription adjusted_font_description = font_description;
          adjusted_font_description.SetStretch(variant_stretch);
          typeface =

@@ -38,9 +38,9 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  .../proxy_config/proxy_config_dictionary.cc   |  30 +-
  .../proxy_config/proxy_config_dictionary.h    |   7 +-
  .../proxy_config/proxy_policy_handler.cc      |   2 +-
- net/proxy_resolution/proxy_config.cc          |  52 ++-
+ net/proxy_resolution/proxy_config.cc          |  51 ++-
  net/proxy_resolution/proxy_config.h           |   3 +
- 25 files changed, 981 insertions(+), 17 deletions(-)
+ 25 files changed, 980 insertions(+), 17 deletions(-)
  create mode 100644 chrome/browser/resources/proxy_config.css
  create mode 100644 chrome/browser/resources/proxy_config.html
  create mode 100644 chrome/browser/resources/proxy_config.js
@@ -77,7 +77,7 @@ diff --git a/chrome/android/java/res/xml/privacy_preferences.xml b/chrome/androi
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/privacy/settings/PrivacySettings.java
-@@ -76,6 +76,7 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
+@@ -78,6 +78,7 @@ public class PrivacySettings extends ChromeBaseSettingsFragment
      private static final String PREF_SAFE_BROWSING = "safe_browsing";
      private static final String PREF_SYNC_AND_SERVICES_LINK = "sync_and_services_link";
      private static final String PREF_PRIVACY_SANDBOX = "privacy_sandbox";
@@ -88,7 +88,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/privacy/setting
 diff --git a/chrome/browser/autocomplete/chrome_autocomplete_provider_client.cc b/chrome/browser/autocomplete/chrome_autocomplete_provider_client.cc
 --- a/chrome/browser/autocomplete/chrome_autocomplete_provider_client.cc
 +++ b/chrome/browser/autocomplete/chrome_autocomplete_provider_client.cc
-@@ -302,6 +302,8 @@ ChromeAutocompleteProviderClient::GetBuiltinsToProvideAsUserTypes() {
+@@ -303,6 +303,8 @@ ChromeAutocompleteProviderClient::GetBuiltinsToProvideAsUserTypes() {
    builtins_to_provide.push_back(
        base::ASCIIToUTF16(chrome::kChromeUISettingsURL));
  #endif
@@ -100,8 +100,8 @@ diff --git a/chrome/browser/autocomplete/chrome_autocomplete_provider_client.cc 
 diff --git a/chrome/browser/browser_resources.grd b/chrome/browser/browser_resources.grd
 --- a/chrome/browser/browser_resources.grd
 +++ b/chrome/browser/browser_resources.grd
-@@ -237,6 +237,9 @@
-         <include name="IDR_PREF_HASH_SEED_BIN" file="resources\settings_internal\pref_hash_seed.bin" type="BINDATA" />
+@@ -234,6 +234,9 @@
+         <include name="IDR_PREF_HASH_SEED_BIN" file="resources\settings\internal\pref_hash_seed.bin" type="BINDATA" />
          <include name="IDR_ADDITIONAL_MODULE_IDS" file="${additional_modules_list_file}" use_base_dir="false" type="BINDATA" />
        </if>
 +      <!-- Bromite Proxy Configuration UI -->
@@ -197,16 +197,16 @@ diff --git a/chrome/browser/net/proxy_service_factory.h b/chrome/browser/net/pro
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -190,6 +190,8 @@
- #include "printing/buildflags/buildflags.h"
+@@ -191,6 +191,8 @@
  #include "rlz/buildflags/buildflags.h"
+ #include "services/screen_ai/buildflags/buildflags.h"
  
 +#include "chrome/browser/net/proxy_service_factory.h"
 +
  #if BUILDFLAG(ENABLE_BACKGROUND_MODE)
  #include "chrome/browser/background/background_mode_manager.h"
  #endif
-@@ -1412,6 +1414,8 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
+@@ -1483,6 +1485,8 @@ void RegisterLocalState(PrefRegistrySimple* registry) {
    component_updater::RegisterPrefs(registry);
    domain_reliability::RegisterPrefs(registry);
    embedder_support::OriginTrialPrefs::RegisterPrefs(registry);
@@ -661,7 +661,7 @@ new file mode 100644
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -310,6 +310,8 @@ static_library("ui") {
+@@ -306,6 +306,8 @@ static_library("ui") {
      "webui/metrics_internals/metrics_internals_ui.h",
      "webui/net_export_ui.cc",
      "webui/net_export_ui.h",
@@ -673,7 +673,7 @@ diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
 diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 --- a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
 +++ b/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc
-@@ -55,6 +55,7 @@
+@@ -53,6 +53,7 @@
  #include "chrome/browser/ui/webui/ntp_tiles_internals_ui.h"
  #include "chrome/browser/ui/webui/omnibox/omnibox_ui.h"
  #include "chrome/browser/ui/webui/policy/policy_ui.h"
@@ -681,7 +681,7 @@ diff --git a/chrome/browser/ui/webui/chrome_web_ui_controller_factory.cc b/chrom
  #include "chrome/browser/ui/webui/predictors/predictors_ui.h"
  #include "chrome/browser/ui/webui/privacy_sandbox/privacy_sandbox_internals_ui.h"
  #include "chrome/browser/ui/webui/segmentation_internals/segmentation_internals_ui.h"
-@@ -494,6 +495,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
+@@ -470,6 +471,8 @@ WebUIFactoryFunction GetWebUIFactoryFunction(WebUI* web_ui,
      return &NewWebUI<MetricsInternalsUI>;
    if (url.host_piece() == chrome::kChromeUINetExportHost)
      return &NewWebUI<NetExportUI>;
@@ -1136,7 +1136,7 @@ diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_cons
  const char kChromeUIChromeURLsHost[] = "chrome-urls";
  const char kChromeUIChromeURLsURL[] = "chrome://chrome-urls/";
  const char kChromeUIComponentsHost[] = "components";
-@@ -455,6 +457,7 @@ bool IsSystemWebUIHost(base::StringPiece host) {
+@@ -466,6 +468,7 @@ bool IsSystemWebUIHost(base::StringPiece host) {
        kChromeUILockScreenNetworkHost,
        kChromeUILockScreenStartReauthHost,
        kChromeUIMobileSetupHost,
@@ -1144,7 +1144,7 @@ diff --git a/chrome/common/webui_url_constants.cc b/chrome/common/webui_url_cons
        kChromeUIMultiDeviceSetupHost,
        kChromeUINetworkHost,
        kChromeUINotificationTesterHost,
-@@ -757,6 +760,7 @@ const char* const kChromeHostURLs[] = {
+@@ -764,6 +767,7 @@ const char* const kChromeHostURLs[] = {
  #if !BUILDFLAG(IS_ANDROID)
  #if !BUILDFLAG(IS_CHROMEOS)
      kChromeUIAppLauncherPageHost,
@@ -1342,16 +1342,11 @@ diff --git a/net/proxy_resolution/proxy_config.cc b/net/proxy_resolution/proxy_c
        }
  
        // Trim whitespace off the url scheme.
-@@ -140,6 +140,56 @@ void ProxyConfig::ProxyRules::ParseFromString(const std::string& proxy_rules) {
+@@ -140,6 +140,55 @@ void ProxyConfig::ProxyRules::ParseFromString(const std::string& proxy_rules) {
    }
  }
  
 +std::string ProxyConfig::ProxyRules::ToString() const {
-+  if (type == Type::EMPTY) {
-+    return "";
-+  }
-+
-+  // special case: a single proxy servers list specified
 +  if (type == Type::PROXY_LIST) {
 +    std::string proxy_list;
 +    for (const auto& proxy_chain : single_proxies.AllChains()) {
@@ -1363,37 +1358,41 @@ diff --git a/net/proxy_resolution/proxy_config.cc b/net/proxy_resolution/proxy_c
 +      proxy_list.pop_back();
 +    }
 +    return proxy_list;
-+  }
-+
-+  if (type != Type::PROXY_LIST_PER_SCHEME) {
-+    NOTREACHED();
-+    // Unexpected LIST with fallback, or other type values
++  } else if (type == Type::PROXY_LIST_PER_SCHEME) {
++    // start to build a per-scheme list
++    std::string list;
++    for (const auto& proxy_chain : proxies_for_http.AllChains()) {
++      if (proxy_chain.length()) {
++        net::ProxyServer proxy_server = proxy_chain.First();
++        list += "http=" + ProxyServerToProxyUri(proxy_server) + ";";
++      }
++    }
++    for (const auto& proxy_chain : proxies_for_https.AllChains()) {
++      if (proxy_chain.length()) {
++        net::ProxyServer proxy_server = proxy_chain.First();
++        list += "https=" + ProxyServerToProxyUri(proxy_server) + ";";
++      }
++    }
++    for (const auto& proxy_chain : proxies_for_ftp.AllChains()) {
++      if (proxy_chain.length()) {
++        net::ProxyServer proxy_server = proxy_chain.First();
++        list += "ftp=" + ProxyServerToProxyUri(proxy_server) + ";";
++      }
++    }
++    for (const auto& proxy_chain : fallback_proxies.AllChains()) {
++      if (proxy_chain.length()) {
++        net::ProxyServer proxy_server = proxy_chain.First();
++        list += "socks=" + ProxyServerToProxyUri(proxy_server) + ";";
++      }
++    }
++    if (list.length() != 0 ) {
++      // remove last semicolon
++      list.pop_back();
++    }
++    return list;
++  } else {
 +    return "";
 +  }
-+
-+  // start to build a per-scheme list
-+  std::string list;
-+  for (const auto& proxy_chain : proxies_for_http.AllChains()) {
-+    net::ProxyServer proxy_server = proxy_chain.GetProxyServer(/*chain_index=*/0);
-+    list += "http=" + ProxyServerToProxyUri(proxy_server) + ";";
-+  }
-+  for (const auto& proxy_chain : proxies_for_https.AllChains()) {
-+    net::ProxyServer proxy_server = proxy_chain.GetProxyServer(/*chain_index=*/0);
-+    list += "https=" + ProxyServerToProxyUri(proxy_server) + ";";
-+  }
-+  for (const auto& proxy_chain : proxies_for_ftp.AllChains()) {
-+    net::ProxyServer proxy_server = proxy_chain.GetProxyServer(/*chain_index=*/0);
-+    list += "ftp=" + ProxyServerToProxyUri(proxy_server) + ";";
-+  }
-+  for (const auto& proxy_chain : fallback_proxies.AllChains()) {
-+    net::ProxyServer proxy_server = proxy_chain.GetProxyServer(/*chain_index=*/0);
-+    list += "socks=" + ProxyServerToProxyUri(proxy_server) + ";";
-+  }
-+  if (list.length() != 0 ) {
-+    // remove last semicolon
-+    list.pop_back();
-+  }
-+  return list;
 +}
 +
  const ProxyList* ProxyConfig::ProxyRules::MapUrlSchemeToProxyList(

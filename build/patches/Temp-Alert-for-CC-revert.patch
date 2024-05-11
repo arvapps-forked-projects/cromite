@@ -1,0 +1,44 @@
+From: Your Name <you@example.com>
+Date: Sun, 14 Apr 2024 07:48:02 +0000
+Subject: Temp Alert content setting revert
+
+https://chromium-review.googlesource.com/c/chromium/src/+/5437554
+---
+ .../page_specific_content_settings_delegate.cc                | 4 ++--
+ components/content_settings/core/common/content_settings.cc   | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/chrome/browser/content_settings/page_specific_content_settings_delegate.cc b/chrome/browser/content_settings/page_specific_content_settings_delegate.cc
+--- a/chrome/browser/content_settings/page_specific_content_settings_delegate.cc
++++ b/chrome/browser/content_settings/page_specific_content_settings_delegate.cc
+@@ -155,7 +155,7 @@ namespace {
+ void GetGuestViewDefaultContentSettingRules(
+     bool incognito,
+     RendererContentSettingRules* rules) {
+-  rules->image_rules.clear();
++  rules->image_rules.clear(); // do not remove
+   rules->image_rules.push_back(ContentSettingPatternSource(
+       ContentSettingsPattern::Wildcard(), ContentSettingsPattern::Wildcard(),
+       content_settings::ContentSettingToValue(CONTENT_SETTING_ALLOW),
+@@ -165,7 +165,7 @@ void GetGuestViewDefaultContentSettingRules(
+       ContentSettingsPattern::Wildcard(), ContentSettingsPattern::Wildcard(),
+       content_settings::ContentSettingToValue(CONTENT_SETTING_ALLOW),
+       std::string(), incognito));
+-  rules->script_rules.clear();
++  rules->script_rules.clear(); // do not remove
+   rules->script_rules.push_back(ContentSettingPatternSource(
+       ContentSettingsPattern::Wildcard(), ContentSettingsPattern::Wildcard(),
+       content_settings::ContentSettingToValue(CONTENT_SETTING_ALLOW),
+diff --git a/components/content_settings/core/common/content_settings.cc b/components/content_settings/core/common/content_settings.cc
+--- a/components/content_settings/core/common/content_settings.cc
++++ b/components/content_settings/core/common/content_settings.cc
+@@ -124,7 +124,7 @@ void RendererContentSettingRules::FilterRulesByOutermostMainFrameURL(
+   for (ContentSettingRuleSource& info : settings_rules) {
+       FilterRulesForType(info.rules, outermost_main_frame_url);
+   }
+-  FilterRulesForType(image_rules, outermost_main_frame_url);
++  FilterRulesForType(image_rules, outermost_main_frame_url); // do not remove
+   FilterRulesForType(script_rules, outermost_main_frame_url);
+   FilterRulesForType(popup_redirect_rules, outermost_main_frame_url);
+   FilterRulesForType(mixed_content_rules, outermost_main_frame_url);
+--

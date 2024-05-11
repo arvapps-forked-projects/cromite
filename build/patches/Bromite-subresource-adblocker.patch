@@ -46,10 +46,10 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  ...tent_subresource_filter_throttle_manager.h |   2 +
  .../content/browser/ruleset_service.cc        |  42 ++-
  .../content/browser/ruleset_service.h         |   7 +-
- .../content/browser/ruleset_version.h         |   4 +
  .../unindexed_ruleset_stream_generator.cc     |   3 +
- .../browser/verified_ruleset_dealer.cc        |   3 +
+ .../core/browser/ruleset_version.h            |   4 +
  .../browser/subresource_filter_features.cc    | 116 +-------
+ .../core/browser/verified_ruleset_dealer.cc   |   3 +
  .../core/common/indexed_ruleset.cc            |   5 +-
  .../Bromite-subresource-adblocker.inc         |   3 +
  40 files changed, 1254 insertions(+), 127 deletions(-)
@@ -68,7 +68,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -302,6 +302,7 @@ if (current_toolchain == default_toolchain) {
+@@ -334,6 +334,7 @@ if (current_toolchain == default_toolchain) {
        "//chrome/android/modules/cablev2_authenticator/public:java",
        "//chrome/android/modules/stack_unwinder/provider:java",
        "//chrome/android/webapk/libs/client:client_java",
@@ -79,7 +79,7 @@ diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_java_resources.gni
 --- a/chrome/android/chrome_java_resources.gni
 +++ b/chrome/android/chrome_java_resources.gni
-@@ -429,6 +429,7 @@ chrome_java_resources = [
+@@ -431,6 +431,7 @@ chrome_java_resources = [
    "java/res/layout/account_chooser_dialog_title.xml",
    "java/res/layout/account_divider_preference.xml",
    "java/res/layout/account_management_account_row.xml",
@@ -87,7 +87,7 @@ diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_ja
    "java/res/layout/auto_sign_in_first_run_dialog.xml",
    "java/res/layout/autofill_billing_address_dropdown.xml",
    "java/res/layout/autofill_card_name_and_number.xml",
-@@ -631,6 +632,7 @@ chrome_java_resources = [
+@@ -634,6 +635,7 @@ chrome_java_resources = [
    "java/res/xml/about_chrome_preferences.xml",
    "java/res/xml/account_management_preferences.xml",
    "java/res/xml/ad_services_config.xml",
@@ -98,7 +98,7 @@ diff --git a/chrome/android/chrome_java_resources.gni b/chrome/android/chrome_ja
 diff --git a/chrome/android/chrome_java_sources.gni b/chrome/android/chrome_java_sources.gni
 --- a/chrome/android/chrome_java_sources.gni
 +++ b/chrome/android/chrome_java_sources.gni
-@@ -964,6 +964,8 @@ chrome_java_sources = [
+@@ -973,6 +973,8 @@ chrome_java_sources = [
    "java/src/org/chromium/chrome/browser/permissions/PermissionSettingsBridge.java",
    "java/src/org/chromium/chrome/browser/permissions/PermissionUpdateRequester.java",
    "java/src/org/chromium/chrome/browser/photo_picker/DecoderServiceImpl.java",
@@ -182,7 +182,7 @@ new file mode 100644
 diff --git a/chrome/android/java/res/values/styles.xml b/chrome/android/java/res/values/styles.xml
 --- a/chrome/android/java/res/values/styles.xml
 +++ b/chrome/android/java/res/values/styles.xml
-@@ -232,6 +232,24 @@ found in the LICENSE file.
+@@ -245,6 +245,24 @@ found in the LICENSE file.
          </item>
      </style>
  
@@ -254,9 +254,9 @@ new file mode 100644
 diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/java/res/xml/main_preferences.xml
 --- a/chrome/android/java/res/xml/main_preferences.xml
 +++ b/chrome/android/java/res/xml/main_preferences.xml
-@@ -78,6 +78,11 @@ found in the LICENSE file.
-         android:key="safety_check"
-         android:order="13"
+@@ -83,6 +83,11 @@ found in the LICENSE file.
+         android:key="safety_hub"
+         android:order="14"
          android:title="@string/prefs_safety_check"/>
 +    <Preference
 +        android:fragment="org.chromium.chrome.browser.settings.AdBlockPreferences"
@@ -265,7 +265,7 @@ diff --git a/chrome/android/java/res/xml/main_preferences.xml b/chrome/android/j
 +        android:title="@string/prefs_adblock"/>
      <Preference
          android:key="notifications"
-         android:order="14"
+         android:order="15"
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/AdBlockEditor.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/AdBlockEditor.java
 new file mode 100644
 --- /dev/null
@@ -440,7 +440,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tabmodel/TabMod
 diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources.grd
 --- a/chrome/app/generated_resources.grd
 +++ b/chrome/app/generated_resources.grd
-@@ -15005,6 +15005,16 @@ Please help our engineers fix this problem. Tell us what happened right before y
+@@ -15085,6 +15085,16 @@ Please help our engineers fix this problem. Tell us what happened right before y
        Never show this again.
      </message>
  
@@ -460,7 +460,7 @@ diff --git a/chrome/app/generated_resources.grd b/chrome/app/generated_resources
 diff --git a/chrome/browser/after_startup_task_utils.cc b/chrome/browser/after_startup_task_utils.cc
 --- a/chrome/browser/after_startup_task_utils.cc
 +++ b/chrome/browser/after_startup_task_utils.cc
-@@ -28,6 +28,8 @@
+@@ -29,6 +29,8 @@
  #include "chromeos/startup/browser_params_proxy.h"
  #endif  // BUILDFLAG(IS_CHROMEOS_LACROS)
  
@@ -469,10 +469,10 @@ diff --git a/chrome/browser/after_startup_task_utils.cc b/chrome/browser/after_s
  using content::BrowserThread;
  
  namespace {
-@@ -123,6 +125,8 @@ void SetBrowserStartupIsComplete() {
-     ScheduleTask(base::WrapUnique(queued_task));
-   g_after_startup_tasks.Get().clear();
-   g_after_startup_tasks.Get().shrink_to_fit();
+@@ -132,6 +134,8 @@ void SetBrowserStartupIsComplete() {
+   }
+   GetAfterStartupTasks().clear();
+   GetAfterStartupTasks().shrink_to_fit();
 +  // initialize AdBlock engine scheduled updates
 +  g_browser_process->adblock_updater()->Start();
  }
@@ -511,7 +511,7 @@ diff --git a/chrome/browser/browser_process.h b/chrome/browser/browser_process.h
 diff --git a/chrome/browser/browser_process_impl.cc b/chrome/browser/browser_process_impl.cc
 --- a/chrome/browser/browser_process_impl.cc
 +++ b/chrome/browser/browser_process_impl.cc
-@@ -1147,6 +1147,27 @@ BrowserProcessImpl::component_updater() {
+@@ -1168,6 +1168,27 @@ BrowserProcessImpl::component_updater() {
    return component_updater_.get();
  }
  
@@ -561,7 +561,7 @@ diff --git a/chrome/browser/browser_process_impl.h b/chrome/browser/browser_proc
 diff --git a/chrome/browser/chrome_browser_main.cc b/chrome/browser/chrome_browser_main.cc
 --- a/chrome/browser/chrome_browser_main.cc
 +++ b/chrome/browser/chrome_browser_main.cc
-@@ -445,6 +445,9 @@ StartupProfileInfo CreateInitialProfile(
+@@ -455,6 +455,9 @@ StartupProfileInfo CreateInitialProfile(
    // missing code in the above test.
    CHECK(profile_info.profile) << "Cannot get default profile.";
  
@@ -680,7 +680,7 @@ new file mode 100755
 diff --git a/chrome/browser/net/system_network_context_manager.cc b/chrome/browser/net/system_network_context_manager.cc
 --- a/chrome/browser/net/system_network_context_manager.cc
 +++ b/chrome/browser/net/system_network_context_manager.cc
-@@ -638,6 +638,14 @@ SystemNetworkContextManager::~SystemNetworkContextManager() {
+@@ -640,6 +640,14 @@ SystemNetworkContextManager::~SystemNetworkContextManager() {
  void SystemNetworkContextManager::RegisterPrefs(PrefRegistrySimple* registry) {
    StubResolverConfigReader::RegisterPrefs(registry);
  
@@ -753,7 +753,7 @@ diff --git a/chrome/common/pref_names.h b/chrome/common/pref_names.h
 diff --git a/components/browser_ui/strings/android/site_settings.grdp b/components/browser_ui/strings/android/site_settings.grdp
 --- a/components/browser_ui/strings/android/site_settings.grdp
 +++ b/components/browser_ui/strings/android/site_settings.grdp
-@@ -362,6 +362,9 @@
+@@ -359,6 +359,9 @@
    <message name="IDS_INTRUSIVE_ADS_INFORMATION" desc="The extra information at the top of the Site Details page when the site tends to show intrusive ads">
      This site shows intrusive or misleading ads
    </message>
@@ -1683,7 +1683,7 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.cc b/
 +    LOG(WARNING) << "RulesetService: failed to open: " << unindexed_ruleset_info.ruleset_path;
      RecordIndexAndWriteRulesetResult(
          IndexAndWriteRulesetResult::FAILED_OPENING_UNINDEXED_RULESET);
-     return IndexedRulesetVersion();
+     return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 @@ -286,6 +303,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
            indexed_ruleset_base_dir, indexed_version);
  
@@ -1691,14 +1691,14 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.cc b/
 +    LOG(WARNING) << "RulesetService: failed to create version dir: " << indexed_ruleset_version_dir;
      RecordIndexAndWriteRulesetResult(
          IndexAndWriteRulesetResult::FAILED_CREATING_VERSION_DIR);
-     return IndexedRulesetVersion();
+     return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 @@ -293,12 +311,11 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
  
    SentinelFile sentinel_file(indexed_ruleset_version_dir);
    if (sentinel_file.IsPresent()) {
 -    RecordIndexAndWriteRulesetResult(
 -        IndexAndWriteRulesetResult::ABORTED_BECAUSE_SENTINEL_FILE_PRESENT);
--    return IndexedRulesetVersion();
+-    return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 +    LOG(WARNING) << "RulesetService: sentinel file is present in " << indexed_ruleset_version_dir;
    }
  
@@ -1706,7 +1706,7 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.cc b/
 +    LOG(WARNING) << "RulesetService: cannot create sentinel file in " << indexed_ruleset_version_dir;
      RecordIndexAndWriteRulesetResult(
          IndexAndWriteRulesetResult::FAILED_CREATING_SENTINEL_FILE);
-     return IndexedRulesetVersion();
+     return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 @@ -311,6 +328,7 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
  
    RulesetIndexer indexer;
@@ -1714,7 +1714,7 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.cc b/
 +    LOG(WARNING) << "RulesetService: failed parsing.";
      RecordIndexAndWriteRulesetResult(
          IndexAndWriteRulesetResult::FAILED_PARSING_UNINDEXED_RULESET);
-     return IndexedRulesetVersion();
+     return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 @@ -328,8 +346,12 @@ IndexedRulesetVersion RulesetService::IndexAndWriteRuleset(
        WriteRuleset(indexed_ruleset_version_dir,
                     unindexed_ruleset_info.license_path, indexer.data());
@@ -1722,7 +1722,7 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.cc b/
 -  if (result != IndexAndWriteRulesetResult::SUCCESS)
 +  if (result != IndexAndWriteRulesetResult::SUCCESS) {
 +    LOG(INFO) << "RulesetService: failed to index.";
-     return IndexedRulesetVersion();
+     return IndexedRulesetVersion(kSafeBrowsingFilterTag);
 +  }
 +
 +  LOG(INFO) << "RulesetService: successful parsing.";
@@ -1769,20 +1769,6 @@ diff --git a/components/subresource_filter/content/browser/ruleset_service.h b/c
    // Reads the rules via the |unindexed_ruleset_stream_generator|, and indexes
    // them using |indexer|. Returns whether the entire ruleset could be parsed.
    static bool IndexRuleset(
-diff --git a/components/subresource_filter/content/browser/ruleset_version.h b/components/subresource_filter/content/browser/ruleset_version.h
---- a/components/subresource_filter/content/browser/ruleset_version.h
-+++ b/components/subresource_filter/content/browser/ruleset_version.h
-@@ -53,6 +53,10 @@ struct UnindexedRulesetInfo {
-   // can be indicated not only by setting |license_path| to empty, but also by
-   // setting it to any non existent path.
-   base::FilePath license_path;
-+
-+  // Whether to delete or not the ruleset path once done indexing; useful for disposal
-+  // of temporary files.
-+  bool delete_ruleset_path;
- };
- 
- // Encapsulates the combination of the binary format version of the indexed
 diff --git a/components/subresource_filter/content/browser/unindexed_ruleset_stream_generator.cc b/components/subresource_filter/content/browser/unindexed_ruleset_stream_generator.cc
 --- a/components/subresource_filter/content/browser/unindexed_ruleset_stream_generator.cc
 +++ b/components/subresource_filter/content/browser/unindexed_ruleset_stream_generator.cc
@@ -1803,19 +1789,20 @@ diff --git a/components/subresource_filter/content/browser/unindexed_ruleset_str
    copying_stream_ = std::make_unique<CopyingFileInputStream>(
        std::move(unindexed_ruleset_file));
    ruleset_stream_ =
-diff --git a/components/subresource_filter/content/browser/verified_ruleset_dealer.cc b/components/subresource_filter/content/browser/verified_ruleset_dealer.cc
---- a/components/subresource_filter/content/browser/verified_ruleset_dealer.cc
-+++ b/components/subresource_filter/content/browser/verified_ruleset_dealer.cc
-@@ -38,6 +38,9 @@ RulesetFilePtr VerifiedRulesetDealer::OpenAndSetRulesetFile(
-   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("loading"),
-                "VerifiedRulesetDealer::OpenAndSetRulesetFile", "file_valid",
-                file->IsValid());
+diff --git a/components/subresource_filter/core/browser/ruleset_version.h b/components/subresource_filter/core/browser/ruleset_version.h
+--- a/components/subresource_filter/core/browser/ruleset_version.h
++++ b/components/subresource_filter/core/browser/ruleset_version.h
+@@ -53,6 +53,10 @@ struct UnindexedRulesetInfo {
+   // can be indicated not only by setting |license_path| to empty, but also by
+   // setting it to any non existent path.
+   base::FilePath license_path;
 +
-+  LOG(INFO) << "OpenAndSetRulesetFile: " << file_path << " is valid: " << file->IsValid();
-+
-   if (file->IsValid()) {
-     SetRulesetFile(file->Duplicate());
-     expected_checksum_ = expected_checksum;
++  // Whether to delete or not the ruleset path once done indexing; useful for disposal
++  // of temporary files.
++  bool delete_ruleset_path;
+ };
+ 
+ // Encapsulates the combination of the binary format version of the indexed
 diff --git a/components/subresource_filter/core/browser/subresource_filter_features.cc b/components/subresource_filter/core/browser/subresource_filter_features.cc
 --- a/components/subresource_filter/core/browser/subresource_filter_features.cc
 +++ b/components/subresource_filter/core/browser/subresource_filter_features.cc
@@ -1967,6 +1954,19 @@ diff --git a/components/subresource_filter/core/browser/subresource_filter_featu
  
    return configs;
  }
+diff --git a/components/subresource_filter/core/browser/verified_ruleset_dealer.cc b/components/subresource_filter/core/browser/verified_ruleset_dealer.cc
+--- a/components/subresource_filter/core/browser/verified_ruleset_dealer.cc
++++ b/components/subresource_filter/core/browser/verified_ruleset_dealer.cc
+@@ -38,6 +38,9 @@ RulesetFilePtr VerifiedRulesetDealer::OpenAndSetRulesetFile(
+   TRACE_EVENT1(TRACE_DISABLED_BY_DEFAULT("loading"),
+                "VerifiedRulesetDealer::OpenAndSetRulesetFile", "file_valid",
+                file->IsValid());
++
++  LOG(INFO) << "OpenAndSetRulesetFile: " << file_path << " is valid: " << file->IsValid();
++
+   if (file->IsValid()) {
+     SetRulesetFile(file->Duplicate());
+     expected_checksum_ = expected_checksum;
 diff --git a/components/subresource_filter/core/common/indexed_ruleset.cc b/components/subresource_filter/core/common/indexed_ruleset.cc
 --- a/components/subresource_filter/core/common/indexed_ruleset.cc
 +++ b/components/subresource_filter/core/common/indexed_ruleset.cc

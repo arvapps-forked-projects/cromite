@@ -187,15 +187,15 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/modules/peerconnection/peer_connection_dependency_factory.cc b/third_party/blink/renderer/modules/peerconnection/peer_connection_dependency_factory.cc
 --- a/third_party/blink/renderer/modules/peerconnection/peer_connection_dependency_factory.cc
 +++ b/third_party/blink/renderer/modules/peerconnection/peer_connection_dependency_factory.cc
-@@ -37,6 +37,7 @@
- #include "third_party/blink/public/common/peerconnection/webrtc_ip_handling_policy.h"
+@@ -41,6 +41,7 @@
  #include "third_party/blink/public/platform/modules/webrtc/webrtc_logging.h"
  #include "third_party/blink/public/platform/platform.h"
+ #include "third_party/blink/public/platform/task_type.h"
 +#include "third_party/blink/public/platform/web_content_settings_client.h"
  #include "third_party/blink/public/platform/web_url.h"
  #include "third_party/blink/public/web/modules/mediastream/media_stream_video_source.h"
  #include "third_party/blink/public/web/web_document.h"
-@@ -807,6 +808,11 @@ PeerConnectionDependencyFactory::CreatePortAllocator(
+@@ -838,6 +839,11 @@ PeerConnectionDependencyFactory::CreatePortAllocator(
        // origin.
        WebRTCIPHandlingPolicy policy =
            GetWebRTCIPHandlingPolicy(webrtc_ip_handling_policy);
@@ -219,7 +219,7 @@ diff --git a/third_party/blink/renderer/modules/peerconnection/rtc_rtp_receiver.
  #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
  #include "third_party/blink/renderer/bindings/modules/v8/v8_rtc_insertable_streams.h"
  #include "third_party/blink/renderer/bindings/modules/v8/v8_rtc_rtcp_parameters.h"
-@@ -287,6 +289,14 @@ RTCRtpCapabilities* RTCRtpReceiver::getCapabilities(ScriptState* state,
+@@ -313,6 +315,14 @@ RTCRtpCapabilities* RTCRtpReceiver::getCapabilities(ScriptState* state,
    if (kind != "audio" && kind != "video")
      return nullptr;
  
@@ -246,7 +246,7 @@ diff --git a/third_party/blink/renderer/modules/peerconnection/rtc_rtp_sender.cc
  #include "third_party/blink/renderer/bindings/core/v8/script_promise_resolver.h"
  #include "third_party/blink/renderer/bindings/modules/v8/v8_rtc_encoding_options.h"
  #include "third_party/blink/renderer/bindings/modules/v8/v8_rtc_insertable_streams.h"
-@@ -1062,6 +1064,14 @@ RTCRtpCapabilities* RTCRtpSender::getCapabilities(ScriptState* state,
+@@ -1073,6 +1075,14 @@ RTCRtpCapabilities* RTCRtpSender::getCapabilities(ScriptState* state,
    if (kind != "audio" && kind != "video")
      return nullptr;
  

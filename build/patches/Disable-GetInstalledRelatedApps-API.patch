@@ -30,9 +30,9 @@ diff --git a/content/browser/installedapp/installed_app_provider_impl_win.cc b/c
      blink::mojom::InstalledAppProvider::FilterInstalledAppsCallback callback,
      const GURL frame_url) {
 +  CHECK(true);
-   ComPtr<ILauncherStatics4> launcher_statics;
-   HRESULT hr = base::win::RoActivateInstance(
-       base::win::ScopedHString::Create(RuntimeClass_Windows_System_Launcher)
+   ComPtr<IUriRuntimeClassFactory> url_factory;
+   HRESULT hr =
+       base::win::GetActivationFactory<IUriRuntimeClassFactory,
 diff --git a/cromite_flags/content/public/common/content_features_cc/Disable-GetInstalledRelatedApps-API.inc b/cromite_flags/content/public/common/content_features_cc/Disable-GetInstalledRelatedApps-API.inc
 new file mode 100644
 --- /dev/null
@@ -43,7 +43,7 @@ new file mode 100644
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2160,9 +2160,9 @@
+@@ -2183,9 +2183,9 @@
        status: {"Android": "test", "default": "stable"},
      },
      {

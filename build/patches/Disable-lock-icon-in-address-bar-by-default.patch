@@ -10,7 +10,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/components/omnibox/common/omnibox_features.cc b/components/omnibox/common/omnibox_features.cc
 --- a/components/omnibox/common/omnibox_features.cc
 +++ b/components/omnibox/common/omnibox_features.cc
-@@ -434,8 +434,8 @@ BASE_FEATURE(kOmniboxModernizeVisualUpdate,
+@@ -431,8 +431,8 @@ BASE_FEATURE(kOmniboxModernizeVisualUpdate,
  // used, on non-Android platforms this is controlled through the
  // ChromeRefresh2023 flag.
  BASE_FEATURE(kUpdatedConnectionSecurityIndicators,

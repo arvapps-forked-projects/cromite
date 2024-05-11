@@ -12,7 +12,7 @@ RUN wget https://github.com/clangd/clangd/releases/download/17.0.3/clangd_indexi
     unzip clangd_indexing_tools-linux-17.0.3.zip && \
     rm clangd_indexing_tools-linux-17.0.3.zip
 
-ADD bromite.idx .
+ADD cromite.idx .
 ADD entry_point.sh .
 
 RUN chmod +x ./entry_point.sh

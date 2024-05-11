@@ -23,7 +23,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browser_prefs.cc
 --- a/chrome/browser/prefs/browser_prefs.cc
 +++ b/chrome/browser/prefs/browser_prefs.cc
-@@ -1338,7 +1338,7 @@ void RegisterProfilePrefsForMigration(
+@@ -1350,7 +1350,7 @@ void RegisterProfilePrefsForMigration(
  #endif
  
    // Deprecated 12/2023.
@@ -35,7 +35,7 @@ diff --git a/chrome/browser/prefs/browser_prefs.cc b/chrome/browser/prefs/browse
 diff --git a/chrome/browser/ui/autofill/chrome_autofill_client.cc b/chrome/browser/ui/autofill/chrome_autofill_client.cc
 --- a/chrome/browser/ui/autofill/chrome_autofill_client.cc
 +++ b/chrome/browser/ui/autofill/chrome_autofill_client.cc
-@@ -225,12 +225,7 @@ ChromeAutofillClient::GetURLLoaderFactory() {
+@@ -228,12 +228,7 @@ ChromeAutofillClient::GetURLLoaderFactory() {
  }
  
  AutofillCrowdsourcingManager* ChromeAutofillClient::GetCrowdsourcingManager() {
@@ -52,8 +52,8 @@ diff --git a/chrome/browser/ui/autofill/chrome_autofill_client.cc b/chrome/brows
 diff --git a/components/autofill/core/browser/browser_autofill_manager.h b/components/autofill/core/browser/browser_autofill_manager.h
 --- a/components/autofill/core/browser/browser_autofill_manager.h
 +++ b/components/autofill/core/browser/browser_autofill_manager.h
-@@ -777,9 +777,9 @@ class BrowserAutofillManager : public AutofillManager {
-       autocomplete_unrecognized_fallback_logger_;
+@@ -593,9 +593,9 @@ class BrowserAutofillManager : public AutofillManager {
+       manual_fallback_logger_;
  
    // Have we logged whether Autofill is enabled for this page load?
 -  bool has_logged_autofill_enabled_ = false;
@@ -67,7 +67,7 @@ diff --git a/components/autofill/core/browser/browser_autofill_manager.h b/compo
 diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
 --- a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
 +++ b/components/autofill/core/browser/crowdsourcing/autofill_crowdsourcing_manager.cc
-@@ -473,33 +473,6 @@ std::optional<std::string> GetUploadPayloadForApi(
+@@ -475,33 +475,6 @@ std::optional<std::string> GetUploadPayloadForApi(
    return std::move(payload);
  }
  
@@ -101,7 +101,7 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
  // Gets HTTP body payload for API POST request.
  std::optional<std::string> GetAPIBodyPayload(std::string payload,
                                               RequestType type) {
-@@ -531,18 +504,7 @@ std::optional<std::string> GetAPIQueryPayload(
+@@ -533,18 +506,7 @@ std::optional<std::string> GetAPIQueryPayload(
  }
  
  std::string GetAPIKeyForUrl(version_info::Channel channel) {
@@ -121,7 +121,7 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
  }
  
  std::optional<std::vector<variations::VariationID>>& GetActiveExperiments() {
-@@ -772,34 +734,13 @@ size_t AutofillCrowdsourcingManager::GetPayloadLength(
+@@ -774,34 +736,13 @@ size_t AutofillCrowdsourcingManager::GetPayloadLength(
  
  std::tuple<GURL, std::string> AutofillCrowdsourcingManager::GetRequestURLAndMethod(
      const FormRequestData& request_data) const {
@@ -175,7 +175,7 @@ diff --git a/components/autofill/core/browser/crowdsourcing/autofill_crowdsourci
 diff --git a/components/autofill/core/common/autofill_features.cc b/components/autofill/core/common/autofill_features.cc
 --- a/components/autofill/core/common/autofill_features.cc
 +++ b/components/autofill/core/common/autofill_features.cc
-@@ -791,6 +791,7 @@ BASE_FEATURE(kAutofillUploadThrottling,
+@@ -799,6 +799,7 @@ BASE_FEATURE(kAutofillUploadThrottling,
               "AutofillUploadThrottling",
               base::FEATURE_ENABLED_BY_DEFAULT);
  
@@ -206,9 +206,9 @@ diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/auto
 -      prefs::kAutofillPaymentCvcStorage, true,
 +      prefs::kAutofillPaymentCvcStorage, false,
        user_prefs::PrefRegistrySyncable::SYNCABLE_PREF);
- 
-   // Non-synced prefs. Used for per-device choices, e.g., signin promo.
-@@ -91,9 +91,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
+   registry->RegisterBooleanPref(
+       kAutofillPaymentCardBenefits, true,
+@@ -94,9 +94,9 @@ void RegisterProfilePrefs(user_prefs::PrefRegistrySyncable* registry) {
  #endif
  
    // Deprecated prefs registered for migration.
@@ -223,7 +223,7 @@ diff --git a/components/autofill/core/common/autofill_prefs.cc b/components/auto
 diff --git a/components/password_manager/core/browser/password_generation_frame_helper.cc b/components/password_manager/core/browser/password_generation_frame_helper.cc
 --- a/components/password_manager/core/browser/password_generation_frame_helper.cc
 +++ b/components/password_manager/core/browser/password_generation_frame_helper.cc
-@@ -94,7 +94,6 @@ void PasswordGenerationFrameHelper::ProcessPasswordRequirements(
+@@ -95,7 +95,6 @@ void PasswordGenerationFrameHelper::ProcessPasswordRequirements(
  // In order for password generation to be enabled, we need to make sure:
  // (1) Password sync is enabled, and
  // (2) Password saving is enabled
@@ -231,14 +231,14 @@ diff --git a/components/password_manager/core/browser/password_generation_frame_
  bool PasswordGenerationFrameHelper::IsGenerationEnabled(
      bool log_debug_data) const {
    std::unique_ptr<Logger> logger;
-@@ -104,9 +103,6 @@ bool PasswordGenerationFrameHelper::IsGenerationEnabled(
+@@ -105,9 +104,6 @@ bool PasswordGenerationFrameHelper::IsGenerationEnabled(
    }
  
    GURL url = driver_->GetLastCommittedURL();
 -  if (url.DomainIs("google.com"))
 -    return false;
 -
-   if (!client_->IsSavingAndFillingEnabled(url)) {
-     if (logger)
-       logger->LogMessage(Logger::STRING_GENERATION_DISABLED_SAVING_DISABLED);
+   if (!password_manager_util::IsAbleToSavePasswords(client_)) {
+     if (logger) {
+       logger->LogMessage(
 --

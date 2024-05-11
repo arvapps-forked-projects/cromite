@@ -15,7 +15,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/net/stub_resolver_config_reader.cc b/chrome/browser/net/stub_resolver_config_reader.cc
 --- a/chrome/browser/net/stub_resolver_config_reader.cc
 +++ b/chrome/browser/net/stub_resolver_config_reader.cc
-@@ -150,7 +150,7 @@ StubResolverConfigReader::StubResolverConfigReader(PrefService* local_state,
+@@ -151,7 +151,7 @@ StubResolverConfigReader::StubResolverConfigReader(PrefService* local_state,
        if (entries.count("dns-over-https@1")) {
          // The user has "Enabled" selected.
          local_state_->SetString(prefs::kDnsOverHttpsMode,
@@ -24,7 +24,7 @@ diff --git a/chrome/browser/net/stub_resolver_config_reader.cc b/chrome/browser/
        } else if (entries.count("dns-over-https@2")) {
          // The user has "Disabled" selected.
          local_state_->SetString(prefs::kDnsOverHttpsMode,
-@@ -345,22 +345,7 @@ SecureDnsConfig StubResolverConfigReader::GetAndUpdateConfiguration(
+@@ -348,22 +348,7 @@ SecureDnsConfig StubResolverConfigReader::GetAndUpdateConfiguration(
      check_parental_controls = false;
    }
  
@@ -50,7 +50,7 @@ diff --git a/chrome/browser/net/stub_resolver_config_reader.cc b/chrome/browser/
 diff --git a/net/dns/dns_client.cc b/net/dns/dns_client.cc
 --- a/net/dns/dns_client.cc
 +++ b/net/dns/dns_client.cc
-@@ -243,11 +243,14 @@ class DnsClientImpl : public DnsClient {
+@@ -249,11 +249,14 @@ class DnsClientImpl : public DnsClient {
   private:
    std::optional<DnsConfig> BuildEffectiveConfig() const {
      DnsConfig config;
@@ -67,7 +67,7 @@ diff --git a/net/dns/dns_client.cc b/net/dns/dns_client.cc
  
        config = config_overrides_.ApplyOverrides(system_config_.value());
      }
-@@ -262,8 +265,10 @@ class DnsClientImpl : public DnsClient {
+@@ -268,8 +271,10 @@ class DnsClientImpl : public DnsClient {
      if (config.unhandled_options)
        config.nameservers.clear();
  
@@ -82,7 +82,7 @@ diff --git a/net/dns/dns_client.cc b/net/dns/dns_client.cc
 diff --git a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc
 --- a/net/dns/host_resolver_manager.cc
 +++ b/net/dns/host_resolver_manager.cc
-@@ -599,6 +599,7 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
+@@ -583,6 +583,7 @@ void HostResolverManager::SetDnsConfigOverrides(DnsConfigOverrides overrides) {
    bool changed = dns_client_->SetConfigOverrides(std::move(overrides));
  
    if (changed) {

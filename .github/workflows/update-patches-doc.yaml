@@ -1,0 +1,82 @@
+name: Update patches doc
+permissions:
+#  actions: none
+#  checks: none
+#  contents: write
+#  deployments: none
+#  issues: none
+#  packages: none
+   pull-requests: write
+#  repository-projects: none
+#  security-events: none
+#  statuses: none
+
+on:
+  push:
+    branches:
+      - 'master'
+    paths:
+      - 'build/**'
+
+  workflow_dispatch:
+    inputs:
+      rtag:
+        description: 'uazo/cromite TAG or COMMIT'
+        required: true
+        default: ''
+
+env:
+  RTAG: ${{ github.event.inputs.rtag }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: "Get value from dispatch"
+        run: |
+          if [ -z "${RTAG}" ]; then
+            echo "RTAG=$GITHUB_SHA" >> $GITHUB_ENV
+            echo "RTAG=$RTAG"
+          fi
+
+      - name: Checkout 'uazo/cromite' ${{ env.BRANCH }}
+        uses: actions/checkout@v2
+        with:
+            repository: 'uazo/cromite'
+            ref: ${{ github.event.inputs.rtag }}
+            path: 'cromite'
+            fetch-depth: 1
+
+      - name: Generate patches doc
+        run: |
+          export HOME=$GITHUB_WORKSPACE
+
+          bash ~/cromite/tools/extract-all-patch-data.sh ~/cromite/build/patches
+
+      - name: Check differences CHANGES=${{ env.CHANGES }}
+        run: |
+          export HOME=$GITHUB_WORKSPACE
+
+          cd ~/cromite
+          CHANGES=0 && git diff --quiet || CHANGES=1
+          echo "CHANGES=$CHANGES" >> $GITHUB_ENV
+
+          if [[ CHANGES -eq 1 ]]; then
+              git add docs/*.md
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@dcd5fd746d53dd8de555c0f10bca6c35628be47a #v3.12.0
+        if: env.CHANGES == '1'
+        with:
+          token: ${{ secrets.CROMITE_PULLS }}
+          path: cromite
+          base: ${{ env.BRANCH }}
+          add-paths: |
+            build/patches/*.patch
+          commit-message: '[AUTO][DOC] Generate patches doc for master branch'
+          title: '[AUTO][DOC] Generate patches doc for master branch'
+          body: ${{ env.MESSAGE }}
+          delete-branch: true
+          branch-suffix: short-commit-hash

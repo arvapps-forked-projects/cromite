@@ -36,13 +36,13 @@ diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibil
 +        android:summary="@string/enable_accessibility_summary"
 +        android:title="@string/enable_accessibility_title" />
 +
-     <org.chromium.components.browser_ui.accessibility.TextScalePreference
+     <org.chromium.chrome.browser.accessibility.settings.TextScalePreference
          android:key="text_scale"
          android:title="@string/font_size"
 diff --git a/content/public/android/java/src/org/chromium/content/browser/accessibility/WebContentsAccessibilityImpl.java b/content/public/android/java/src/org/chromium/content/browser/accessibility/WebContentsAccessibilityImpl.java
 --- a/content/public/android/java/src/org/chromium/content/browser/accessibility/WebContentsAccessibilityImpl.java
 +++ b/content/public/android/java/src/org/chromium/content/browser/accessibility/WebContentsAccessibilityImpl.java
-@@ -1044,6 +1044,11 @@ public class WebContentsAccessibilityImpl extends AccessibilityNodeProviderCompa
+@@ -1039,6 +1039,11 @@ public class WebContentsAccessibilityImpl extends AccessibilityNodeProviderCompa
              structure.setChildCount(0);
              return;
          }

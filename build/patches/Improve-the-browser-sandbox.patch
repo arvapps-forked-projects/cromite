@@ -7,29 +7,21 @@ using the new flags on android
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- .../browser/chrome_content_browser_client.cc  |  2 +-
- sandbox/policy/features.cc                    |  7 ++++
- sandbox/win/src/sandbox_nt_util.h             | 12 ++++--
- sandbox/win/src/signed_interception.cc        | 37 +++++++++-------
- sandbox/win/src/target_interceptions.cc       | 42 +++++++------------
- 5 files changed, 54 insertions(+), 46 deletions(-)
+ .../common/features_cc/Improve-the-browser-sandbox.inc    | 1 +
+ sandbox/policy/features.cc                                | 8 ++++++++
+ 2 files changed, 9 insertions(+)
+ create mode 100644 cromite_flags/third_party/blink/common/features_cc/Improve-the-browser-sandbox.inc
 
-diff --git a/chrome/browser/chrome_content_browser_client.cc b/chrome/browser/chrome_content_browser_client.cc
---- a/chrome/browser/chrome_content_browser_client.cc
-+++ b/chrome/browser/chrome_content_browser_client.cc
-@@ -782,7 +782,7 @@ namespace {
- // https://blogs.windows.com/blog/tag/code-integrity-guard/.
- BASE_FEATURE(kNetworkServiceCodeIntegrity,
-              "NetworkServiceCodeIntegrity",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             base::FEATURE_ENABLED_BY_DEFAULT);
- 
- #endif  // BUILDFLAG(IS_WIN) && !defined(COMPONENT_BUILD) &&
-         // !defined(ADDRESS_SANITIZER)
+diff --git a/cromite_flags/third_party/blink/common/features_cc/Improve-the-browser-sandbox.inc b/cromite_flags/third_party/blink/common/features_cc/Improve-the-browser-sandbox.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/third_party/blink/common/features_cc/Improve-the-browser-sandbox.inc
+@@ -0,0 +1 @@
++SET_CROMITE_FEATURE_ENABLED(kEnableMojoJSProtectedMemory);
 diff --git a/sandbox/policy/features.cc b/sandbox/policy/features.cc
 --- a/sandbox/policy/features.cc
 +++ b/sandbox/policy/features.cc
-@@ -212,4 +212,11 @@ bool IsNetworkSandboxEnabled() {
+@@ -210,4 +210,12 @@ bool IsNetworkSandboxEnabled() {
  #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_FUCHSIA)
  }
  
@@ -39,199 +31,7 @@ diff --git a/sandbox/policy/features.cc b/sandbox/policy/features.cc
 +#endif
 +#if BUILDFLAG(IS_WIN)
 +SET_CROMITE_FEATURE_ENABLED(kNetworkServiceSandbox);
++SET_CROMITE_FEATURE_ENABLED(kNetworkServiceCodeIntegrity);
 +#endif
  }  // namespace sandbox::policy::features
-diff --git a/sandbox/win/src/sandbox_nt_util.h b/sandbox/win/src/sandbox_nt_util.h
---- a/sandbox/win/src/sandbox_nt_util.h
-+++ b/sandbox/win/src/sandbox_nt_util.h
-@@ -184,10 +184,6 @@ bool IsValidImageSection(HANDLE section,
- // Converts an ansi string to an UNICODE_STRING.
- UNICODE_STRING* AnsiToUnicode(const char* string);
- 
--// Resolves a handle to an nt path. Returns true if the handle can be resolved.
--bool NtGetPathFromHandle(HANDLE handle,
--                         std::unique_ptr<wchar_t, NtAllocDeleter>* path);
--
- // Provides a simple way to temporarily change the protection of a memory page.
- class AutoProtectMemory {
-  public:
-@@ -223,6 +219,14 @@ bool IsSupportedRenameCall(FILE_RENAME_INFORMATION* file_info,
- // Get the CLIENT_ID from the current TEB.
- CLIENT_ID GetCurrentClientId();
- 
-+// Version of memset that can be called before the CRT is initialized.
-+__forceinline void Memset(void* ptr, int value, size_t num_bytes) {
-+  unsigned char* byte_ptr = static_cast<unsigned char*>(ptr);
-+  while (num_bytes--) {
-+    *byte_ptr++ = static_cast<unsigned char>(value);
-+  }
-+}
-+
- }  // namespace sandbox
- 
- #endif  // SANDBOX_WIN_SRC_SANDBOX_NT_UTIL_H_
-diff --git a/sandbox/win/src/signed_interception.cc b/sandbox/win/src/signed_interception.cc
---- a/sandbox/win/src/signed_interception.cc
-+++ b/sandbox/win/src/signed_interception.cc
-@@ -14,11 +14,13 @@
- #include "sandbox/win/src/sandbox_factory.h"
- #include "sandbox/win/src/sandbox_nt_util.h"
- #include "sandbox/win/src/sharedmem_ipc_client.h"
--#include "sandbox/win/src/target_interceptions.h"
- #include "sandbox/win/src/target_services.h"
- 
- namespace sandbox {
- 
-+// Note that this shim may be called before the heap is available, we must get
-+// as far as |QueryBroker| without using the heap, for example when AppVerifier
-+// is enabled.
- NTSTATUS WINAPI
- TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
-                       PHANDLE section_handle,
-@@ -43,27 +45,31 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
-       break;
-     if (allocation_attributes != SEC_IMAGE)
-       break;
--    // We shouldn't need to broker section creations until after kernel32.dll is
--    // loaded, and delaying is necessary to avoid using the Windows heap for any
--    // sections created before the Windows heap is initialized.
--    if (GetSectionLoadState() != SectionLoadState::kAfterKernel32) {
--      break;
--    }
- 
-     // IPC must be fully started.
-     void* memory = GetGlobalIPCMemory();
-     if (!memory)
-       break;
- 
--    std::unique_ptr<wchar_t, NtAllocDeleter> path;
--
--    if (!NtGetPathFromHandle(file_handle, &path))
-+    // As mentioned at the top of the function, we need to use the stack here
-+    // because the heap may not be available.
-+    constexpr ULONG path_buffer_size =
-+        (MAX_PATH * sizeof(wchar_t)) + sizeof(OBJECT_NAME_INFORMATION);
-+    // Avoid memset inserted by -ftrivial-auto-var-init=pattern.
-+    STACK_UNINITIALIZED char path_buffer[path_buffer_size];
-+    OBJECT_NAME_INFORMATION* path =
-+        reinterpret_cast<OBJECT_NAME_INFORMATION*>(path_buffer);
-+    ULONG out_buffer_size = 0;
-+    NTSTATUS status =
-+        GetNtExports()->QueryObject(file_handle, ObjectNameInformation, path,
-+                                    path_buffer_size, &out_buffer_size);
-+
-+    if (!NT_SUCCESS(status)) {
-       break;
--
--    const wchar_t* const_name = path.get();
-+    }
- 
-     CountedParameterSet<NameBased> params;
--    params[NameBased::NAME] = ParamPickerMake(const_name);
-+    params[NameBased::NAME] = ParamPickerMake(path->ObjectName.Buffer);
- 
-     // Check if this will be sent to the broker.
-     if (!QueryBroker(IpcTag::NTCREATESECTION, params.GetBase()))
-@@ -72,7 +78,10 @@ TargetNtCreateSection(NtCreateSectionFunction orig_CreateSection,
-     if (!ValidParameter(section_handle, sizeof(HANDLE), WRITE))
-       break;
- 
--    CrossCallReturn answer = {0};
-+    // Avoid memset inserted by -ftrivial-auto-var-init=pattern on debug builds.
-+    STACK_UNINITIALIZED CrossCallReturn answer;
-+    Memset(&answer, 0, sizeof(answer));
-+
-     answer.nt_status = STATUS_INVALID_IMAGE_HASH;
-     SharedMemIPCClient ipc(memory);
-     ResultCode code =
-diff --git a/sandbox/win/src/target_interceptions.cc b/sandbox/win/src/target_interceptions.cc
---- a/sandbox/win/src/target_interceptions.cc
-+++ b/sandbox/win/src/target_interceptions.cc
-@@ -4,31 +4,16 @@
- 
- #include "sandbox/win/src/target_interceptions.h"
- 
--#include <atomic>
--
- #include <ntstatus.h>
- 
-+#include "base/win/static_constants.h"
- #include "sandbox/win/src/interception_agent.h"
- #include "sandbox/win/src/sandbox_factory.h"
- #include "sandbox/win/src/sandbox_nt_util.h"
- 
- namespace sandbox {
- 
--namespace {
--
--std::atomic<SectionLoadState> g_section_load_state{
--    SectionLoadState::kBeforeKernel32};
--
--void UpdateSectionLoadState(SectionLoadState new_state) {
--  g_section_load_state = new_state;
--}
--
- const char KERNEL32_DLL_NAME[] = "kernel32.dll";
--}  // namespace
--
--SectionLoadState GetSectionLoadState() {
--  return g_section_load_state.load(std::memory_order_relaxed);
--}
- 
- // Hooks NtMapViewOfSection to detect the load of DLLs. If hot patching is
- // required for this dll, this functions patches it.
-@@ -47,6 +32,7 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
-   NTSTATUS ret = orig_MapViewOfSection(section, process, base, zero_bits,
-                                        commit_size, offset, view_size, inherit,
-                                        allocation_type, protect);
-+  static SectionLoadState s_state = SectionLoadState::kBeforeKernel32;
- 
-   do {
-     if (!NT_SUCCESS(ret))
-@@ -57,7 +43,7 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
- 
-     // Only check for verifier.dll or kernel32.dll loading if we haven't moved
-     // past that state yet.
--    if (GetSectionLoadState() == SectionLoadState::kBeforeKernel32) {
-+    if (s_state == SectionLoadState::kBeforeKernel32) {
-       const char* ansi_module_name =
-           GetAnsiImageInfoFromModule(reinterpret_cast<HMODULE>(*base));
- 
-@@ -65,24 +51,26 @@ TargetNtMapViewOfSection(NtMapViewOfSectionFunction orig_MapViewOfSection,
-       // find what looks like a valid export directory for a PE module but the
-       // pointer to the module name will be pointing to invalid memory.
-       __try {
-+        // Don't initialize the heap if verifier.dll is being loaded. This
-+        // indicates Application Verifier is enabled and we should wait until
-+        // the next module is loaded.
-+        if (ansi_module_name &&
-+            (GetNtExports()->_strnicmp(
-+                 ansi_module_name, base::win::kApplicationVerifierDllName,
-+                 GetNtExports()->strlen(
-+                     base::win::kApplicationVerifierDllName) +
-+                     1) == 0)) {
-+          break;
-+        }
-         if (ansi_module_name &&
-             (GetNtExports()->_strnicmp(ansi_module_name, KERNEL32_DLL_NAME,
-                                        sizeof(KERNEL32_DLL_NAME)) == 0)) {
--          UpdateSectionLoadState(SectionLoadState::kAfterKernel32);
-+          s_state = SectionLoadState::kAfterKernel32;
-         }
-       } __except (EXCEPTION_EXECUTE_HANDLER) {
-       }
-     }
- 
--    // Assume the Windows heap isn't initialized until we've loaded kernel32. We
--    // don't expect that we will need to patch any modules before kernel32.dll
--    // is loaded as they should all depend on kernel32.dll, and Windows may load
--    // sections before it's safe to call into the Windows heap (e.g. AppVerifier
--    // or internal Windows feature key checking).
--    if (GetSectionLoadState() == SectionLoadState::kBeforeKernel32) {
--      break;
--    }
--
-     if (!InitHeap())
-       break;
- 
 --

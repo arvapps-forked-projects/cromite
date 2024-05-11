@@ -5,8 +5,8 @@ Subject: Enable Android Dynamic Performance Framework
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
  chrome/version.gni                | 2 +-
- components/viz/common/features.cc | 5 +++--
- 2 files changed, 4 insertions(+), 3 deletions(-)
+ components/viz/common/features.cc | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/chrome/version.gni b/chrome/version.gni
 --- a/chrome/version.gni
@@ -23,17 +23,16 @@ diff --git a/chrome/version.gni b/chrome/version.gni
 diff --git a/components/viz/common/features.cc b/components/viz/common/features.cc
 --- a/components/viz/common/features.cc
 +++ b/components/viz/common/features.cc
-@@ -295,9 +295,10 @@ BASE_FEATURE(kDelegateTransforms,
+@@ -289,9 +289,11 @@ BASE_FEATURE(kDelegateTransforms,
  
  // If enabled, Chrome includes the Renderer Main thread(s) into the
  // ADPF(Android Dynamic Performance Framework) hint session.
 +// see https://source.chromium.org/chromium/chromium/src/+/e7507d15614ac7f499fb89086b3a09772fa8deb4
  BASE_FEATURE(kEnableADPFRendererMain,
--             "EnableADPFRendererMain",
--             base::FEATURE_DISABLED_BY_DEFAULT);
-+             "EnableADPFRendererMain",           // enabled
-+             base::FEATURE_ENABLED_BY_DEFAULT);  // by default
+              "EnableADPFRendererMain",
+              base::FEATURE_ENABLED_BY_DEFAULT);
++SET_CROMITE_FEATURE_ENABLED(kEnableADPFRendererMain);
  
- // If enabled, Chrome verifies that Renderer threads do not belong to the
- // Browser process asynchronously via a mojo call to the Browser before
+ // If enabled, surface activation and draw do not block on dependencies.
+ BASE_FEATURE(kDrawImmediatelyWhenInteractive,
 --

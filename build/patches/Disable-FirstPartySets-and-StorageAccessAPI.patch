@@ -46,7 +46,7 @@ diff --git a/chrome/browser/first_party_sets/first_party_sets_policy_service.cc 
 diff --git a/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc b/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
 --- a/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
 +++ b/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc
-@@ -418,7 +418,7 @@ bool PrivacySandboxServiceImpl::IsRestrictedNoticeEnabled() {
+@@ -419,7 +419,7 @@ bool PrivacySandboxServiceImpl::IsRestrictedNoticeEnabled() {
  void PrivacySandboxServiceImpl::SetFirstPartySetsDataAccessEnabled(
      bool enabled) {
    pref_service_->SetBoolean(prefs::kPrivacySandboxRelatedWebsiteSetsEnabled,
@@ -58,7 +58,7 @@ diff --git a/chrome/browser/privacy_sandbox/privacy_sandbox_service_impl.cc b/ch
 diff --git a/components/privacy_sandbox/privacy_sandbox_prefs.cc b/components/privacy_sandbox/privacy_sandbox_prefs.cc
 --- a/components/privacy_sandbox/privacy_sandbox_prefs.cc
 +++ b/components/privacy_sandbox/privacy_sandbox_prefs.cc
-@@ -51,7 +51,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
+@@ -48,7 +48,7 @@ void RegisterProfilePrefs(PrefRegistrySimple* registry) {
    registry->RegisterBooleanPref(
        prefs::kPrivacySandboxFirstPartySetsDataAccessAllowedInitialized, false);
    registry->RegisterBooleanPref(

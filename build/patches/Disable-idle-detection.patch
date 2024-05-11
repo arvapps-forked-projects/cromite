@@ -55,9 +55,9 @@ diff --git a/third_party/blink/renderer/modules/idle/idle_detector.idl b/third_p
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -2105,6 +2105,11 @@
+@@ -2108,6 +2108,11 @@
        name: "HTMLUnsafeMethods",
-       status: "experimental",
+       status: "stable",
      },
 +    {
 +      name: "IdleDetection",  // disabled

@@ -147,8 +147,8 @@ jobs:
           #push-to-fork: uazo/cromite
           add-paths: |
             build/patches/*.patch
-          commit-message: 'AUTOMATED - git apply results'
-          title: Git apply result for ${{ env.BRANCH }} branch
+          commit-message: '[AUTO] Patches auto-rebase'
+          title: '[AUTO] Patches auto-rebase for ${{ env.BRANCH }} branch'
           body: ${{ env.MESSAGE }}
           delete-branch: true
           branch-suffix: short-commit-hash

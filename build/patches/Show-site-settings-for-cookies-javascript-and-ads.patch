@@ -15,7 +15,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/components/browser_ui/site_settings/android/java/src/org/chromium/components/browser_ui/site_settings/SingleWebsiteSettings.java b/components/browser_ui/site_settings/android/java/src/org/chromium/components/browser_ui/site_settings/SingleWebsiteSettings.java
 --- a/components/browser_ui/site_settings/android/java/src/org/chromium/components/browser_ui/site_settings/SingleWebsiteSettings.java
 +++ b/components/browser_ui/site_settings/android/java/src/org/chromium/components/browser_ui/site_settings/SingleWebsiteSettings.java
-@@ -569,6 +569,8 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
+@@ -558,6 +558,8 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
                  setUpSoundPreference(preference);
              } else if (type == ContentSettingsType.JAVASCRIPT) {
                  setUpJavascriptPreference(preference);
@@ -24,7 +24,7 @@ diff --git a/components/browser_ui/site_settings/android/java/src/org/chromium/c
              } else if (type == ContentSettingsType.GEOLOCATION) {
                  setUpLocationPreference(preference);
              } else if (type == ContentSettingsType.NOTIFICATIONS) {
-@@ -1002,17 +1004,8 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
+@@ -991,17 +993,8 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
      private void setUpAdsInformationalBanner() {
          // Add the informational banner which shows at the top of the UI if ad blocking is
          // activated on this site.
@@ -42,7 +42,7 @@ diff --git a/components/browser_ui/site_settings/android/java/src/org/chromium/c
      }
  
      private SiteSettingsCategory getWarningCategory() {
-@@ -1210,12 +1203,13 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
+@@ -1199,12 +1192,13 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
          @Nullable
          Integer currentValue =
                  mSite.getContentSetting(browserContextHandle, ContentSettingsType.JAVASCRIPT);
@@ -62,7 +62,7 @@ diff --git a/components/browser_ui/site_settings/android/java/src/org/chromium/c
          }
          // Not possible to embargo JAVASCRIPT.
          setupContentSettingsPreference(
-@@ -1225,6 +1219,29 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
+@@ -1214,6 +1208,29 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
                  isOneTime(ContentSettingsType.JAVASCRIPT));
      }
  
@@ -92,7 +92,7 @@ diff --git a/components/browser_ui/site_settings/android/java/src/org/chromium/c
      /**
       * Updates the ads list preference based on whether the site is a candidate for blocking. This
       * has some custom behavior.
-@@ -1243,9 +1260,7 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
+@@ -1232,9 +1249,7 @@ public class SingleWebsiteSettings extends BaseSiteSettingsFragment
          }
          // If the ad blocker is activated, then this site will have ads blocked unless there is an
          // explicit permission disallowing the blocking.

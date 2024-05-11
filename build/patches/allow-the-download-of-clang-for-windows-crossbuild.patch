@@ -58,8 +58,8 @@ diff --git a/tools/clang/scripts/update.py b/tools/clang/scripts/update.py
 +                      help='Do not remove old file before extracting.')
    args = parser.parse_args()
  
-   # TODO(crbug.com/1467585): Remove in next Clang roll.
-@@ -378,7 +384,7 @@ def main():
+   if args.verify_version and args.verify_version != RELEASE_VERSION:
+@@ -373,7 +379,7 @@ def main():
      print('--llvm-force-head-revision can only be used for --print-revision')
      return 1
  

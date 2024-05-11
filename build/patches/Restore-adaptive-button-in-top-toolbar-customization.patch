@@ -22,7 +22,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSettings.java
-@@ -46,6 +46,7 @@ import org.chromium.chrome.browser.sync.settings.ManageSyncSettings;
+@@ -47,6 +47,7 @@ import org.chromium.chrome.browser.sync.settings.ManageSyncSettings;
  import org.chromium.chrome.browser.sync.settings.SignInPreference;
  import org.chromium.chrome.browser.sync.settings.SyncPromoPreference;
  import org.chromium.chrome.browser.sync.settings.SyncSettingsUtils;
@@ -30,7 +30,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/settings/MainSe
  import org.chromium.chrome.browser.toolbar.adaptive.AdaptiveToolbarStatePredictor;
  import org.chromium.chrome.browser.tracing.settings.DeveloperSettings;
  import org.chromium.chrome.browser.ui.signin.SyncPromoController;
-@@ -247,7 +248,7 @@ public class MainSettings extends ChromeBaseSettingsFragment
+@@ -245,7 +246,7 @@ public class MainSettings extends ChromeBaseSettingsFragment
                          uiState -> {
                              // We don't show the toolbar shortcut settings page if disabled from
                              // finch.
@@ -89,7 +89,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/share/ShareButt
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -653,18 +653,12 @@ const FeatureEntry::FeatureParam kAdaptiveButtonCustomization_Share[] = {
+@@ -668,18 +668,12 @@ const FeatureEntry::FeatureParam kAdaptiveButtonCustomization_Share[] = {
      {"default_segment", "share"},
      {"show_ui_only_after_ready", "false"},
      {"ignore_segmentation_results", "true"}};
@@ -111,7 +111,7 @@ diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 diff --git a/chrome/browser/flag-metadata.json b/chrome/browser/flag-metadata.json
 --- a/chrome/browser/flag-metadata.json
 +++ b/chrome/browser/flag-metadata.json
-@@ -47,9 +47,10 @@
+@@ -42,9 +42,10 @@
      "expiry_milestone": 125
    },
    {
@@ -126,7 +126,7 @@ diff --git a/chrome/browser/flag-metadata.json b/chrome/browser/flag-metadata.js
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -150,6 +150,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -147,6 +147,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &history_clusters::internal::kJourneys,
      &history_clusters::internal::kOmniboxAction,
      &history_clusters::internal::kOmniboxHistoryClusterProvider,
@@ -134,7 +134,7 @@ diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browse
      &kAdaptiveButtonInTopToolbarTranslate,
      &kAdaptiveButtonInTopToolbarAddToBookmarks,
      &kAdaptiveButtonInTopToolbarCustomizationV2,
-@@ -392,6 +393,10 @@ static jlong JNI_ChromeFeatureMap_GetNativeMap(JNIEnv* env) {
+@@ -397,6 +398,10 @@ static jlong JNI_ChromeFeatureMap_GetNativeMap(JNIEnv* env) {
  
  // Alphabetical:
  
@@ -175,7 +175,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
 diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
 --- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
 +++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/adaptive/AdaptiveToolbarFeatures.java
-@@ -16,8 +16,18 @@ import org.chromium.chrome.browser.readaloud.ReadAloudFeatures;
+@@ -17,8 +17,18 @@ import org.chromium.chrome.browser.readaloud.ReadAloudFeatures;
  
  import java.util.HashMap;
  
@@ -195,7 +195,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      /** Finch default group for new tab variation. */
      static final String NEW_TAB = "new-tab";
  
-@@ -33,6 +43,7 @@ public class AdaptiveToolbarFeatures {
+@@ -34,6 +44,7 @@ public class AdaptiveToolbarFeatures {
      private static final String VARIATION_PARAM_DISABLE_UI = "disable_ui";
      private static final String VARIATION_PARAM_IGNORE_SEGMENTATION_RESULTS =
              "ignore_segmentation_results";
@@ -203,7 +203,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      private static final String VARIATION_PARAM_SHOW_UI_ONLY_AFTER_READY =
              "show_ui_only_after_ready";
      @VisibleForTesting static final String VARIATION_PARAM_MIN_VERSION = "min_version_adaptive";
-@@ -101,6 +112,21 @@ public class AdaptiveToolbarFeatures {
+@@ -102,6 +113,21 @@ public class AdaptiveToolbarFeatures {
          }
      }
  
@@ -225,7 +225,7 @@ diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/brow
      /**
       * Returns whether the adaptive toolbar is enabled with segmentation and customization.
       *
-@@ -241,11 +267,48 @@ public class AdaptiveToolbarFeatures {
+@@ -242,11 +268,48 @@ public class AdaptiveToolbarFeatures {
                          ChromeFeatureList.CONTEXTUAL_PAGE_ACTIONS, "enable_ui", true);
      }
  

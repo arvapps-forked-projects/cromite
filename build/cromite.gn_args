@@ -37,13 +37,41 @@ enable_feed_v2=false
 enable_cardboard=false
 is_high_end_android=true
 
+# media section
 proprietary_codecs=true
 ffmpeg_branding="Chrome"
 enable_av1_decoder=true
 enable_dav1d_decoder=true
-enable_platform_dolby_vision=true
-enable_platform_hevc=true
-enable_mse_mpeg2ts_stream_parser=true
+
+# disable cisco OpenH264
+media_use_openh264 = false
+
+# decoder flags
+if (target_os == "android" || target_os == "win") {
+  # codec supported by default
+  # android: https://developer.android.com/media/platform/supported-formats
+  # windows: https://learn.microsoft.com/en-us/windows/win32/medfound/codecobjects
+
+  # enable aac and h264 hw decoder only
+  enable_platform_aac_audio = true
+  enable_platform_h264_video = true
+
+  # enable hw decoder for h265 (hevc)
+  enable_platform_hevc = true
+
+  # disable dolby vision
+  enable_platform_dolby_vision = false
+  enable_platform_encrypted_dolby_vision = false
+
+  if (target_os == "win") {
+    # enable ac3/eac codec
+    enable_platform_ac3_eac3_audio = true
+  }
+}
+
+# disable passthrough audio codecs
+enable_platform_dts_audio = false
+enable_passthrough_audio_codecs = false
 
 # Do not compile libmonochrome.so with RELR relocations
 # since supported only on API 28+

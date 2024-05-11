@@ -23,25 +23,25 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -248,6 +248,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -252,6 +252,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &kReaderModeInCCT,
      &kRecordSuppressionMetrics,
      &kReengagementNotification,
 +    &kSearchReadyOmniboxFeature,
      &kRelatedSearchesAllLanguage,
      &kReportParentalControlSitesChild,
-     &kRequestDesktopSiteDefaults,
+     &kSearchEnginesPromoV3,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -325,6 +325,7 @@ public abstract class ChromeFeatureList {
+@@ -321,6 +321,7 @@ public abstract class ChromeFeatureList {
+             "LookalikeUrlNavigationSuggestionsUI";
+     public static final String MAGIC_STACK_ANDROID = "MagicStackAndroid";
      public static final String MESSAGES_FOR_ANDROID_ADS_BLOCKED = "MessagesForAndroidAdsBlocked";
-     public static final String MESSAGES_FOR_ANDROID_INFRASTRUCTURE =
-             "MessagesForAndroidInfrastructure";
 +    public static final String SEARCH_READY_OMNIBOX = "SearchReadyOmnibox";
      public static final String MESSAGES_FOR_ANDROID_PERMISSION_UPDATE =
              "MessagesForAndroidPermissionUpdate";
-     public static final String MUlTI_INSTANCE_APPLICATION_STATUS_CLEANUP =
+     public static final String MIGRATE_ACCOUNT_MANAGEMENT_SETTINGS_TO_CAPABILITIES =
 diff --git a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/suggestions/DropdownItemViewInfoListBuilder.java b/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/suggestions/DropdownItemViewInfoListBuilder.java
 --- a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/suggestions/DropdownItemViewInfoListBuilder.java
 +++ b/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/suggestions/DropdownItemViewInfoListBuilder.java
@@ -51,17 +51,17 @@ diff --git a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/brow
  
 +import org.chromium.chrome.browser.flags.ChromeFeatureList;
  import org.chromium.base.supplier.Supplier;
+ import org.chromium.chrome.browser.flags.ChromeFeatureList;
  import org.chromium.chrome.browser.omnibox.OmniboxFeatures;
- import org.chromium.chrome.browser.omnibox.UrlBarEditingTextStateProvider;
-@@ -55,6 +56,7 @@ class DropdownItemViewInfoListBuilder {
+@@ -54,6 +55,7 @@ class DropdownItemViewInfoListBuilder {
      private @NonNull BookmarkState mBookmarkState;
-     @Px private int mDropdownHeight;
-     private OpenHistoryClustersDelegate mOpenHistoryClustersDelegate;
+     private @Px int mDropdownHeight;
+     private boolean mUseNativeGrouping;
 +    private EditUrlSuggestionProcessor mEditUrlSuggestionProcessor;
  
      DropdownItemViewInfoListBuilder(
-             @NonNull Supplier<Tab> tabSupplier,
-@@ -87,9 +89,11 @@ class DropdownItemViewInfoListBuilder {
+             @NonNull Supplier<Tab> tabSupplier, BookmarkState bookmarkState) {
+@@ -83,9 +85,11 @@ class DropdownItemViewInfoListBuilder {
  
          mGroupSeparatorProcessor = new GroupSeparatorProcessor(context);
          mHeaderProcessor = new HeaderProcessor(context);
@@ -75,10 +75,10 @@ diff --git a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/brow
          registerSuggestionProcessor(
                  new AnswerSuggestionProcessor(context, host, textProvider, mImageSupplier));
          registerSuggestionProcessor(
-@@ -206,6 +210,9 @@ class DropdownItemViewInfoListBuilder {
-     /** Signals that native initialization has completed. */
-     void onNativeInitialized() {
-         mHeaderProcessor.onNativeInitialized();
+@@ -197,6 +201,9 @@ class DropdownItemViewInfoListBuilder {
+         mUseNativeGrouping =
+                 ChromeFeatureList.isEnabled(
+                         ChromeFeatureList.OMNIBOX_SUGGESTION_GROUPING_FOR_NON_ZPS);
 +        if (ChromeFeatureList.isEnabled(ChromeFeatureList.SEARCH_READY_OMNIBOX) == false) {
 +            mPriorityOrderedSuggestionProcessors.remove(mEditUrlSuggestionProcessor);
 +        }

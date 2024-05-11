@@ -6,26 +6,26 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
  chrome/android/BUILD.gn                       |  1 -
  .../chrome/browser/ui/RootUiCoordinator.java  |  5 -----
- chrome/browser/share/BUILD.gn                 |  2 --
+ chrome/browser/share/BUILD.gn                 |  1 -
  ...omeProvidedSharingOptionsProviderBase.java | 22 -------------------
  chrome/browser/share/android/java_sources.gni | 11 ----------
- 5 files changed, 41 deletions(-)
+ 5 files changed, 40 deletions(-)
 
 diff --git a/chrome/android/BUILD.gn b/chrome/android/BUILD.gn
 --- a/chrome/android/BUILD.gn
 +++ b/chrome/android/BUILD.gn
-@@ -3503,7 +3503,6 @@ generate_jni("chrome_jni_headers") {
+@@ -3542,7 +3542,6 @@ generate_jni("chrome_jni_headers") {
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/link_to_text/LinkToTextBridge.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabService.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabServiceFactory.java",
--    "../browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QRCodeGenerationRequest.java",
+-    "../browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QRCodeGenerator.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/screenshot/EditorScreenshotTask.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/send_tab_to_self/MetricsRecorder.java",
      "../browser/share/android/java/src/org/chromium/chrome/browser/share/send_tab_to_self/NotificationManager.java",
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
-@@ -114,7 +114,6 @@ import org.chromium.chrome.browser.share.ShareButtonController;
+@@ -112,7 +112,6 @@ import org.chromium.chrome.browser.share.ShareButtonController;
  import org.chromium.chrome.browser.share.ShareDelegate;
  import org.chromium.chrome.browser.share.ShareDelegate.ShareOrigin;
  import org.chromium.chrome.browser.share.ShareUtils;
@@ -33,7 +33,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordi
  import org.chromium.chrome.browser.share.scroll_capture.ScrollCaptureManager;
  import org.chromium.chrome.browser.tab.AccessibilityVisibilityHandler;
  import org.chromium.chrome.browser.tab.AutofillSessionLifetimeController;
-@@ -587,10 +586,6 @@ public class RootUiCoordinator
+@@ -594,10 +593,6 @@ public class RootUiCoordinator
      }
  
      public void onAttachFragment(Fragment fragment) {
@@ -47,12 +47,11 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordi
 diff --git a/chrome/browser/share/BUILD.gn b/chrome/browser/share/BUILD.gn
 --- a/chrome/browser/share/BUILD.gn
 +++ b/chrome/browser/share/BUILD.gn
-@@ -44,8 +44,6 @@ source_set("share") {
-       "default_ranking_android.cc",
-       "editor_screenshot_task.cc",
+@@ -45,7 +45,6 @@ source_set("share") {
        "link_to_text_bridge.cc",
--      "qr_code_generation_request.cc",
--      "qr_code_generation_request.h",
+       "page_info_sharing_bridge.cc",
+       "page_info_sharing_bridge.h",
+-      "qr_code_generator_android.cc",
      ]
      deps += [
        ":jni_headers",
@@ -67,7 +66,7 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
  import org.chromium.chrome.browser.share.send_tab_to_self.SendTabToSelfAndroidBridge;
  import org.chromium.chrome.browser.share.send_tab_to_self.SendTabToSelfCoordinator;
  import org.chromium.chrome.browser.share.share_sheet.ChromeOptionShareCallback;
-@@ -268,9 +267,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
+@@ -276,9 +275,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
      }
  
      private void maybeAddQrCodeFirstPartyOption() {
@@ -77,7 +76,7 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
      }
  
      private void maybeAddLongScreenshotFirstPartyOption() {
-@@ -386,24 +382,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
+@@ -394,24 +390,6 @@ public abstract class ChromeProvidedSharingOptionsProviderBase {
                  .build();
      }
  
@@ -105,11 +104,11 @@ diff --git a/chrome/browser/share/android/java/src/org/chromium/chrome/browser/s
 diff --git a/chrome/browser/share/android/java_sources.gni b/chrome/browser/share/android/java_sources.gni
 --- a/chrome/browser/share/android/java_sources.gni
 +++ b/chrome/browser/share/android/java_sources.gni
-@@ -28,17 +28,6 @@ share_java_sources = [
-   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabService.java",
-   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/LongScreenshotsTabServiceFactory.java",
-   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/long_screenshots/bitmap_generation/ScreenshotBoundsManager.java",
--  "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QRCodeGenerationRequest.java",
+@@ -36,17 +36,6 @@ share_java_sources = [
+   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/page_info_sheet/PageInfoBottomSheetViewBinder.java",
+   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/page_info_sheet/PageInfoSharingController.java",
+   "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/page_info_sheet/PageInfoSharingControllerImpl.java",
+-  "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QRCodeGenerator.java",
 -  "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QrCodeCoordinator.java",
 -  "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QrCodeDialog.java",
 -  "//chrome/browser/share/android/java/src/org/chromium/chrome/browser/share/qrcode/QrCodeDialogTab.java",

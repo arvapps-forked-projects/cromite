@@ -5,13 +5,13 @@ Subject: Do not build API keys infobar
 License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 ---
  chrome/browser/ui/BUILD.gn                 | 2 --
- chrome/browser/ui/startup/infobar_utils.cc | 3 ---
- 2 files changed, 5 deletions(-)
+ chrome/browser/ui/startup/infobar_utils.cc | 4 ----
+ 2 files changed, 6 deletions(-)
 
 diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
 --- a/chrome/browser/ui/BUILD.gn
 +++ b/chrome/browser/ui/BUILD.gn
-@@ -1435,8 +1435,6 @@ static_library("ui") {
+@@ -1429,8 +1429,6 @@ static_library("ui") {
        "singleton_tabs.h",
        "startup/automation_infobar_delegate.cc",
        "startup/automation_infobar_delegate.h",
@@ -23,12 +23,13 @@ diff --git a/chrome/browser/ui/BUILD.gn b/chrome/browser/ui/BUILD.gn
 diff --git a/chrome/browser/ui/startup/infobar_utils.cc b/chrome/browser/ui/startup/infobar_utils.cc
 --- a/chrome/browser/ui/startup/infobar_utils.cc
 +++ b/chrome/browser/ui/startup/infobar_utils.cc
-@@ -146,9 +146,6 @@ void AddInfoBarsIfNecessary(Browser* browser,
+@@ -151,10 +151,6 @@ void AddInfoBarsIfNecessary(Browser* browser,
      infobars::ContentInfoBarManager* infobar_manager =
          infobars::ContentInfoBarManager::FromWebContents(web_contents);
  
--    if (!google_apis::HasAPIKeyConfigured())
+-    if (!google_apis::HasAPIKeyConfigured()) {
 -      GoogleApiKeysInfoBarDelegate::Create(infobar_manager);
+-    }
 -
      if (ObsoleteSystem::IsObsoleteNowOrSoon()) {
        PrefService* local_state = g_browser_process->local_state();

@@ -10,17 +10,20 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
  components/embedder_support/user_agent_utils.cc |  4 +---
  content/browser/client_hints/client_hints.cc    | 17 +++++++++++------
  .../loader/navigation_url_loader_impl.cc        |  5 +++++
+ .../about_flags_cc/Client-hints-overrides.inc   |  9 +++++++++
  .../features_cc/Client-hints-overrides.inc      |  1 +
  .../cpp/features_cc/Client-hints-overrides.inc  |  1 +
  net/http/http_network_transaction.cc            |  1 +
  services/network/public/cpp/client_hints.cc     |  1 +
- .../blink/common/client_hints/client_hints.cc   |  1 +
+ .../blink/common/client_hints/client_hints.cc   |  6 ++++--
  .../common/client_hints/enabled_client_hints.cc |  4 +++-
  .../blink/renderer/core/frame/navigator_ua.idl  |  4 +++-
+ .../renderer/core/frame/navigator_ua_data.cc    |  1 +
  .../renderer/core/frame/navigator_ua_data.idl   |  5 ++++-
  .../renderer/core/loader/base_fetch_context.cc  |  6 ++++--
- .../platform/runtime_enabled_features.json5     |  4 ++++
- 13 files changed, 40 insertions(+), 14 deletions(-)
+ .../platform/runtime_enabled_features.json5     |  5 +++++
+ 15 files changed, 54 insertions(+), 16 deletions(-)
+ create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Client-hints-overrides.inc
  create mode 100644 cromite_flags/content/common/features_cc/Client-hints-overrides.inc
  create mode 100644 cromite_flags/services/network/public/cpp/features_cc/Client-hints-overrides.inc
 
@@ -30,12 +33,12 @@ diff --git a/components/embedder_support/user_agent_utils.cc b/components/embedd
 @@ -187,9 +187,7 @@ const blink::UserAgentBrandList GetUserAgentBrandList(
    bool parse_result = base::StringToInt(major_version, &major_version_number);
    DCHECK(parse_result);
-   absl::optional<std::string> brand;
+   std::optional<std::string> brand;
 -#if !BUILDFLAG(CHROMIUM_BRANDING)
 -  brand = version_info::GetProductName();
 -#endif
 +  brand = "Google Chrome";
-   absl::optional<std::string> maybe_brand_override =
+   std::optional<std::string> maybe_brand_override =
        base::GetFieldTrialParamValueByFeature(features::kGreaseUACH,
                                               "brand_override");
 diff --git a/content/browser/client_hints/client_hints.cc b/content/browser/client_hints/client_hints.cc
@@ -89,7 +92,7 @@ diff --git a/content/browser/client_hints/client_hints.cc b/content/browser/clie
 diff --git a/content/browser/loader/navigation_url_loader_impl.cc b/content/browser/loader/navigation_url_loader_impl.cc
 --- a/content/browser/loader/navigation_url_loader_impl.cc
 +++ b/content/browser/loader/navigation_url_loader_impl.cc
-@@ -1070,6 +1070,11 @@ void NavigationURLLoaderImpl::OnAcceptCHFrameReceived(
+@@ -1179,6 +1179,11 @@ void NavigationURLLoaderImpl::OnAcceptCHFrameReceived(
      return;
    }
  
@@ -101,6 +104,20 @@ diff --git a/content/browser/loader/navigation_url_loader_impl.cc b/content/brow
    LogAcceptCHFrameStatus(AcceptCHFrameRestart::kFramePresent);
  
    // Given that this is happening in the middle of navigation, there should
+diff --git a/cromite_flags/chrome/browser/about_flags_cc/Client-hints-overrides.inc b/cromite_flags/chrome/browser/about_flags_cc/Client-hints-overrides.inc
+new file mode 100644
+--- /dev/null
++++ b/cromite_flags/chrome/browser/about_flags_cc/Client-hints-overrides.inc
+@@ -0,0 +1,9 @@
++#ifdef FLAG_SECTION
++
++    {"enable-ua-client-hint",
++     "Enable UA client hint",
++     "Allow sending base low entropy client hints as "
++     "UA, UAMobile and UAPlatform for compatibility", kOsAll,
++     FEATURE_VALUE_TYPE(blink::features::kUserAgentClientHint)},
++
++#endif
 diff --git a/cromite_flags/content/common/features_cc/Client-hints-overrides.inc b/cromite_flags/content/common/features_cc/Client-hints-overrides.inc
 new file mode 100644
 --- /dev/null
@@ -129,23 +146,38 @@ diff --git a/services/network/public/cpp/client_hints.cc b/services/network/publ
 +++ b/services/network/public/cpp/client_hints.cc
 @@ -120,6 +120,7 @@ const DecodeMap& GetDecodeMap() {
  
- absl::optional<std::vector<network::mojom::WebClientHintsType>>
+ std::optional<std::vector<network::mojom::WebClientHintsType>>
  ParseClientHintsHeader(const std::string& header) {
-+  if ((true)) return absl::nullopt;
++  if ((true)) return std::nullopt;
    // Accept-CH is an sh-list of tokens; see:
    // https://datatracker.ietf.org/doc/html/draft-ietf-httpbis-header-structure-19#section-3.1
-   absl::optional<net::structured_headers::List> maybe_list =
+   std::optional<net::structured_headers::List> maybe_list =
 diff --git a/third_party/blink/common/client_hints/client_hints.cc b/third_party/blink/common/client_hints/client_hints.cc
 --- a/third_party/blink/common/client_hints/client_hints.cc
 +++ b/third_party/blink/common/client_hints/client_hints.cc
-@@ -105,6 +105,7 @@ const PolicyFeatureToClientHintMap& GetPolicyFeatureToClientHintMap() {
- }
+@@ -14,6 +14,7 @@
+ #include "base/strings/string_util.h"
+ #include "services/network/public/cpp/client_hints.h"
+ #include "third_party/blink/public/common/features.h"
++#include "third_party/blink/renderer/platform/runtime_enabled_features.h"
+ #include "third_party/blink/public/common/permissions_policy/permissions_policy.h"
+ #include "url/origin.h"
+ 
+@@ -106,11 +107,12 @@ const PolicyFeatureToClientHintMap& GetPolicyFeatureToClientHintMap() {
  
  bool IsClientHintSentByDefault(network::mojom::WebClientHintsType type) {
-+  if ((true)) return false;
    switch (type) {
-     case network::mojom::WebClientHintsType::kSaveData:
+-    case network::mojom::WebClientHintsType::kSaveData:
      case network::mojom::WebClientHintsType::kUA:
+     case network::mojom::WebClientHintsType::kUAMobile:
+     case network::mojom::WebClientHintsType::kUAPlatform:
+-      return true;
++      return RuntimeEnabledFeatures::UserAgentClientHintEnabled();
++    case network::mojom::WebClientHintsType::kSaveData:
++      return false;
+     default:
+       return false;
+   }
 diff --git a/third_party/blink/common/client_hints/enabled_client_hints.cc b/third_party/blink/common/client_hints/enabled_client_hints.cc
 --- a/third_party/blink/common/client_hints/enabled_client_hints.cc
 +++ b/third_party/blink/common/client_hints/enabled_client_hints.cc
@@ -187,6 +219,17 @@ diff --git a/third_party/blink/renderer/core/frame/navigator_ua.idl b/third_part
 +] interface mixin NavigatorUA {
    [SecureContext] readonly attribute NavigatorUAData userAgentData;
  };
+diff --git a/third_party/blink/renderer/core/frame/navigator_ua_data.cc b/third_party/blink/renderer/core/frame/navigator_ua_data.cc
+--- a/third_party/blink/renderer/core/frame/navigator_ua_data.cc
++++ b/third_party/blink/renderer/core/frame/navigator_ua_data.cc
+@@ -220,6 +220,7 @@ ScriptPromiseTyped<UADataValues> NavigatorUAData::getHighEntropyValues(
+   Dactyloscoper::RecordDirectSurface(
+       GetExecutionContext(), WebFeature::kNavigatorUAData_Platform, platform());
+ 
++  if ((false))
+   for (const String& hint : hints) {
+     if (hint == "platformVersion") {
+       values->setPlatformVersion(platform_version_);
 diff --git a/third_party/blink/renderer/core/frame/navigator_ua_data.idl b/third_party/blink/renderer/core/frame/navigator_ua_data.idl
 --- a/third_party/blink/renderer/core/frame/navigator_ua_data.idl
 +++ b/third_party/blink/renderer/core/frame/navigator_ua_data.idl
@@ -235,15 +278,16 @@ diff --git a/third_party/blink/renderer/core/loader/base_fetch_context.cc b/thir
 diff --git a/third_party/blink/renderer/platform/runtime_enabled_features.json5 b/third_party/blink/renderer/platform/runtime_enabled_features.json5
 --- a/third_party/blink/renderer/platform/runtime_enabled_features.json5
 +++ b/third_party/blink/renderer/platform/runtime_enabled_features.json5
-@@ -536,6 +536,10 @@
-       name: "ByobFetch",
+@@ -324,6 +324,11 @@
+       name: "AsyncClipboardImplicitPermission",
        status: "stable",
      },
 +    {
-+      name: "UserAgentClientHint",  // always disabled
-+      status: "experimental",       // in bromite
++      name: "UserAgentClientHint",
++      status: "stable",
++      base_feature: "UserAgentClientHint",
 +    },
      {
-       name: "CacheStorageCodeCacheHint",
-       origin_trial_feature_name: "CacheStorageCodeCacheHint",
+       name: "AttributionReporting",
+       origin_trial_feature_name: "PrivacySandboxAdsAPIs",
 --

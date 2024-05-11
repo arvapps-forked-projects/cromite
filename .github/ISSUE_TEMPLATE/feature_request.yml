@@ -24,8 +24,6 @@ body:
       options:
         - label: "I have read the [README](https://github.com/uazo/cromite/blob/master/README.md)"
           required: true
-        - label: "I have read the [FAQs](https://github.com/uazo/cromite/blob/master/FAQ.md)."
-          required: true
         - label: "I have searched [existing issues](https://github.com/uazo/cromite/issues) for my feature request. This is a new issue (NOT a duplicate) and is not related to another issue."
           required: true
         - label: "I have searched [wont fix issues](https://github.com/uazo/cromite/issues?q=label%3Awontfix) and this request is not among them"

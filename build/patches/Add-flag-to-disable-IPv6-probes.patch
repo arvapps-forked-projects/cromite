@@ -45,7 +45,7 @@ new file mode 100644
 diff --git a/net/BUILD.gn b/net/BUILD.gn
 --- a/net/BUILD.gn
 +++ b/net/BUILD.gn
-@@ -1028,6 +1028,7 @@ component("net") {
+@@ -1037,6 +1037,7 @@ component("net") {
      "//build:chromeos_buildflags",
      "//components/miracle_parameter/common",
      "//net/http:transport_security_state_generated_files",
@@ -56,7 +56,7 @@ diff --git a/net/BUILD.gn b/net/BUILD.gn
 diff --git a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc
 --- a/net/dns/host_resolver_manager.cc
 +++ b/net/dns/host_resolver_manager.cc
-@@ -113,6 +113,7 @@
+@@ -112,6 +112,7 @@
  #include "net/log/net_log_event_type.h"
  #include "net/log/net_log_source.h"
  #include "net/log/net_log_source_type.h"
@@ -64,7 +64,7 @@ diff --git a/net/dns/host_resolver_manager.cc b/net/dns/host_resolver_manager.cc
  #include "net/log/net_log_with_source.h"
  #include "net/socket/client_socket_factory.h"
  #include "net/url_request/url_request_context.h"
-@@ -1373,6 +1374,13 @@ int HostResolverManager::StartIPv6ReachabilityCheck(
+@@ -1351,6 +1352,13 @@ int HostResolverManager::StartIPv6ReachabilityCheck(
      return OK;
    }
  

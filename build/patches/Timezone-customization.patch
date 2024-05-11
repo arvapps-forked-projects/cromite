@@ -44,7 +44,7 @@ Require: Content-settings-infrastructure.patch
 diff --git a/components/browser_ui/site_settings/android/BUILD.gn b/components/browser_ui/site_settings/android/BUILD.gn
 --- a/components/browser_ui/site_settings/android/BUILD.gn
 +++ b/components/browser_ui/site_settings/android/BUILD.gn
-@@ -96,6 +96,7 @@ android_library("java") {
+@@ -97,6 +97,7 @@ android_library("java") {
      "java/src/org/chromium/components/browser_ui/site_settings/WebsitePreference.java",
      "java/src/org/chromium/components/browser_ui/site_settings/WebsitePreferenceBridge.java",
      "java/src/org/chromium/components/browser_ui/site_settings/WebsiteRowPreference.java",
@@ -52,7 +52,7 @@ diff --git a/components/browser_ui/site_settings/android/BUILD.gn b/components/b
    ]
  
    resources_package = "org.chromium.components.browser_ui.site_settings"
-@@ -270,6 +271,8 @@ android_resources("java_resources") {
+@@ -271,6 +272,8 @@ android_resources("java_resources") {
      "java/res/xml/site_settings_preferences.xml",
      "java/res/xml/storage_access_settings.xml",
      "java/res/xml/website_preferences.xml",
@@ -559,7 +559,7 @@ new file mode 100644
 diff --git a/components/browser_ui/site_settings/android/website_preference_bridge.cc b/components/browser_ui/site_settings/android/website_preference_bridge.cc
 --- a/components/browser_ui/site_settings/android/website_preference_bridge.cc
 +++ b/components/browser_ui/site_settings/android/website_preference_bridge.cc
-@@ -1123,3 +1123,19 @@ JNI_WebsitePreferenceBridge_ToHostOnlyPattern(
+@@ -1124,3 +1124,19 @@ JNI_WebsitePreferenceBridge_ToHostOnlyPattern(
            ContentSettingsPattern::FromString(pattern_string));
    return ConvertUTF8ToJavaString(env, host_only_pattern.ToString());
  }
@@ -655,7 +655,7 @@ new file mode 100644
 diff --git a/components/content_settings/core/browser/content_settings_pref_provider.cc b/components/content_settings/core/browser/content_settings_pref_provider.cc
 --- a/components/content_settings/core/browser/content_settings_pref_provider.cc
 +++ b/components/content_settings/core/browser/content_settings_pref_provider.cc
-@@ -80,6 +80,8 @@ void PrefProvider::RegisterProfilePrefs(
+@@ -79,6 +79,8 @@ void PrefProvider::RegisterProfilePrefs(
                                       info->GetPrefRegistrationFlags());
    }
  
@@ -664,7 +664,7 @@ diff --git a/components/content_settings/core/browser/content_settings_pref_prov
    // Obsolete prefs ----------------------------------------------------------
  
    // These prefs have been removed, but need to be registered so they can
-@@ -153,6 +155,10 @@ PrefProvider::PrefProvider(PrefService* prefs,
+@@ -151,6 +153,10 @@ PrefProvider::PrefProvider(PrefService* prefs,
      event_args->set_number_of_exceptions(
          num_exceptions);  // PrefProvider::PrefProvider.
    });
@@ -675,8 +675,8 @@ diff --git a/components/content_settings/core/browser/content_settings_pref_prov
  }
  
  PrefProvider::~PrefProvider() {
-@@ -439,4 +445,14 @@ void PrefProvider::SetClockForTesting(base::Clock* clock) {
-   clock_ = clock;
+@@ -440,4 +446,14 @@ void PrefProvider::SetClockForTesting(base::Clock* clock) {
+   }
  }
  
 +void PrefProvider::GetPrefTimezoneOverrideValue(std::string& timezone) const {
@@ -767,7 +767,7 @@ new file mode 100644
 diff --git a/components/content_settings/core/common/content_settings.h b/components/content_settings/core/common/content_settings.h
 --- a/components/content_settings/core/common/content_settings.h
 +++ b/components/content_settings/core/common/content_settings.h
-@@ -110,6 +110,7 @@ struct RendererContentSettingRules {
+@@ -107,6 +107,7 @@ struct RendererContentSettingRules {
    ContentSettingsForOneType popup_redirect_rules;
    ContentSettingsForOneType mixed_content_rules;
    ContentSettingsForOneType auto_dark_content_rules;
@@ -778,7 +778,7 @@ diff --git a/components/content_settings/core/common/content_settings.h b/compon
 diff --git a/components/content_settings/core/common/content_settings.mojom b/components/content_settings/core/common/content_settings.mojom
 --- a/components/content_settings/core/common/content_settings.mojom
 +++ b/components/content_settings/core/common/content_settings.mojom
-@@ -100,4 +100,5 @@ struct RendererContentSettingRules {
+@@ -94,4 +94,5 @@ struct RendererContentSettingRules {
    array<ContentSettingPatternSource> popup_redirect_rules;
    array<ContentSettingPatternSource> mixed_content_rules;
    array<ContentSettingPatternSource> auto_dark_content_rules;
@@ -787,7 +787,7 @@ diff --git a/components/content_settings/core/common/content_settings.mojom b/co
 diff --git a/components/content_settings/core/common/content_settings_mojom_traits.cc b/components/content_settings/core/common/content_settings_mojom_traits.cc
 --- a/components/content_settings/core/common/content_settings_mojom_traits.cc
 +++ b/components/content_settings/core/common/content_settings_mojom_traits.cc
-@@ -173,7 +173,8 @@ bool StructTraits<content_settings::mojom::RendererContentSettingRulesDataView,
+@@ -136,7 +136,8 @@ bool StructTraits<content_settings::mojom::RendererContentSettingRulesDataView,
           data.ReadScriptRules(&out->script_rules) &&
           data.ReadPopupRedirectRules(&out->popup_redirect_rules) &&
           data.ReadMixedContentRules(&out->mixed_content_rules) &&
@@ -800,7 +800,7 @@ diff --git a/components/content_settings/core/common/content_settings_mojom_trai
 diff --git a/components/content_settings/core/common/content_settings_mojom_traits.h b/components/content_settings/core/common/content_settings_mojom_traits.h
 --- a/components/content_settings/core/common/content_settings_mojom_traits.h
 +++ b/components/content_settings/core/common/content_settings_mojom_traits.h
-@@ -222,6 +222,11 @@ struct StructTraits<
+@@ -217,6 +217,11 @@ struct StructTraits<
      return r.auto_dark_content_rules;
    }
  
@@ -815,7 +815,7 @@ diff --git a/components/content_settings/core/common/content_settings_mojom_trai
 diff --git a/components/content_settings/core/common/pref_names.h b/components/content_settings/core/common/pref_names.h
 --- a/components/content_settings/core/common/pref_names.h
 +++ b/components/content_settings/core/common/pref_names.h
-@@ -224,6 +224,9 @@ inline constexpr char kDesktopSiteWindowSettingEnabled[] =
+@@ -234,6 +234,9 @@ inline constexpr char kDesktopSiteWindowSettingEnabled[] =
      "desktop_site.window_setting";
  #endif
  
@@ -839,7 +839,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc
  #include "components/content_settings/core/common/content_settings.h"
  #include "components/content_settings/core/common/content_settings.mojom.h"
  #include "components/content_settings/core/common/content_settings_pattern.h"
-@@ -353,6 +355,7 @@ bool ContentSettingsAgentImpl::AllowScript(bool enabled_per_settings) {
+@@ -369,6 +371,7 @@ bool ContentSettingsAgentImpl::AllowScript(bool enabled_per_settings) {
    allow = allow || IsAllowlistedForContentSettings();
  
    cached_script_permissions_[frame] = allow;
@@ -847,7 +847,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc
    return allow;
  }
  
-@@ -368,7 +371,9 @@ bool ContentSettingsAgentImpl::AllowScriptFromSource(
+@@ -384,7 +387,9 @@ bool ContentSettingsAgentImpl::AllowScriptFromSource(
          content_setting_rules_->script_rules, script_url);
      allow = setting != CONTENT_SETTING_BLOCK;
    }
@@ -858,7 +858,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.cc
  }
  
  bool ContentSettingsAgentImpl::AllowReadFromClipboard() {
-@@ -468,4 +473,78 @@ bool ContentSettingsAgentImpl::IsAllowlistedForContentSettings() const {
+@@ -484,4 +489,78 @@ bool ContentSettingsAgentImpl::IsAllowlistedForContentSettings() const {
    return false;
  }
  
@@ -952,7 +952,7 @@ diff --git a/components/content_settings/renderer/content_settings_agent_impl.h 
  namespace blink {
  class WebFrame;
  class WebURL;
-@@ -172,6 +177,12 @@ class ContentSettingsAgentImpl
+@@ -176,6 +181,12 @@ class ContentSettingsAgentImpl
    std::unique_ptr<Delegate> delegate_;
  
    mojo::AssociatedReceiverSet<mojom::ContentSettingsAgent> receivers_;

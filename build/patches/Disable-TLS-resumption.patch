@@ -79,7 +79,7 @@ new file mode 100644
 diff --git a/net/http/http_network_session.cc b/net/http/http_network_session.cc
 --- a/net/http/http_network_session.cc
 +++ b/net/http/http_network_session.cc
-@@ -208,6 +208,7 @@ HttpNetworkSession::HttpNetworkSession(const HttpNetworkSessionParams& params,
+@@ -209,6 +209,7 @@ HttpNetworkSession::HttpNetworkSession(const HttpNetworkSessionParams& params,
  
    next_protos_.push_back(kProtoHTTP11);
  
@@ -90,15 +90,15 @@ diff --git a/net/http/http_network_session.cc b/net/http/http_network_session.cc
 diff --git a/net/quic/quic_session_pool.cc b/net/quic/quic_session_pool.cc
 --- a/net/quic/quic_session_pool.cc
 +++ b/net/quic/quic_session_pool.cc
-@@ -69,6 +69,7 @@
- #include "net/third_party/quiche/src/quiche/quic/core/quic_utils.h"
+@@ -71,6 +71,7 @@
  #include "net/third_party/quiche/src/quiche/quic/platform/api/quic_flags.h"
+ #include "net/traffic_annotation/network_traffic_annotation.h"
  #include "third_party/boringssl/src/include/openssl/aead.h"
 +#include "third_party/boringssl/src/include/openssl/ssl.h"
  #include "url/gurl.h"
  #include "url/scheme_host_port.h"
  #include "url/url_constants.h"
-@@ -196,6 +197,38 @@ std::set<std::string> HostsFromOrigins(std::set<HostPortPair> origins) {
+@@ -158,6 +159,38 @@ std::set<std::string> HostsFromOrigins(std::set<HostPortPair> origins) {
  
  }  // namespace
  
@@ -134,10 +134,10 @@ diff --git a/net/quic/quic_session_pool.cc b/net/quic/quic_session_pool.cc
 +  }
 +};
 +
- // Refcounted class that owns quic::QuicCryptoClientConfig and tracks how many
- // consumers are using it currently. When the last reference is freed, the
- // QuicCryptoClientConfigHandle informs the owning QuicSessionPool, moves it
-@@ -2409,7 +2442,7 @@ QuicSessionPool::CreateCryptoConfigHandle(
+ QuicSessionRequest::QuicSessionRequest(QuicSessionPool* pool) : pool_(pool) {}
+ 
+ QuicSessionRequest::~QuicSessionRequest() {
+@@ -1721,7 +1754,7 @@ QuicSessionPool::CreateCryptoConfigHandle(
                cert_verifier_, transport_security_state_, sct_auditing_delegate_,
                HostsFromOrigins(params_.origins_to_force_quic_on),
                actual_network_anonymization_key),
@@ -149,7 +149,7 @@ diff --git a/net/quic/quic_session_pool.cc b/net/quic/quic_session_pool.cc
 diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket_impl.cc
 --- a/net/socket/ssl_client_socket_impl.cc
 +++ b/net/socket/ssl_client_socket_impl.cc
-@@ -380,7 +380,33 @@ SSLClientSocketImpl::SSLClientSocketImpl(
+@@ -288,7 +288,33 @@ SSLClientSocketImpl::SSLClientSocketImpl(
    CHECK(context_);
  }
  
@@ -183,7 +183,7 @@ diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket
    Disconnect();
  }
  
-@@ -764,6 +790,8 @@ int SSLClientSocketImpl::Init() {
+@@ -672,6 +698,8 @@ int SSLClientSocketImpl::Init() {
      }
      if (session)
        SSL_set_session(ssl_.get(), session.get());
@@ -192,7 +192,7 @@ diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket
    }
  
    const int kBufferSize = GetDefaultOpenSSLBufferSize();
-@@ -1062,6 +1090,35 @@ int SSLClientSocketImpl::DoHandshakeComplete(int result) {
+@@ -960,6 +988,35 @@ int SSLClientSocketImpl::DoHandshakeComplete(int result) {
                      : SSLHandshakeDetails::kTLS13Full;
      }
    }
@@ -228,7 +228,7 @@ diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket
    UMA_HISTOGRAM_ENUMERATION("Net.SSLHandshakeDetails", details);
  
    // Measure TLS connections that implement the renegotiation_info extension.
-@@ -1699,6 +1756,8 @@ bool SSLClientSocketImpl::IsRenegotiationAllowed() const {
+@@ -1585,6 +1642,8 @@ bool SSLClientSocketImpl::IsRenegotiationAllowed() const {
  }
  
  bool SSLClientSocketImpl::IsCachingEnabled() const {

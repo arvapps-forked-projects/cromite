@@ -1,30 +1,230 @@
-From: Wengling Chen <feiyu2817@gmail.com>
-Date: Mon, 1 Feb 2021 19:18:55 +0200
+From: uazo <uazo@users.noreply.github.com>
+Date: Sun, 5 May 2024 09:34:39 +0000
 Subject: Add option to force tablet UI
 
-License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
+License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
- .../ChromeAccessibilitySettingsDelegate.java  | 19 +++++++++++++++++++
- .../browser/tasks/ReturnToChromeUtil.java     |  4 +++-
- .../chrome/browser/ui/RootUiCoordinator.java  |  5 ++++-
+ .../start_surface/StartSurfaceMediator.java   |  5 +++-
+ .../tasks/SingleTabSwitcherOnNtpMediator.java |  3 +-
+ .../layout/custom_tabs_control_container.xml  |  2 +-
+ .../java/res/layout/recent_tabs_page.xml      |  2 +-
+ .../java/res/values-sw600dp/dimens.xml        |  6 ++--
+ chrome/android/java/res/values/dimens.xml     |  5 ++--
+ .../chrome/browser/ChromeTabbedActivity.java  |  4 ++-
+ .../chrome/browser/WarmupManager.java         |  5 +++-
+ .../settings/AccessibilitySettings.java       | 13 +++++++++
+ .../ChromeAccessibilitySettingsDelegate.java  | 19 +++++++++++++
+ .../chrome/browser/app/ChromeActivity.java    |  4 ++-
+ .../overlays/strip/StripLayoutHelper.java     | 10 +++++--
+ .../strip/StripLayoutHelperManager.java       |  6 +++-
+ .../browser/tasks/ReturnToChromeUtil.java     |  4 ++-
+ .../chrome/browser/ui/RootUiCoordinator.java  |  5 +++-
  chrome/browser/preferences/BUILD.gn           |  1 +
  .../preferences/ChromePreferenceKeys.java     |  1 +
- .../preferences/ChromeSharedPreferences.java  |  8 ++++++++
+ .../preferences/ChromeSharedPreferences.java  |  8 ++++++
  .../LegacyChromePreferenceKeys.java           |  1 +
  .../omnibox/LocationBarCoordinator.java       |  2 +-
- .../strings/android_chrome_strings.grd        |  7 +++++++
- components/BUILD.gn                           |  6 +++---
- .../res/xml/accessibility_preferences.xml     |  5 +++++
- .../accessibility/AccessibilitySettings.java  | 10 ++++++++++
- .../AccessibilitySettingsDelegate.java        |  2 ++
- .../chromium/ui/base/DeviceFormFactor.java    |  6 ++++++
- 14 files changed, 71 insertions(+), 6 deletions(-)
+ .../strings/android_chrome_strings.grd        |  7 +++++
+ .../java/res/layout/control_container.xml     | 12 ++++----
+ .../java/res/layout/toolbar_tablet.xml        |  2 +-
+ .../java/res/values-sw600dp/dimens.xml        |  3 +-
+ .../toolbar/java/res/values/dimens.xml        |  3 +-
+ .../browser/toolbar/ControlContainer.java     |  2 +-
+ .../toolbar/top/ToolbarControlContainer.java  | 28 ++++++++++++++++++-
+ .../browser/toolbar/top/ToolbarLayout.java    |  5 +++-
+ components/BUILD.gn                           |  6 ++--
+ .../res/xml/accessibility_preferences.xml     |  5 ++++
+ .../AccessibilitySettingsDelegate.java        | 11 ++++++++
+ .../chromium/ui/base/DeviceFormFactor.java    |  9 ++++++
+ 32 files changed, 165 insertions(+), 34 deletions(-)
 
+diff --git a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/start_surface/StartSurfaceMediator.java b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/start_surface/StartSurfaceMediator.java
+--- a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/start_surface/StartSurfaceMediator.java
++++ b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/start_surface/StartSurfaceMediator.java
+@@ -102,6 +102,7 @@ import org.chromium.components.browser_ui.widget.gesture.BackPressHandler;
+ import org.chromium.components.embedder_support.util.UrlUtilities;
+ import org.chromium.components.prefs.PrefService;
+ import org.chromium.content_public.browser.LoadUrlParams;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.modelutil.PropertyModel;
+ import org.chromium.ui.text.EmptyTextWatcher;
+ import org.chromium.ui.util.ColorUtils;
+@@ -1208,7 +1209,9 @@ class StartSurfaceMediator
+     int getTopToolbarPlaceholderHeight() {
+         // If logo is visible in Start surface instead of in the toolbar, we don't need to show the
+         // top margin of the fake search box.
+-        return getPixelSize(R.dimen.control_container_height)
++        return DeviceFormFactor.isForceTabletUI()
++                    ? getPixelSize(R.dimen.control_container_height_tabletui)
++                    : getPixelSize(R.dimen.control_container_height_cromite)
+                 + (isLogoVisible()
+                         ? 0
+                         : getPixelSize(R.dimen.start_surface_fake_search_box_top_margin));
+diff --git a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
+--- a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
++++ b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
+@@ -41,6 +41,7 @@ import org.chromium.components.browser_ui.widget.displaystyle.HorizontalDisplayS
+ import org.chromium.components.browser_ui.widget.displaystyle.UiConfig;
+ import org.chromium.components.browser_ui.widget.displaystyle.UiConfig.DisplayStyle;
+ import org.chromium.components.embedder_support.util.UrlUtilities;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.modelutil.PropertyModel;
+ import org.chromium.url.GURL;
+ 
+@@ -91,7 +92,7 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+         mSingleTabCardClickedCallback = singleTabCardClickedCallback;
+         mIsSurfacePolishEnabled = tabContentManager != null;
+         mUiConfig = uiConfig;
+-        mIsTablet = isTablet;
++        mIsTablet = isTablet && !DeviceFormFactor.isForceTabletUI();
+         mModuleDelegate = moduleDelegate;
+ 
+         mMarginNarrowWindowOnTablet =
+diff --git a/chrome/android/java/res/layout/custom_tabs_control_container.xml b/chrome/android/java/res/layout/custom_tabs_control_container.xml
+--- a/chrome/android/java/res/layout/custom_tabs_control_container.xml
++++ b/chrome/android/java/res/layout/custom_tabs_control_container.xml
+@@ -32,7 +32,7 @@ found in the LICENSE file.
+             android:id="@+id/find_toolbar_stub"
+             android:inflatedId="@+id/find_toolbar"
+             android:visibility="gone"
+-            android:layout_marginTop="@dimen/tab_strip_height"
++            android:layout_marginTop="@dimen/tab_strip_height_cromite"
+             android:layout_width="match_parent"
+             android:layout_height="@dimen/custom_tabs_control_container_height"
+             android:layout="@layout/find_toolbar" />
+diff --git a/chrome/android/java/res/layout/recent_tabs_page.xml b/chrome/android/java/res/layout/recent_tabs_page.xml
+--- a/chrome/android/java/res/layout/recent_tabs_page.xml
++++ b/chrome/android/java/res/layout/recent_tabs_page.xml
+@@ -11,7 +11,7 @@ found in the LICENSE file.
+     android:id="@+id/history_navigation"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+-    android:paddingTop="@dimen/tab_strip_height" >
++    android:paddingTop="@dimen/tab_strip_height_cromite" >
+ 
+     <org.chromium.chrome.browser.ntp.NativePageRootFrameLayout
+         android:id="@+id/recent_tabs_root"
+diff --git a/chrome/android/java/res/values-sw600dp/dimens.xml b/chrome/android/java/res/values-sw600dp/dimens.xml
+--- a/chrome/android/java/res/values-sw600dp/dimens.xml
++++ b/chrome/android/java/res/values-sw600dp/dimens.xml
+@@ -14,12 +14,10 @@ found in the LICENSE file.
+     <dimen name="compositor_tab_title_text_size">14sp</dimen>
+ 
+     <!-- Full Screen Dimensions -->
+-    <dimen name="control_container_height">96dp</dimen>
++    <dimen name="control_container_height_cromite">96dp</dimen>
++    <dimen name="control_container_height_tabletui">96dp</dimen>
+     <dimen name="custom_tabs_control_container_height">64dp</dimen>
+ 
+-    <!-- The combined height of the tab strip and toolbar. -->
+-    <dimen name="tab_strip_and_toolbar_height">96dp</dimen>
+-
+     <!-- NTP dimensions -->
+     <dimen name="ntp_search_box_transition_length">60dp</dimen>
+     <dimen name="ntp_wide_card_lateral_margins">48dp</dimen>
+diff --git a/chrome/android/java/res/values/dimens.xml b/chrome/android/java/res/values/dimens.xml
+--- a/chrome/android/java/res/values/dimens.xml
++++ b/chrome/android/java/res/values/dimens.xml
+@@ -121,11 +121,12 @@ found in the LICENSE file.
+     <dimen name="tab_modal_scrim_vertical_margin">16dp</dimen>
+ 
+     <!-- Should match toolbar_height_no_shadow -->
+-    <dimen name="control_container_height">56dp</dimen>
++    <dimen name="control_container_height_cromite">56dp</dimen>
++    <dimen name="control_container_height_tabletui">96dp</dimen>
+     <dimen name="custom_tabs_control_container_height">56dp</dimen>
+ 
+     <!-- The combined height of the tab strip and toolbar. -->
+-    <dimen name="tab_strip_and_toolbar_height">56dp</dimen>
++    <dimen name="tab_strip_and_toolbar_height_cromite">56dp</dimen>
+ 
+     <!-- Find in Page dimensions -->
+     <dimen name="find_in_page_popup_width">375dp</dimen>
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
+@@ -2247,7 +2247,9 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+ 
+     @Override
+     public int getControlContainerHeightResource() {
+-        return R.dimen.control_container_height;
++        if (DeviceFormFactor.isForceTabletUI())
++            return R.dimen.control_container_height_tabletui;
++        return R.dimen.control_container_height_cromite;
+     }
+ 
+     @Override
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/WarmupManager.java b/chrome/android/java/src/org/chromium/chrome/browser/WarmupManager.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/WarmupManager.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/WarmupManager.java
+@@ -50,6 +50,7 @@ import org.chromium.components.embedder_support.util.UrlConstants;
+ import org.chromium.content_public.browser.WebContents;
+ import org.chromium.content_public.browser.WebContentsObserver;
+ import org.chromium.ui.LayoutInflaterUtils;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.base.WindowAndroid;
+ import org.chromium.ui.display.DisplayUtil;
+ 
+@@ -383,7 +384,9 @@ public class WarmupManager {
+                     (ControlContainer) mainView.findViewById(R.id.control_container);
+ 
+             if (toolbarId != ActivityUtils.NO_RESOURCE_ID && controlContainer != null) {
+-                controlContainer.initWithToolbar(toolbarId);
++                controlContainer.initWithToolbar(toolbarId,
++                        DeviceFormFactor.isForceTabletUI()
++                            ? R.dimen.control_container_height_tabletui : 0);
+             }
+             return mainView;
+         } catch (InflateException e) {
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/AccessibilitySettings.java b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/AccessibilitySettings.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/AccessibilitySettings.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/AccessibilitySettings.java
+@@ -17,6 +17,7 @@ import org.chromium.chrome.browser.image_descriptions.ImageDescriptionsControlle
+ import org.chromium.chrome.browser.preferences.Pref;
+ import org.chromium.chrome.browser.settings.SettingsLauncherImpl;
+ import org.chromium.components.browser_ui.accessibility.AccessibilitySettingsDelegate;
++import org.chromium.components.browser_ui.accessibility.AccessibilitySettingsDelegate.BooleanPreferenceDelegate;
+ import org.chromium.components.browser_ui.accessibility.FontSizePrefs;
+ import org.chromium.components.browser_ui.accessibility.FontSizePrefs.FontSizePrefsObserver;
+ import org.chromium.components.browser_ui.accessibility.PageZoomPreference;
+@@ -46,6 +47,9 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+     public static final String PREF_ZOOM_INFO = "zoom_info";
+     public static final String PREF_IMAGE_DESCRIPTIONS = "image_descriptions";
+ 
++    private BooleanPreferenceDelegate mForceTabletUIDelegate;
++    static final String PREF_FORCE_TABLET_UI = "force_tablet_ui";
++
+     private TextScalePreference mTextScalePref;
+     private PageZoomPreference mPageZoomDefaultZoomPref;
+     private ChromeSwitchPreference mPageZoomIncludeOSAdjustment;
+@@ -143,6 +147,12 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+                 mPrefService.getBoolean(Pref.READER_FOR_ACCESSIBILITY));
+         readerForAccessibilityPref.setOnPreferenceChangeListener(this);
+ 
++        ChromeSwitchPreference forceTabletUiPref =
++                (ChromeSwitchPreference) findPreference(PREF_FORCE_TABLET_UI);
++        mForceTabletUIDelegate = mDelegate.getForceTabletUIDelegate();
++        forceTabletUiPref.setChecked(mForceTabletUIDelegate.isEnabled());
++        forceTabletUiPref.setOnPreferenceChangeListener(this);
++
+         Preference captions = findPreference(PREF_CAPTIONS);
+         captions.setOnPreferenceClickListener(
+                 preference -> {
+@@ -214,6 +224,9 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
+             mFontSizePrefs.setUserFontScaleFactor((Float) newValue);
+         } else if (PREF_FORCE_ENABLE_ZOOM.equals(preference.getKey())) {
+             mFontSizePrefs.setForceEnableZoomFromUser((Boolean) newValue);
++        } else if (PREF_FORCE_TABLET_UI.equals(preference.getKey())) {
++            mForceTabletUIDelegate.setEnabled((Boolean) newValue);
++            mDelegate.requestRestart(getActivity());
+         } else if (PREF_READER_FOR_ACCESSIBILITY.equals(preference.getKey())) {
+             mPrefService.setBoolean(Pref.READER_FOR_ACCESSIBILITY, (Boolean) newValue);
+         } else if (PREF_PAGE_ZOOM_DEFAULT_ZOOM.equals(preference.getKey())) {
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/accessibility/settings/ChromeAccessibilitySettingsDelegate.java
-@@ -94,6 +94,25 @@ public class ChromeAccessibilitySettingsDelegate implements AccessibilitySetting
-         return new TextSizeContrastAccessibilityDelegate(getBrowserContextHandle());
+@@ -38,6 +38,25 @@ public class ChromeAccessibilitySettingsDelegate implements AccessibilitySetting
+         }
      }
  
 +    private static class ForceTabletUIDelegate implements BooleanPreferenceDelegate {
@@ -46,13 +246,77 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/accessibility/s
 +        return new ForceTabletUIDelegate();
 +    }
 +
-     @Override
-     public void addExtraPreferences(PreferenceFragmentCompat fragment) {
-         if (ImageDescriptionsController.getInstance().shouldShowImageDescriptionsMenuItem()) {
+     private final Profile mProfile;
+ 
+     /**
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/app/ChromeActivity.java
+@@ -847,7 +847,9 @@ public abstract class ChromeActivity<C extends ChromeActivityComponent>
+                 // Inflate the correct toolbar layout for the device.
+                 int toolbarLayoutId = getToolbarLayoutId();
+                 if (toolbarLayoutId != ActivityUtils.NO_RESOURCE_ID && controlContainer != null) {
+-                    controlContainer.initWithToolbar(toolbarLayoutId);
++                    controlContainer.initWithToolbar(toolbarLayoutId,
++                        DeviceFormFactor.isForceTabletUI()
++                            ? R.dimen.control_container_height_tabletui : 0);
+                 }
+             }
+             onInitialLayoutInflationComplete();
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelper.java b/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelper.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelper.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelper.java
+@@ -66,6 +66,7 @@ import org.chromium.chrome.browser.tasks.tab_management.TabUiThemeUtil;
+ import org.chromium.components.browser_ui.styles.ChromeColors;
+ import org.chromium.components.browser_ui.styles.SemanticColorUtils;
+ import org.chromium.components.tab_groups.TabGroupColorId;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.base.LocalizationUtils;
+ import org.chromium.ui.base.WindowAndroid;
+ import org.chromium.ui.interpolators.Interpolators;
+@@ -3806,8 +3807,13 @@ public class StripLayoutHelper
+         mTabMenu.setAnchorView(tabView);
+         // 3. Set the vertical offset to align the tab menu with bottom of the tab strip
+         int tabHeight = mManagerHost.getHeight();
+-        int verticalOffset =
+-                -(tabHeight - (int) mContext.getResources().getDimension(R.dimen.tab_strip_height));
++        int tab_strip_height =
++            (int) mContext.getResources().getDimension(R.dimen.tab_strip_height_cromite);
++        if (DeviceFormFactor.isForceTabletUI()) {
++            tab_strip_height =
++                (int) mContext.getResources().getDimension(R.dimen.tab_strip_height_tabletui);
++        }
++        int verticalOffset = -(tabHeight - tab_strip_height);
+         mTabMenu.setVerticalOffset(verticalOffset);
+ 
+         // 4. Set the horizontal offset to align the tab menu with the right side of the tab
+diff --git a/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelperManager.java b/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelperManager.java
+--- a/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelperManager.java
++++ b/chrome/android/java/src/org/chromium/chrome/browser/compositor/overlays/strip/StripLayoutHelperManager.java
+@@ -72,6 +72,7 @@ import org.chromium.chrome.browser.ui.system.StatusBarColorController;
+ import org.chromium.components.browser_ui.styles.SemanticColorUtils;
+ import org.chromium.components.browser_ui.widget.scrim.ScrimProperties;
+ import org.chromium.content_public.browser.LoadUrlParams;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.base.LocalizationUtils;
+ import org.chromium.ui.base.PageTransition;
+ import org.chromium.ui.base.WindowAndroid;
+@@ -444,7 +445,10 @@ public class StripLayoutHelperManager
+         mModelSelectorButton.setClickSlop(MODEL_SELECTOR_BUTTON_CLICK_SLOP_DP);
+ 
+         Resources res = context.getResources();
+-        mHeight = res.getDimension(R.dimen.tab_strip_height) / mDensity;
++        int tab_strip_height = (int) res.getDimension(R.dimen.tab_strip_height_cromite);
++        if (DeviceFormFactor.isForceTabletUI())
++            tab_strip_height = (int) res.getDimension(R.dimen.tab_strip_height_tabletui);
++        mHeight = tab_strip_height / mDensity;
+         mModelSelectorButton.setAccessibilityDescription(
+                 res.getString(R.string.accessibility_tabstrip_btn_incognito_toggle_standard),
+                 res.getString(R.string.accessibility_tabstrip_btn_incognito_toggle_incognito));
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
-@@ -975,7 +975,9 @@ public final class ReturnToChromeUtil {
+@@ -974,7 +974,9 @@ public final class ReturnToChromeUtil {
  
      public static boolean isScrollableMvtEnabled(Context context) {
          boolean isSurfacePolishEnabled = ChromeFeatureList.sSurfacePolish.isEnabled();
@@ -66,15 +330,15 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToC
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ui/RootUiCoordinator.java
-@@ -100,6 +100,7 @@ import org.chromium.chrome.browser.paint_preview.DemoPaintPreview;
+@@ -97,6 +97,7 @@ import org.chromium.chrome.browser.paint_preview.DemoPaintPreview;
  import org.chromium.chrome.browser.password_manager.ManagePasswordsReferrer;
  import org.chromium.chrome.browser.password_manager.PasswordManagerLauncher;
  import org.chromium.chrome.browser.preferences.ChromeSharedPreferences;
 +import org.chromium.chrome.browser.preferences.ChromePreferenceKeys;
  import org.chromium.chrome.browser.price_tracking.PriceTrackingButtonController;
  import org.chromium.chrome.browser.profiles.Profile;
- import org.chromium.chrome.browser.quick_delete.QuickDeleteController;
-@@ -1634,7 +1635,9 @@ public class RootUiCoordinator
+ import org.chromium.chrome.browser.profiles.ProfileManager;
+@@ -1593,7 +1594,9 @@ public class RootUiCoordinator
          if (!mSupportsFindInPageSupplier.getAsBoolean()) return;
  
          int stubId = R.id.find_toolbar_stub;
@@ -99,7 +363,7 @@ diff --git a/chrome/browser/preferences/BUILD.gn b/chrome/browser/preferences/BU
 diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 --- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 +++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
-@@ -294,6 +294,7 @@ public final class ChromePreferenceKeys {
+@@ -270,6 +270,7 @@ public final class ChromePreferenceKeys {
              AccessibilityConstants.FONT_USER_SET_FORCE_ENABLE_ZOOM;
  
      public static final String HISTORY_SHOW_HISTORY_INFO = "history_home_show_info";
@@ -146,7 +410,7 @@ diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/bro
 diff --git a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/LocationBarCoordinator.java b/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/LocationBarCoordinator.java
 --- a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/LocationBarCoordinator.java
 +++ b/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/browser/omnibox/LocationBarCoordinator.java
-@@ -760,7 +760,7 @@ public class LocationBarCoordinator
+@@ -768,7 +768,7 @@ public class LocationBarCoordinator
      }
  
      private boolean isTabletWindow() {
@@ -158,8 +422,8 @@ diff --git a/chrome/browser/ui/android/omnibox/java/src/org/chromium/chrome/brow
 diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chrome/browser/ui/android/strings/android_chrome_strings.grd
 --- a/chrome/browser/ui/android/strings/android_chrome_strings.grd
 +++ b/chrome/browser/ui/android/strings/android_chrome_strings.grd
-@@ -1558,6 +1558,13 @@ Your Google account may have other forms of browsing history like searches and a
-         Manage third-party cookies and tracking protections
+@@ -1604,6 +1604,13 @@ Your Google account may have other forms of browsing history like searches and a
+         Hide your IP address
        </message>
  
 +      <message name="IDS_FORCE_TABLET_UI_SUMMARY" desc="Summary of the preference that allows the user to force chromium to use tablet UI.">
@@ -172,6 +436,178 @@ diff --git a/chrome/browser/ui/android/strings/android_chrome_strings.grd b/chro
        <!-- Safety check -->
        <message name="IDS_PREFS_SAFETY_CHECK" desc="Title of the Safety check element in settings, allowing the user to check multiple areas of browser safety. [CHAR_LIMIT=32]">
          Safety check
+diff --git a/chrome/browser/ui/android/toolbar/java/res/layout/control_container.xml b/chrome/browser/ui/android/toolbar/java/res/layout/control_container.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/layout/control_container.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/layout/control_container.xml
+@@ -9,7 +9,7 @@ found in the LICENSE file.
+     android:id="@+id/control_container"
+     android:layout_width="match_parent"
+     android:layout_height="wrap_content"
+-    android:minHeight="@dimen/control_container_height" >
++    android:minHeight="@dimen/control_container_height_cromite" >
+ 
+     <view
+         class="org.chromium.chrome.browser.toolbar.top.ToolbarControlContainer$ToolbarViewResourceFrameLayout"
+@@ -20,7 +20,7 @@ found in the LICENSE file.
+         <ViewStub
+             android:id="@+id/toolbar_stub"
+             android:layout_width="match_parent"
+-            android:layout_marginTop="@dimen/tab_strip_height"
++            android:layout_marginTop="@dimen/tab_strip_height_cromite"
+             android:layout_height="@dimen/toolbar_height_no_shadow" />
+ 
+         <ImageView
+@@ -28,7 +28,7 @@ found in the LICENSE file.
+             android:src="@drawable/toolbar_hairline"
+             android:layout_width="match_parent"
+             android:layout_height="wrap_content"
+-            android:layout_marginTop="@dimen/tab_strip_and_toolbar_height"
++            android:layout_marginTop="@dimen/tab_strip_and_toolbar_height_cromite"
+             android:scaleType="fitXY"
+             android:importantForAccessibility="no" />
+ 
+@@ -36,7 +36,7 @@ found in the LICENSE file.
+             android:id="@+id/find_toolbar_stub"
+             android:inflatedId="@+id/find_toolbar"
+             android:visibility="gone"
+-            android:layout_marginTop="@dimen/tab_strip_height"
++            android:layout_marginTop="@dimen/tab_strip_height_cromite"
+             android:layout_width="match_parent"
+             android:layout_height="@dimen/toolbar_height_no_shadow"
+             android:layout="@layout/find_toolbar" />
+@@ -55,14 +55,14 @@ found in the LICENSE file.
+         android:id="@+id/target_view_stub"
+         android:inflatedId="@+id/toolbar_drag_drop_target_view"
+         android:layout_width="match_parent"
+-        android:layout_marginTop="@dimen/tab_strip_height"
++        android:layout_marginTop="@dimen/tab_strip_height_cromite"
+         android:layout_height="@dimen/toolbar_height_no_shadow"
+         android:layout="@layout/drag_drop_target_view" />
+ 
+     <ViewStub
+         android:id="@+id/tab_switcher_toolbar_stub"
+         android:layout_width="match_parent"
+-        android:layout_marginTop="@dimen/tab_strip_height"
++        android:layout_marginTop="@dimen/tab_strip_height_cromite"
+         android:layout_height="@dimen/toolbar_height_no_shadow"
+         android:inflatedId="@+id/tab_switcher_toolbar"
+         android:layout="@layout/tab_switcher_toolbar" />
+diff --git a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_tablet.xml b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_tablet.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_tablet.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/layout/toolbar_tablet.xml
+@@ -15,7 +15,7 @@ found in the LICENSE file.
+     android:id="@+id/toolbar"
+     android:layout_width="match_parent"
+     android:layout_height="@dimen/toolbar_height_no_shadow"
+-    android:layout_marginTop="@dimen/tab_strip_height"
++    android:layout_marginTop="@dimen/tab_strip_height_tabletui"
+     android:background="@macro/default_bg_color"
+      >
+ 
+diff --git a/chrome/browser/ui/android/toolbar/java/res/values-sw600dp/dimens.xml b/chrome/browser/ui/android/toolbar/java/res/values-sw600dp/dimens.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/values-sw600dp/dimens.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/values-sw600dp/dimens.xml
+@@ -7,5 +7,6 @@ found in the LICENSE file.
+ 
+ <resources>
+     <!-- Tab Strip Dimensions -->
+-    <dimen name="tab_strip_height">40dp</dimen>
++    <dimen name="tab_strip_height_cromite">40dp</dimen>
++    <dimen name="tab_strip_height_tabletui">40dp</dimen>
+ </resources>
+diff --git a/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml b/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
+--- a/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
++++ b/chrome/browser/ui/android/toolbar/java/res/values/dimens.xml
+@@ -10,7 +10,8 @@ found in the LICENSE file.
+     <dimen name="toolbar_tab_count_text_size_2_digit">10dp</dimen>
+ 
+     <!-- Tab Strip Dimensions -->
+-    <dimen name="tab_strip_height">0dp</dimen>
++    <dimen name="tab_strip_height_cromite">0dp</dimen>
++    <dimen name="tab_strip_height_tabletui">40dp</dimen>
+ 
+     <!-- Negative vertical inset added to the search box bounds when modern is enabled. 4dp is added
+          to both the top and bottom bounds to bring the 48dp modern_toolbar_background_size to 56dp
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/ControlContainer.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/ControlContainer.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/ControlContainer.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/ControlContainer.java
+@@ -20,7 +20,7 @@ public interface ControlContainer {
+      * Initialize the control container with the specified toolbar.
+      * @param toolbarLayoutId The ID of the toolbar layout to use.
+      */
+-    void initWithToolbar(int toolbarLayoutId);
++    void initWithToolbar(int toolbarLayoutId, int controlContainerHeightOverrideId);
+ 
+     /**
+      * @return The {@link ViewResourceAdapter} that exposes this {@link View} as a CC resource.
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarControlContainer.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarControlContainer.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarControlContainer.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarControlContainer.java
+@@ -5,6 +5,7 @@
+ package org.chromium.chrome.browser.toolbar.top;
+ 
+ import android.content.Context;
++import android.content.res.Resources;
+ import android.graphics.Canvas;
+ import android.graphics.PorterDuff;
+ import android.graphics.Rect;
+@@ -113,8 +114,33 @@ public class ToolbarControlContainer extends OptimizedFrameLayout implements Con
+     }
+ 
+     @Override
+-    public void initWithToolbar(int toolbarLayoutId) {
++    public void initWithToolbar(int toolbarLayoutId, int controlContainerHeightOverrideId) {
+         try (TraceEvent te = TraceEvent.scoped("ToolbarControlContainer.initWithToolbar")) {
++            if (controlContainerHeightOverrideId != 0) {
++                Resources res = getContext().getResources();
++                setMinimumHeight((int) res.getDimension(controlContainerHeightOverrideId));
++                int tab_strip_height =
++                    (int) res.getDimension(R.dimen.tab_strip_height_tabletui);
++
++                View view = findViewById(R.id.toolbar_stub);
++                if (view != null)
++                    ((MarginLayoutParams)view.getLayoutParams()).topMargin = tab_strip_height;
++
++                view = findViewById(R.id.toolbar_hairline);
++                if (view != null) view.setVisibility(View.GONE);
++
++                view = findViewById(R.id.find_toolbar_stub);
++                if (view != null)
++                    ((MarginLayoutParams)view.getLayoutParams()).topMargin = tab_strip_height;
++
++                view = findViewById(R.id.target_view_stub);
++                if (view != null)
++                    ((MarginLayoutParams)view.getLayoutParams()).topMargin = tab_strip_height;
++
++                view = findViewById(R.id.tab_switcher_toolbar_stub);
++                if (view != null)
++                    ((MarginLayoutParams)view.getLayoutParams()).topMargin = tab_strip_height;
++            }
+             mToolbarContainer =
+                     (ToolbarViewResourceFrameLayout) findViewById(R.id.toolbar_container);
+             ViewStub toolbarStub = findViewById(R.id.toolbar_stub);
+diff --git a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarLayout.java b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarLayout.java
+--- a/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarLayout.java
++++ b/chrome/browser/ui/android/toolbar/java/src/org/chromium/chrome/browser/toolbar/top/ToolbarLayout.java
+@@ -63,6 +63,7 @@ import org.chromium.chrome.browser.util.BrowserUiUtils.HostSurface;
+ import org.chromium.chrome.browser.util.BrowserUiUtils.ModuleTypeOnStartAndNtp;
+ import org.chromium.ui.UiUtils;
+ import org.chromium.ui.base.ViewUtils;
++import org.chromium.ui.base.DeviceFormFactor;
+ import org.chromium.ui.util.TokenHolder;
+ import org.chromium.url.GURL;
+ 
+@@ -584,7 +585,9 @@ public abstract class ToolbarLayout extends FrameLayout
+      * not have a tab strip.
+      */
+     protected int getTabStripHeightFromResource() {
+-        return getResources().getDimensionPixelSize(R.dimen.tab_strip_height);
++        if (DeviceFormFactor.isForceTabletUI())
++            return getResources().getDimensionPixelSize(R.dimen.tab_strip_height_tabletui);
++        return getResources().getDimensionPixelSize(R.dimen.tab_strip_height_cromite);
+     }
+ 
+     /** Triggered when the content view for the specified tab has changed. */
 diff --git a/components/BUILD.gn b/components/BUILD.gn
 --- a/components/BUILD.gn
 +++ b/components/BUILD.gn
@@ -184,7 +620,7 @@ diff --git a/components/BUILD.gn b/components/BUILD.gn
    disallowed_extension_deps_ = [
      # Components should largely not depend on //extensions. Since // extensions
      # is not a component target and is linked with //chrome, depending on most
-@@ -829,7 +829,7 @@ test("components_unittests") {
+@@ -832,7 +832,7 @@ test("components_unittests") {
    # On other platforms, no components should depend on Chrome.
    # Since //chrome depends on //extensions, we also only assert_no_deps on
    # extensions targets for non-lacros builds.
@@ -193,7 +629,7 @@ diff --git a/components/BUILD.gn b/components/BUILD.gn
      assert_no_deps = [ "//chrome/*" ]
      assert_no_deps += disallowed_extension_deps_
    }
-@@ -1120,7 +1120,7 @@ if (use_blink) {
+@@ -1113,7 +1113,7 @@ if (use_blink) {
      # dependency. On other platforms, no components should depend on Chrome.
      # Since //chrome depends on //extensions, we also only assert_no_deps on
      # extensions targets for non-lacros builds.
@@ -217,68 +653,53 @@ diff --git a/components/browser_ui/accessibility/android/java/res/xml/accessibil
      <Preference
          android:key="captions"
          android:title="@string/accessibility_captions_title"/>
-diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
---- a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
-+++ b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettings.java
-@@ -32,6 +32,8 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
-     public static final String PREF_CAPTIONS = "captions";
-     public static final String PREF_ZOOM_INFO = "zoom_info";
- 
-+    private BooleanPreferenceDelegate mForceTabletUIDelegate;
-+    static final String PREF_FORCE_TABLET_UI = "force_tablet_ui";
-     private TextScalePreference mTextScalePref;
-     private PageZoomPreference mPageZoomDefaultZoomPref;
-     private ChromeSwitchPreference mPageZoomIncludeOSAdjustment;
-@@ -129,6 +131,12 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
-             getPreferenceScreen().removePreference(readerForAccessibilityPref);
-         }
- 
-+        ChromeSwitchPreference forceTabletUiPref =
-+                (ChromeSwitchPreference) findPreference(PREF_FORCE_TABLET_UI);
-+        mForceTabletUIDelegate = mDelegate.getForceTabletUIDelegate();
-+        forceTabletUiPref.setChecked(mForceTabletUIDelegate.isEnabled());
-+        forceTabletUiPref.setOnPreferenceChangeListener(this);
-+
-         Preference captions = findPreference(PREF_CAPTIONS);
-         captions.setOnPreferenceClickListener(
-                 preference -> {
-@@ -190,6 +198,8 @@ public class AccessibilitySettings extends PreferenceFragmentCompat
-             mFontSizePrefs.setUserFontScaleFactor((Float) newValue);
-         } else if (PREF_FORCE_ENABLE_ZOOM.equals(preference.getKey())) {
-             mFontSizePrefs.setForceEnableZoomFromUser((Boolean) newValue);
-+        } else if (PREF_FORCE_TABLET_UI.equals(preference.getKey())) {
-+            mForceTabletUIDelegate.setEnabled((Boolean) newValue);
-         } else if (PREF_READER_FOR_ACCESSIBILITY.equals(preference.getKey())) {
-             if (mReaderForAccessibilityDelegate != null) {
-                 mReaderForAccessibilityDelegate.setEnabled((Boolean) newValue);
 diff --git a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
 --- a/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
 +++ b/components/browser_ui/accessibility/android/java/src/org/chromium/components/browser_ui/accessibility/AccessibilitySettingsDelegate.java
-@@ -52,6 +52,8 @@ public interface AccessibilitySettingsDelegate {
-      */
-     IntegerPreferenceDelegate getTextSizeContrastAccessibilityDelegate();
+@@ -11,6 +11,15 @@ import org.chromium.content_public.browser.BrowserContextHandle;
+  * embedder-specific logic.
+  */
+ public interface AccessibilitySettingsDelegate {
++    /** An interface to control a single boolean preference. */
++    interface BooleanPreferenceDelegate {
++        /** @return whether the preference is enabled. */
++        boolean isEnabled();
++
++        /** Called when the preference value is changed. */
++        void setEnabled(boolean value);
++    }
++
+     /** An interface to control a single integer preference. */
+     interface IntegerPreferenceDelegate {
+         /** @return int - Current value of the preference of this instance. */
+@@ -26,6 +35,8 @@ public interface AccessibilitySettingsDelegate {
+     /** @return The BrowserContextHandle that should be used to read and update settings. */
+     BrowserContextHandle getBrowserContextHandle();
  
 +    BooleanPreferenceDelegate getForceTabletUIDelegate();
 +
      /**
-      * Allows the embedder to add more preferences to the preference screen.
-      *
+      * @return the InterPreferenceDelegate instance that should be used for reading and setting the
+      * text size contrast value for accessibility settings. Return null to omit the preference.
 diff --git a/ui/android/java/src/org/chromium/ui/base/DeviceFormFactor.java b/ui/android/java/src/org/chromium/ui/base/DeviceFormFactor.java
 --- a/ui/android/java/src/org/chromium/ui/base/DeviceFormFactor.java
 +++ b/ui/android/java/src/org/chromium/ui/base/DeviceFormFactor.java
-@@ -31,6 +31,11 @@ public class DeviceFormFactor {
+@@ -31,6 +31,14 @@ public class DeviceFormFactor {
      /** Matches the value set in res/values-sw720dp/values.xml */
      private static final int SCREEN_BUCKET_LARGET_TABLET = 3;
  
-+    private static boolean mForceTabletUI;
++    private static boolean mForceTabletUI = true;
 +    public static void setForceTabletUI(boolean forceTabletUI) {
 +        mForceTabletUI = forceTabletUI;
++    }
++    public static boolean isForceTabletUI() {
++        return mForceTabletUI;
 +    }
 +
      /**
       * Each activity could be on a different display, and this will just tell you whether the
       * display associated with the application context is "tablet sized".
-@@ -56,6 +61,7 @@ public class DeviceFormFactor {
+@@ -56,6 +64,7 @@ public class DeviceFormFactor {
       *         E.g. http://developer.samsung.com/samsung-dex/testing
       */
      public static boolean isNonMultiDisplayContextOnTablet(Context context) {

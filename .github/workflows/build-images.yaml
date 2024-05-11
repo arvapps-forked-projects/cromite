@@ -37,13 +37,13 @@ jobs:
       - name: Reclaiming disk space on / by removing dotnet/android/ghc
         #if: ${{ github.event.inputs.type == '' }}
         run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          sudo rm -rf /opt/ghc
-          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          test -d /usr/share/dotnet && sudo rm -rf /usr/share/dotnet
+          test -d /usr/local/lib/android && sudo rm -rf /usr/local/lib/android
+          test -d /opt/ghc && sudo rm -rf /opt/ghc
+          test -d /opt/hostedtoolcache/CodeQL && sudo rm -rf /opt/hostedtoolcache/CodeQL
           sudo apt-get remove google-cloud-cli azure-cli google-chrome-stable \
                        firefox mysql-server-core-8.0 mono-devel podman \
-                       powershell
+                       powershell || true
           sudo apt-get autoremove
 
       - name: Enable proxy on container
@@ -118,6 +118,56 @@ jobs:
               echo "NEW_VERSION=$CHR_VERSION" >> $GITHUB_ENV
             fi
           fi
+
+      - name: Update files under control 
+        shell: bash
+        run: |
+          cd cromite
+          RELEASE=$(cat build/RELEASE | xargs)
+
+          cd tools/under-control
+
+          DO_UPDATE=0
+          if [ -n "$NEW_VERSION" ]; then
+            if [ "$RELEASE" != "$NEW_VERSION" ]; then
+              DO_UPDATE=1
+            fi
+
+          elif [ "$RELEASE" != "$(cat src/RELEASE | xargs)" ]; then
+            DO_UPDATE=1
+            NEW_VERSION=$RELEASE
+          fi
+
+          if [[ DO_UPDATE -eq 1 ]]; then
+            echo "Found new version $NEW_VERSION"
+            echo "Under control: $(cat src/RELEASE | xargs)"
+            echo "Current: $RELEASE"
+
+            test -d src && rm -rf src
+            docker build --progress=plain --build-arg "TAG=$NEW_VERSION" -o . .
+            echo $NEW_VERSION >src/RELEASE
+          fi
+
+          CHANGES=0 && git diff --quiet || CHANGES=1
+          echo "CHANGES=$CHANGES" >> $GITHUB_ENV
+          if [[ CHANGES -eq 1 ]]; then
+              git add src
+              git diff --name-only --staged
+          fi
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@dcd5fd746d53dd8de555c0f10bca6c35628be47a #v3.12.0
+        if: env.CHANGES == '1'
+        with:
+          token: ${{ secrets.CROMITE_PULLS }}
+          path: cromite
+          add-paths: |
+            tools/under-control/*
+          commit-message: '[AUTO][FILECONTROL] - version ${{ env.NEW_VERSION }}'
+          title: '[AUTO][FILECONTROL] - version ${{ env.NEW_VERSION }}'
+          body: ${{ env.MESSAGE }}
+          delete-branch: true
+          branch-suffix: short-commit-hash
 
       - name: Create issue ${{ env.VERSION }}
         if: "${{ env.NEW_VERSION != '' }}"

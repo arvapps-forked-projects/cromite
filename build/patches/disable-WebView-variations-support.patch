@@ -12,7 +12,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumAwInit.java b/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumAwInit.java
 --- a/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumAwInit.java
 +++ b/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumAwInit.java
-@@ -201,12 +201,6 @@ public class WebViewChromiumAwInit {
+@@ -215,12 +215,6 @@ public class WebViewChromiumAwInit {
  
              AwBrowserProcess.configureChildProcessLauncher();
  
@@ -24,11 +24,11 @@ diff --git a/android_webview/glue/java/src/com/android/webview/chromium/WebViewC
 -
              AwBrowserProcess.start();
              AwBrowserProcess.handleMinidumpsAndSetMetricsConsent(/* updateMetricsConsent= */ true);
- 
+             doNetworkInitializations(context);
 diff --git a/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumFactoryProvider.java b/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
 --- a/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
 +++ b/android_webview/glue/java/src/com/android/webview/chromium/WebViewChromiumFactoryProvider.java
-@@ -465,10 +465,6 @@ public class WebViewChromiumFactoryProvider implements WebViewFactoryProvider {
+@@ -463,10 +463,6 @@ public class WebViewChromiumFactoryProvider implements WebViewFactoryProvider {
                  }
              }
  

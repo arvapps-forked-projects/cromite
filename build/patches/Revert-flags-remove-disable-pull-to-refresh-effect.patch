@@ -15,7 +15,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/flag-metadata.json b/chrome/browser/flag-metadata.json
 --- a/chrome/browser/flag-metadata.json
 +++ b/chrome/browser/flag-metadata.json
-@@ -1807,6 +1807,10 @@
+@@ -1932,6 +1932,10 @@
        "yangsharon@google.com", "alexmos@google.com", "creis@google.com" ],
      "expiry_milestone": 140
    },

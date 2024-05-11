@@ -38,7 +38,7 @@ diff --git a/chrome/browser/ssl/https_upgrades_interceptor.cc b/chrome/browser/s
 diff --git a/chrome/browser/ui/webui/net_internals/net_internals_ui.cc b/chrome/browser/ui/webui/net_internals/net_internals_ui.cc
 --- a/chrome/browser/ui/webui/net_internals/net_internals_ui.cc
 +++ b/chrome/browser/ui/webui/net_internals/net_internals_ui.cc
-@@ -395,7 +395,10 @@ void NetInternalsMessageHandler::OnDomainSecurityPolicyDelete(
+@@ -405,7 +405,10 @@ void NetInternalsMessageHandler::OnDomainSecurityPolicyDelete(
      // There cannot be a unicode entry in the HSTS set.
      return;
    }
@@ -49,7 +49,7 @@ diff --git a/chrome/browser/ui/webui/net_internals/net_internals_ui.cc b/chrome/
        *domain, base::BindOnce(&IgnoreBoolCallback));
  }
  
-@@ -405,7 +408,10 @@ void NetInternalsMessageHandler::OnHSTSQuery(const base::Value::List& list) {
+@@ -415,7 +418,10 @@ void NetInternalsMessageHandler::OnHSTSQuery(const base::Value::List& list) {
    DCHECK(callback_id && domain);
  
    AllowJavascript();
@@ -60,7 +60,7 @@ diff --git a/chrome/browser/ui/webui/net_internals/net_internals_ui.cc b/chrome/
        *domain,
        base::BindOnce(&NetInternalsMessageHandler::ResolveCallbackWithResult,
                       weak_factory_.GetWeakPtr(), *callback_id));
-@@ -431,8 +437,12 @@ void NetInternalsMessageHandler::OnHSTSAdd(const base::Value::List& list) {
+@@ -441,8 +447,12 @@ void NetInternalsMessageHandler::OnHSTSAdd(const base::Value::List& list) {
    const bool sts_include_subdomains = list[1].GetBool();
  
    base::Time expiry = base::Time::Now() + base::Days(1000);
@@ -543,7 +543,7 @@ diff --git a/net/http/transport_security_state.h b/net/http/transport_security_s
 diff --git a/net/quic/crypto/proof_verifier_chromium.cc b/net/quic/crypto/proof_verifier_chromium.cc
 --- a/net/quic/crypto/proof_verifier_chromium.cc
 +++ b/net/quic/crypto/proof_verifier_chromium.cc
-@@ -401,7 +401,8 @@ int ProofVerifierChromium::Job::DoVerifyCertComplete(int result) {
+@@ -402,7 +402,8 @@ int ProofVerifierChromium::Job::DoVerifyCertComplete(int result) {
          transport_security_state_->CheckPublicKeyPins(
              HostPortPair(hostname_, port_),
              cert_verify_result.is_issued_by_known_root,
@@ -553,7 +553,7 @@ diff --git a/net/quic/crypto/proof_verifier_chromium.cc b/net/quic/crypto/proof_
      switch (pin_validity) {
        case TransportSecurityState::PKPStatus::VIOLATED:
          result = ERR_SSL_PINNED_KEY_NOT_IN_CERT_CHAIN;
-@@ -428,7 +429,7 @@ int ProofVerifierChromium::Job::DoVerifyCertComplete(int result) {
+@@ -429,7 +430,7 @@ int ProofVerifierChromium::Job::DoVerifyCertComplete(int result) {
    verify_details_->is_fatal_cert_error =
        IsCertStatusError(cert_status) &&
        result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
@@ -565,7 +565,7 @@ diff --git a/net/quic/crypto/proof_verifier_chromium.cc b/net/quic/crypto/proof_
 diff --git a/net/quic/quic_chromium_client_session.cc b/net/quic/quic_chromium_client_session.cc
 --- a/net/quic/quic_chromium_client_session.cc
 +++ b/net/quic/quic_chromium_client_session.cc
-@@ -1407,7 +1407,7 @@ bool QuicChromiumClientSession::CanPool(
+@@ -1416,7 +1416,7 @@ bool QuicChromiumClientSession::CanPool(
  
    return SpdySession::CanPool(transport_security_state_, ssl_info,
                                *ssl_config_service_, session_key_.host(),
@@ -577,7 +577,7 @@ diff --git a/net/quic/quic_chromium_client_session.cc b/net/quic/quic_chromium_c
 diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket_impl.cc
 --- a/net/socket/ssl_client_socket_impl.cc
 +++ b/net/socket/ssl_client_socket_impl.cc
-@@ -1300,7 +1300,8 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
+@@ -1190,7 +1190,8 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
      TransportSecurityState::PKPStatus pin_validity =
          context_->transport_security_state()->CheckPublicKeyPins(
              host_and_port_, server_cert_verify_result_.is_issued_by_known_root,
@@ -587,7 +587,7 @@ diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket
      switch (pin_validity) {
        case TransportSecurityState::PKPStatus::VIOLATED:
          server_cert_verify_result_.cert_status |=
-@@ -1322,7 +1323,7 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
+@@ -1212,7 +1213,7 @@ ssl_verify_result_t SSLClientSocketImpl::HandleVerifyResult() {
        IsCertStatusError(server_cert_verify_result_.cert_status) &&
        result != ERR_CERT_KNOWN_INTERCEPTION_BLOCKED &&
        context_->transport_security_state()->ShouldSSLErrorsBeFatal(
@@ -599,17 +599,17 @@ diff --git a/net/socket/ssl_client_socket_impl.cc b/net/socket/ssl_client_socket
 diff --git a/net/spdy/spdy_session.cc b/net/spdy/spdy_session.cc
 --- a/net/spdy/spdy_session.cc
 +++ b/net/spdy/spdy_session.cc
-@@ -732,7 +732,8 @@ bool SpdySession::CanPool(TransportSecurityState* transport_security_state,
+@@ -733,7 +733,8 @@ bool SpdySession::CanPool(TransportSecurityState* transport_security_state,
                            const SSLInfo& ssl_info,
                            const SSLConfigService& ssl_config_service,
-                           const std::string& old_hostname,
--                          const std::string& new_hostname) {
-+                          const std::string& new_hostname,
+                           std::string_view old_hostname,
+-                          std::string_view new_hostname) {
++                          std::string_view new_hostname,
 +                          const net::NetworkAnonymizationKey& network_anonymization_key) {
    // Pooling is prohibited if the server cert is not valid for the new domain,
    // and for connections on which client certs were sent. It is also prohibited
    // when channel ID was sent if the hosts are from different eTLDs+1.
-@@ -751,7 +752,7 @@ bool SpdySession::CanPool(TransportSecurityState* transport_security_state,
+@@ -752,7 +753,7 @@ bool SpdySession::CanPool(TransportSecurityState* transport_security_state,
    // Port is left at 0 as it is never used.
    if (transport_security_state->CheckPublicKeyPins(
            HostPortPair(new_hostname, 0), ssl_info.is_issued_by_known_root,
@@ -618,7 +618,7 @@ diff --git a/net/spdy/spdy_session.cc b/net/spdy/spdy_session.cc
        TransportSecurityState::PKPStatus::VIOLATED) {
      return false;
    }
-@@ -972,7 +973,8 @@ bool SpdySession::VerifyDomainAuthentication(const std::string& domain) const {
+@@ -973,7 +974,8 @@ bool SpdySession::VerifyDomainAuthentication(std::string_view domain) const {
      return true;  // This is not a secure session, so all domains are okay.
  
    return CanPool(transport_security_state_, ssl_info, *ssl_config_service_,
@@ -628,12 +628,12 @@ diff --git a/net/spdy/spdy_session.cc b/net/spdy/spdy_session.cc
  }
  
  void SpdySession::EnqueueStreamWrite(
-@@ -3007,7 +3009,8 @@ void SpdySession::OnAltSvc(
-     if (!GetSSLInfo(&ssl_info))
+@@ -3010,7 +3012,8 @@ void SpdySession::OnAltSvc(
        return;
+     }
      if (!CanPool(transport_security_state_, ssl_info, *ssl_config_service_,
--                 host_port_pair().host(), gurl.host())) {
-+                 host_port_pair().host(), gurl.host(),
+-                 host_port_pair().host(), gurl.host_piece())) {
++                 host_port_pair().host(), gurl.host_piece(),
 +                 spdy_session_key_.network_anonymization_key())) {
        return;
      }
@@ -641,12 +641,12 @@ diff --git a/net/spdy/spdy_session.cc b/net/spdy/spdy_session.cc
 diff --git a/net/spdy/spdy_session.h b/net/spdy/spdy_session.h
 --- a/net/spdy/spdy_session.h
 +++ b/net/spdy/spdy_session.h
-@@ -319,7 +319,8 @@ class NET_EXPORT SpdySession
+@@ -320,7 +320,8 @@ class NET_EXPORT SpdySession
                        const SSLInfo& ssl_info,
                        const SSLConfigService& ssl_config_service,
-                       const std::string& old_hostname,
--                      const std::string& new_hostname);
-+                      const std::string& new_hostname,
+                       std::string_view old_hostname,
+-                      std::string_view new_hostname);
++                      std::string_view new_hostname,
 +                      const net::NetworkAnonymizationKey& network_anonymization_key);
  
    // Create a new SpdySession.
@@ -654,7 +654,7 @@ diff --git a/net/spdy/spdy_session.h b/net/spdy/spdy_session.h
 diff --git a/net/url_request/url_request_context_builder.cc b/net/url_request/url_request_context_builder.cc
 --- a/net/url_request/url_request_context_builder.cc
 +++ b/net/url_request/url_request_context_builder.cc
-@@ -389,20 +389,6 @@ std::unique_ptr<URLRequestContext> URLRequestContextBuilder::Build() {
+@@ -388,20 +388,6 @@ std::unique_ptr<URLRequestContext> URLRequestContextBuilder::Build() {
  
    context->set_transport_security_state(
        std::make_unique<TransportSecurityState>(hsts_policy_bypass_list_));
@@ -678,7 +678,7 @@ diff --git a/net/url_request/url_request_context_builder.cc b/net/url_request/ur
 diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_request_http_job.cc
 --- a/net/url_request/url_request_http_job.cc
 +++ b/net/url_request/url_request_http_job.cc
-@@ -275,7 +275,8 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
+@@ -274,7 +274,8 @@ std::unique_ptr<URLRequestJob> URLRequestHttpJob::Create(URLRequest* request) {
  
    TransportSecurityState* hsts = request->context()->transport_security_state();
    bool should_upgrade_to_ssl =
@@ -688,7 +688,7 @@ diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_reque
  
    // Check for reasons not to return a URLRequestHttpJob. These don't apply to
    // https and wss requests.
-@@ -1100,7 +1101,7 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
+@@ -1085,7 +1086,7 @@ void URLRequestHttpJob::ProcessStrictTransportSecurityHeader() {
    HttpResponseHeaders* headers = GetResponseHeaders();
    std::string value;
    if (headers->EnumerateHeader(nullptr, "Strict-Transport-Security", &value))
@@ -697,7 +697,7 @@ diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_reque
  }
  
  void URLRequestHttpJob::OnStartCompleted(int result) {
-@@ -1170,7 +1171,7 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
+@@ -1155,7 +1156,7 @@ void URLRequestHttpJob::OnStartCompleted(int result) {
      TransportSecurityState* state = context->transport_security_state();
      NotifySSLCertificateError(
          result, transaction_->GetResponseInfo()->ssl_info,
@@ -709,7 +709,7 @@ diff --git a/net/url_request/url_request_http_job.cc b/net/url_request/url_reque
 diff --git a/services/network/network_context.cc b/services/network/network_context.cc
 --- a/services/network/network_context.cc
 +++ b/services/network/network_context.cc
-@@ -1814,6 +1814,7 @@ void NetworkContext::CreateHostResolver(
+@@ -1815,6 +1815,7 @@ void NetworkContext::CreateHostResolver(
  void NetworkContext::VerifyCertForSignedExchange(
      const scoped_refptr<net::X509Certificate>& certificate,
      const GURL& url,
@@ -717,7 +717,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
      const std::string& ocsp_result,
      const std::string& sct_list,
      VerifyCertForSignedExchangeCallback callback) {
-@@ -1824,6 +1825,7 @@ void NetworkContext::VerifyCertForSignedExchange(
+@@ -1825,6 +1826,7 @@ void NetworkContext::VerifyCertForSignedExchange(
    pending_cert_verify->result = std::make_unique<net::CertVerifyResult>();
    pending_cert_verify->certificate = certificate;
    pending_cert_verify->url = url;
@@ -725,7 +725,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
    pending_cert_verify->ocsp_result = ocsp_result;
    pending_cert_verify->sct_list = sct_list;
    net::CertVerifier* cert_verifier =
-@@ -1868,17 +1870,19 @@ void NetworkContext::SetCorsOriginAccessListsForOrigin(
+@@ -1869,17 +1871,19 @@ void NetworkContext::SetCorsOriginAccessListsForOrigin(
    std::move(callback).Run();
  }
  
@@ -748,7 +748,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
                                           IsHSTSActiveForHostCallback callback) {
    net::TransportSecurityState* security_state =
        url_request_context_->transport_security_state();
-@@ -1888,10 +1892,10 @@ void NetworkContext::IsHSTSActiveForHost(const std::string& host,
+@@ -1889,10 +1893,10 @@ void NetworkContext::IsHSTSActiveForHost(const std::string& host,
      return;
    }
  
@@ -761,7 +761,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
                                    GetHSTSStateCallback callback) {
    base::Value::Dict result;
  
-@@ -1929,10 +1933,10 @@ void NetworkContext::GetHSTSState(const std::string& domain,
+@@ -1930,10 +1934,10 @@ void NetworkContext::GetHSTSState(const std::string& domain,
        net::TransportSecurityState::STSState dynamic_sts_state;
        net::TransportSecurityState::PKPState dynamic_pkp_state;
        bool found_sts_dynamic = transport_security_state->GetDynamicSTSState(
@@ -774,7 +774,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
        if (found_sts_dynamic) {
          result.Set("dynamic_upgrade_mode",
                     static_cast<int>(dynamic_sts_state.upgrade_mode));
-@@ -1970,6 +1974,7 @@ void NetworkContext::GetHSTSState(const std::string& domain,
+@@ -1971,6 +1975,7 @@ void NetworkContext::GetHSTSState(const std::string& domain,
  }
  
  void NetworkContext::DeleteDynamicDataForHost(
@@ -782,7 +782,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
      const std::string& host,
      DeleteDynamicDataForHostCallback callback) {
    net::TransportSecurityState* transport_security_state =
-@@ -1980,7 +1985,7 @@ void NetworkContext::DeleteDynamicDataForHost(
+@@ -1981,7 +1986,7 @@ void NetworkContext::DeleteDynamicDataForHost(
    }
  
    std::move(callback).Run(
@@ -791,7 +791,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
  }
  
  void NetworkContext::EnableStaticKeyPinningForTesting(
-@@ -2021,7 +2026,7 @@ void NetworkContext::PreconnectSockets(
+@@ -2022,7 +2027,7 @@ void NetworkContext::PreconnectSockets(
    DCHECK(!require_network_anonymization_key_ ||
           !network_anonymization_key.IsEmpty());
  
@@ -800,7 +800,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
  
    // |PreconnectSockets| may receive arguments from the renderer, which is not
    // guaranteed to validate them.
-@@ -2785,12 +2790,15 @@ void NetworkContext::OnConnectionError() {
+@@ -2806,12 +2811,15 @@ void NetworkContext::OnConnectionError() {
      std::move(on_connection_close_callback_).Run(this);
  }
  
@@ -817,7 +817,7 @@ diff --git a/services/network/network_context.cc b/services/network/network_cont
            original_url.host())) {
      return original_url;
    }
-@@ -2838,7 +2846,8 @@ void NetworkContext::OnVerifyCertForSignedExchangeComplete(
+@@ -2859,7 +2867,8 @@ void NetworkContext::OnVerifyCertForSignedExchangeComplete(
          url_request_context_->transport_security_state()->CheckPublicKeyPins(
              net::HostPortPair::FromURL(pending_cert_verify->url),
              pending_cert_verify->result->is_issued_by_known_root,
@@ -855,7 +855,7 @@ diff --git a/services/network/network_context.h b/services/network/network_conte
        const std::string& host,
        DeleteDynamicDataForHostCallback callback) override;
    void SetCorsOriginAccessListsForOrigin(
-@@ -712,7 +715,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
+@@ -719,7 +722,8 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
        mojo::PendingRemote<mojom::CookieAccessObserver> cookie_observer,
        net::FirstPartySetMetadata first_party_set_metadata);
  
@@ -865,7 +865,7 @@ diff --git a/services/network/network_context.h b/services/network/network_conte
  
  #if BUILDFLAG(IS_P2P_ENABLED)
    void DestroySocketManager(P2PSocketManager* socket_manager);
-@@ -906,6 +910,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
+@@ -909,6 +913,7 @@ class COMPONENT_EXPORT(NETWORK_SERVICE) NetworkContext
      VerifyCertForSignedExchangeCallback callback;
      scoped_refptr<net::X509Certificate> certificate;
      GURL url;
@@ -876,7 +876,7 @@ diff --git a/services/network/network_context.h b/services/network/network_conte
 diff --git a/services/network/public/mojom/network_context.mojom b/services/network/public/mojom/network_context.mojom
 --- a/services/network/public/mojom/network_context.mojom
 +++ b/services/network/public/mojom/network_context.mojom
-@@ -1525,6 +1525,7 @@ interface NetworkContext {
+@@ -1508,6 +1508,7 @@ interface NetworkContext {
    // implementation is currently specific for use by Signed Exchange.
    VerifyCertForSignedExchange(X509Certificate certificate,
                                url.mojom.Url url,
@@ -884,7 +884,7 @@ diff --git a/services/network/public/mojom/network_context.mojom b/services/netw
                                string ocsp_response,
                                string sct_list) => (int32 error_code,
                                                     CertVerifyResult cv_result,
-@@ -1532,16 +1533,16 @@ interface NetworkContext {
+@@ -1515,16 +1516,16 @@ interface NetworkContext {
  
    // Adds explicitly-specified data as if it was processed from an
    // HSTS header. Used by tests and implementation of chrome://net-internals.
@@ -904,7 +904,7 @@ diff --git a/services/network/public/mojom/network_context.mojom b/services/netw
        => (mojo_base.mojom.DictionaryValue state);
  
    // Sets allowed and blocked origins respectively for the URLLoaderFactory
-@@ -1560,7 +1561,7 @@ interface NetworkContext {
+@@ -1543,7 +1544,7 @@ interface NetworkContext {
    // Deletes any dynamic data stored for |host| from the transport
    // security state. Returns true iff an entry was deleted.
    // See net::TransportSecurityState::DeleteDynamicDataForHost for more detail.

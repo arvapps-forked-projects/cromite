@@ -5,9 +5,9 @@ if [[ -z "${INDEX_VERSION}" ]]; then
    exit 1
 fi
 
-FLD=/storage/images/android/$INDEX_VERSION/true/arm64
+FLD=/storage/images/$INDEX_VERSION/android/true/arm64
 
-cp $FLD/bromite.idx .
+cp $FLD/cromite.idx .
 cp $FLD/RELEASE .
 
 DOCKER_BUILDKIT=1 docker build -t uazo/bromite-remote-index:$INDEX_VERSION \

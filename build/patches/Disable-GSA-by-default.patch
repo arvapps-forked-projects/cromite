@@ -21,8 +21,8 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/IntentHandler.j
 -import org.chromium.chrome.browser.gsa.GSAState;
  import org.chromium.chrome.browser.omnibox.suggestions.AutocompleteControllerProvider;
  import org.chromium.chrome.browser.profiles.Profile;
- import org.chromium.chrome.browser.renderer_host.ChromeNavigationUIData;
-@@ -243,8 +242,6 @@ public class IntentHandler {
+ import org.chromium.chrome.browser.profiles.ProfileManager;
+@@ -255,8 +254,6 @@ public class IntentHandler {
      private static int sReferrerId;
      private static String sPendingIncognitoUrl;
  
@@ -31,7 +31,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/IntentHandler.j
      private static final String PACKAGE_GMAIL = "com.google.android.gm";
      private static final String PACKAGE_PLUS = "com.google.android.apps.plus";
      private static final String PACKAGE_HANGOUTS = "com.google.android.talk";
-@@ -460,8 +457,6 @@ public class IntentHandler {
+@@ -472,8 +469,6 @@ public class IntentHandler {
              return ExternalAppId.LINE;
          } else if (packageName.equals(PACKAGE_WHATSAPP)) {
              return ExternalAppId.WHATSAPP;
@@ -85,7 +85,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/share/LensUtils
 diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAState.java b/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAState.java
 --- a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAState.java
 +++ b/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAState.java
-@@ -32,8 +32,6 @@ import java.util.regex.Pattern;
+@@ -31,8 +31,6 @@ import java.util.regex.Pattern;
  
  /** A class responsible for representing the current state of Chrome's integration with GSA. */
  public class GSAState {
@@ -94,7 +94,7 @@ diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAStat
      /** Used to observe state changes in the class. */
      public interface Observer {
          /** Called when the GSA account name is set. */
-@@ -71,7 +69,7 @@ public class GSAState {
+@@ -70,7 +68,7 @@ public class GSAState {
      private final ObserverList<Observer> mObserverList = new ObserverList<>();
  
      /** Caches the result of a computation on whether GSA is available. */
@@ -103,7 +103,7 @@ diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAStat
  
      /**
       * The Google account email address being used by GSA according to the latest update we have
-@@ -153,7 +151,7 @@ public class GSAState {
+@@ -152,7 +150,7 @@ public class GSAState {
  
      /** Returns whether the GSA package is installed on device. */
      public boolean isGsaInstalled() {
@@ -112,7 +112,7 @@ diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAStat
      }
  
      /**
-@@ -176,6 +174,7 @@ public class GSAState {
+@@ -175,6 +173,7 @@ public class GSAState {
       */
      public boolean isAgsaVersionBelowMinimum(
              String installedVersionName, String minimumVersionName) {
@@ -120,7 +120,7 @@ diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAStat
          if (TextUtils.isEmpty(installedVersionName) || TextUtils.isEmpty(minimumVersionName)) {
              return true;
          }
-@@ -207,7 +206,7 @@ public class GSAState {
+@@ -206,7 +205,7 @@ public class GSAState {
       * @return Whether the given intent can be handled by Agsa.
       */
      public boolean canAgsaHandleIntent(@NonNull Intent intent) {
@@ -129,7 +129,7 @@ diff --git a/chrome/browser/gsa/java/src/org/chromium/chrome/browser/gsa/GSAStat
  
          ComponentName activity =
                  intent.resolveActivity(ContextUtils.getApplicationContext().getPackageManager());
-@@ -221,7 +220,7 @@ public class GSAState {
+@@ -220,7 +219,7 @@ public class GSAState {
       * @return The version name of the Agsa package or null if it can't be found.
       */
      public @Nullable String getAgsaVersionName() {

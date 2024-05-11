@@ -36,7 +36,7 @@ Enabled by default
  .../platform/graphics/bitmap_image_metrics.h  |   4 +-
  .../renderer/platform/image-decoders/BUILD.gn |   9 +
  .../platform/image-decoders/image_decoder.cc  |  23 +
- .../image-decoders/jxl/jxl_image_decoder.cc   | 683 ++++++++++++++++++
+ .../image-decoders/jxl/jxl_image_decoder.cc   | 684 ++++++++++++++++++
  .../image-decoders/jxl/jxl_image_decoder.h    | 123 ++++
  .../jxl/jxl_image_decoder_test.cc             | 626 ++++++++++++++++
  .../blink/tools/commit_stats/git-dirs.txt     |   1 +
@@ -58,7 +58,7 @@ Enabled by default
  .../libjxl/gen_headers/jxl/jxl_export.h       |  11 +
  tools/metrics/histograms/enums.xml            |   1 +
  .../histograms/metadata/blink/enums.xml       |   2 +-
- 53 files changed, 1995 insertions(+), 17 deletions(-)
+ 53 files changed, 1996 insertions(+), 17 deletions(-)
  create mode 100644 build/linux/unbundle/libjxl.gn
  create mode 100644 cromite_flags/chrome/browser/about_flags_cc/Add-support-to-jxl.inc
  create mode 100644 cromite_flags/third_party/blink/common/features_cc/Add-support-to-jxl.inc
@@ -84,7 +84,7 @@ Enabled by default
 diff --git a/DEPS b/DEPS
 --- a/DEPS
 +++ b/DEPS
-@@ -487,6 +487,10 @@ vars = {
+@@ -491,6 +491,10 @@ vars = {
    # Three lines of non-changing comments so that
    # the commit queue can handle CLs rolling feed
    # and whatever else without interference from each other.
@@ -95,7 +95,7 @@ diff --git a/DEPS b/DEPS
    'highway_revision': '8f20644eca693cfb74aa795b0006b6779c370e7a',
    # Three lines of non-changing comments so that
    # the commit queue can handle CLs rolling ffmpeg
-@@ -1105,6 +1109,9 @@ deps = {
+@@ -1102,6 +1106,9 @@ deps = {
    'src/third_party/dawn':
      Var('dawn_git') + '/dawn.git' + '@' +  Var('dawn_revision'),
  
@@ -467,7 +467,7 @@ diff --git a/third_party/blink/common/mime_util/mime_util_unittest.cc b/third_pa
 diff --git a/third_party/blink/public/devtools_protocol/browser_protocol.pdl b/third_party/blink/public/devtools_protocol/browser_protocol.pdl
 --- a/third_party/blink/public/devtools_protocol/browser_protocol.pdl
 +++ b/third_party/blink/public/devtools_protocol/browser_protocol.pdl
-@@ -4258,6 +4258,7 @@ domain Emulation
+@@ -4323,6 +4323,7 @@ domain Emulation
    experimental type DisabledImageType extends string
      enum
        avif
@@ -478,7 +478,7 @@ diff --git a/third_party/blink/public/devtools_protocol/browser_protocol.pdl b/t
 diff --git a/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc b/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
 --- a/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
 +++ b/third_party/blink/renderer/core/inspector/inspector_emulation_agent.cc
-@@ -502,10 +502,10 @@ AtomicString InspectorEmulationAgent::OverrideAcceptImageHeader(
+@@ -501,10 +501,10 @@ AtomicString InspectorEmulationAgent::OverrideAcceptImageHeader(
    String header(network_utils::ImageAcceptHeader());
    for (String type : *disabled_image_types) {
      // The header string is expected to be like
@@ -492,7 +492,7 @@ diff --git a/third_party/blink/renderer/core/inspector/inspector_emulation_agent
      header.Replace(String(type + ","), "");
    }
    return AtomicString(header);
-@@ -850,6 +850,7 @@ protocol::Response InspectorEmulationAgent::setDisabledImageTypes(
+@@ -849,6 +849,7 @@ protocol::Response InspectorEmulationAgent::setDisabledImageTypes(
    namespace DisabledImageTypeEnum = protocol::Emulation::DisabledImageTypeEnum;
    for (protocol::Emulation::DisabledImageType type : *disabled_types) {
      if (DisabledImageTypeEnum::Avif == type ||
@@ -608,7 +608,7 @@ diff --git a/third_party/blink/renderer/modules/webcodecs/image_decoder_fuzzer.c
 diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/renderer/platform/BUILD.gn
 --- a/third_party/blink/renderer/platform/BUILD.gn
 +++ b/third_party/blink/renderer/platform/BUILD.gn
-@@ -2277,6 +2277,10 @@ source_set("blink_platform_unittests_sources") {
+@@ -2289,6 +2289,10 @@ source_set("blink_platform_unittests_sources") {
      sources += [ "text/locale_icu_test.cc" ]
    }
  
@@ -619,10 +619,10 @@ diff --git a/third_party/blink/renderer/platform/BUILD.gn b/third_party/blink/re
    sources += [ "testing/run_all_tests.cc" ]
  
    configs += [
-@@ -2320,6 +2324,7 @@ source_set("blink_platform_unittests_sources") {
+@@ -2331,6 +2335,7 @@ source_set("blink_platform_unittests_sources") {
+     "//third_party/blink/renderer/platform/network:unit_tests",
      "//third_party/blink/renderer/platform/scheduler:unit_tests",
      "//third_party/blink/renderer/platform/wtf",
-     "//third_party/libavif:libavif",
 +    "//third_party/libjxl:libjxl",
      "//third_party/libyuv",
      "//third_party/webrtc/api/task_queue:task_queue_test",
@@ -663,7 +663,7 @@ diff --git a/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.c
 diff --git a/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h b/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h
 --- a/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h
 +++ b/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h
-@@ -29,8 +29,8 @@ class PLATFORM_EXPORT BitmapImageMetrics {
+@@ -32,8 +32,8 @@ class PLATFORM_EXPORT BitmapImageMetrics {
      kICO = 5,
      kBMP = 6,
      kAVIF = 7,
@@ -677,7 +677,7 @@ diff --git a/third_party/blink/renderer/platform/graphics/bitmap_image_metrics.h
 diff --git a/third_party/blink/renderer/platform/image-decoders/BUILD.gn b/third_party/blink/renderer/platform/image-decoders/BUILD.gn
 --- a/third_party/blink/renderer/platform/image-decoders/BUILD.gn
 +++ b/third_party/blink/renderer/platform/image-decoders/BUILD.gn
-@@ -70,6 +70,15 @@ component("image_decoders") {
+@@ -72,6 +72,15 @@ component("image_decoders") {
      "//third_party/libyuv",
    ]
  
@@ -696,15 +696,15 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/BUILD.gn b/third
 diff --git a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc b/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
 --- a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
 +++ b/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
-@@ -23,6 +23,7 @@
- #include <memory>
+@@ -24,6 +24,7 @@
  
+ #include "base/containers/heap_array.h"
  #include "base/logging.h"
 +#include "base/feature_list.h"
  #include "base/numerics/safe_conversions.h"
  #include "base/sys_byteorder.h"
  #include "base/trace_event/trace_event.h"
-@@ -30,6 +31,7 @@
+@@ -31,6 +32,7 @@
  #include "media/media_buildflags.h"
  #include "skia/ext/cicp.h"
  #include "third_party/blink/public/common/buildflags.h"
@@ -712,7 +712,7 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
  #include "third_party/blink/public/platform/platform.h"
  #include "third_party/blink/renderer/platform/image-decoders/bmp/bmp_image_decoder.h"
  #include "third_party/blink/renderer/platform/image-decoders/exif_reader.h"
-@@ -47,6 +49,9 @@
+@@ -48,6 +50,9 @@
  #include "third_party/blink/renderer/platform/image-decoders/avif/avif_image_decoder.h"
  #endif
  
@@ -722,7 +722,7 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
  namespace blink {
  
  namespace {
-@@ -74,6 +79,11 @@ cc::ImageType FileExtensionToImageType(String image_extension) {
+@@ -75,6 +80,11 @@ cc::ImageType FileExtensionToImageType(String image_extension) {
    if (image_extension == "avif") {
      return cc::ImageType::kAVIF;
    }
@@ -734,7 +734,7 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
  #endif
    return cc::ImageType::kInvalid;
  }
-@@ -191,6 +201,12 @@ String SniffMimeTypeInternal(scoped_refptr<SegmentReader> reader) {
+@@ -192,6 +202,12 @@ String SniffMimeTypeInternal(scoped_refptr<SegmentReader> reader) {
      return "image/avif";
    }
  #endif
@@ -747,7 +747,7 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/image_decoder.cc
  
    return String();
  }
-@@ -296,6 +312,13 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
+@@ -297,6 +313,13 @@ std::unique_ptr<ImageDecoder> ImageDecoder::CreateByMimeType(
      decoder = std::make_unique<AVIFImageDecoder>(
          alpha_option, high_bit_depth_decoding_option, color_behavior,
          max_decoded_bytes, animation_option);
@@ -765,7 +765,7 @@ diff --git a/third_party/blink/renderer/platform/image-decoders/jxl/jxl_image_de
 new file mode 100644
 --- /dev/null
 +++ b/third_party/blink/renderer/platform/image-decoders/jxl/jxl_image_decoder.cc
-@@ -0,0 +1,683 @@
+@@ -0,0 +1,684 @@
 +// Copyright 2021 The Chromium Authors
 +// Use of this source code is governed by a BSD-style license that can be
 +// found in the LICENSE file.
@@ -815,11 +815,12 @@ new file mode 100644
 +  // The input ColorProfile owns the buffer memory, make a new copy for
 +  // the newly created one and pass the ownership of the new copy to the new
 +  // color profile.
-+  std::unique_ptr<uint8_t[]> owned_buffer(
-+      new uint8_t[buffer_donor.GetProfile()->size]);
-+  memcpy(owned_buffer.get(), buffer_donor.GetProfile()->buffer,
-+         buffer_donor.GetProfile()->size);
-+  new_profile.buffer = owned_buffer.get();
++  auto owned_buffer = base::HeapArray<uint8_t>::Uninit(buffer_donor.GetProfile()->size);
++  owned_buffer.copy_from(
++    base::span<const uint8_t>(
++      static_cast<const uint8_t*>(buffer_donor.GetProfile()->buffer),
++      buffer_donor.GetProfile()->size));
++  new_profile.buffer = std::move(owned_buffer.data());
 +  return std::make_unique<ColorProfile>(new_profile, std::move(owned_buffer));
 +}
 +}  // namespace
@@ -2211,18 +2212,18 @@ new file mode 100644
 diff --git a/third_party/blink/tools/commit_stats/git-dirs.txt b/third_party/blink/tools/commit_stats/git-dirs.txt
 --- a/third_party/blink/tools/commit_stats/git-dirs.txt
 +++ b/third_party/blink/tools/commit_stats/git-dirs.txt
-@@ -75,6 +75,7 @@
+@@ -34,6 +34,7 @@
+ ./third_party/angle/third_party/rapidjson/src,ANGLE
+ ./third_party/angle/third_party/VK-GL-CTS/src,ANGLE
  ./third_party/angle/third_party/glmark2/src,ANGLE
- ./third_party/openh264/src,OpenH264
- ./third_party/googletest/src,GoogleTest
 +./third_party/libjxl/src,libjxl
  ./third_party/highway/src,highway
- ./third_party/wuffs/src,wuffs
  ./third_party/catapult,catapult
+ ./third_party/libwebm/source,libwebm
 diff --git a/third_party/blink/web_tests/TestExpectations b/third_party/blink/web_tests/TestExpectations
 --- a/third_party/blink/web_tests/TestExpectations
 +++ b/third_party/blink/web_tests/TestExpectations
-@@ -4569,6 +4569,12 @@ crbug.com/1199522 http/tests/devtools/layers/layers-3d-view-hit-testing.js [ Fai
+@@ -4636,6 +4636,12 @@ crbug.com/1199522 http/tests/devtools/layers/layers-3d-view-hit-testing.js [ Fai
  # Started failing after rolling new version of check-layout-th.js
  css3/flexbox/perpendicular-writing-modes-inside-flex-item.html [ Failure ]
  
@@ -2653,7 +2654,7 @@ new file mode 100644
 diff --git a/tools/metrics/histograms/enums.xml b/tools/metrics/histograms/enums.xml
 --- a/tools/metrics/histograms/enums.xml
 +++ b/tools/metrics/histograms/enums.xml
-@@ -23856,6 +23856,7 @@ from previous Chrome versions.
+@@ -21300,6 +21300,7 @@ from previous Chrome versions.
    <int value="188610022" label="NewMessageListView:enabled"/>
    <int value="189728101" label="FasterLocationReload:disabled"/>
    <int value="189777537" label="DisableInitialMostVisitedFadeIn:enabled"/>
@@ -2672,5 +2673,5 @@ diff --git a/tools/metrics/histograms/metadata/blink/enums.xml b/tools/metrics/h
 +  <int value="8" label="kImageJXL"/>
  </enum>
  
- <enum name="FedCmAccountsResponseInvalidReason">
+ <enum name="DigitalIdentityRequestStatus">
 --

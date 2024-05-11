@@ -24,7 +24,7 @@ License: GPL-3.0-only - https://spdx.org/licenses/GPL-3.0-only.html
 diff --git a/chrome/browser/about_flags.cc b/chrome/browser/about_flags.cc
 --- a/chrome/browser/about_flags.cc
 +++ b/chrome/browser/about_flags.cc
-@@ -153,6 +153,7 @@
+@@ -154,6 +154,7 @@
  #include "components/send_tab_to_self/features.h"
  #include "components/services/heap_profiling/public/cpp/switches.h"
  #include "components/services/storage/public/cpp/buckets/bucket_info.h"
@@ -68,7 +68,7 @@ diff --git a/chrome/browser/engagement/important_sites_util.cc b/chrome/browser/
 diff --git a/components/feature_engagement/internal/tracker_impl.cc b/components/feature_engagement/internal/tracker_impl.cc
 --- a/components/feature_engagement/internal/tracker_impl.cc
 +++ b/components/feature_engagement/internal/tracker_impl.cc
-@@ -22,6 +22,7 @@
+@@ -23,6 +23,7 @@
  #include "base/task/single_thread_task_runner.h"
  #include "base/time/clock.h"
  #include "build/build_config.h"
@@ -76,7 +76,7 @@ diff --git a/components/feature_engagement/internal/tracker_impl.cc b/components
  #include "components/feature_engagement/internal/availability_model_impl.h"
  #include "components/feature_engagement/internal/blocked_iph_features.h"
  #include "components/feature_engagement/internal/chrome_variations_configuration.h"
-@@ -207,6 +208,8 @@ TrackerImpl::TrackerImpl(
+@@ -211,6 +212,8 @@ TrackerImpl::TrackerImpl(
  TrackerImpl::~TrackerImpl() = default;
  
  void TrackerImpl::NotifyEvent(const std::string& event) {
@@ -96,12 +96,12 @@ diff --git a/components/feature_engagement/public/feature_configurations.cc b/co
  #include "components/feature_engagement/public/configuration.h"
  #include "components/feature_engagement/public/event_constants.h"
  #include "components/feature_engagement/public/feature_constants.h"
-@@ -66,6 +67,12 @@ absl::optional<FeatureConfig> GetClientSideFeatureConfig(
+@@ -112,6 +113,12 @@ std::optional<FeatureConfig> GetClientSideFeatureConfig(
    }
  
  #endif  // BUILDFLAG(IS_MAC) || BUILDFLAG(IS_LINUX) || BUILDFLAG(IS_WIN)
 +  if (!base::FeatureList::IsEnabled(site_engagement::features::kSiteEngagement)) {
-+    absl::optional<FeatureConfig> config = FeatureConfig();
++    std::optional<FeatureConfig> config = FeatureConfig();
 +    config->valid = false;
 +    return config;
 +  }

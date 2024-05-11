@@ -45,19 +45,19 @@ diff --git a/chrome/android/features/tab_ui/java/src/org/chromium/chrome/browser
 diff --git a/chrome/browser/flags/android/chrome_feature_list.cc b/chrome/browser/flags/android/chrome_feature_list.cc
 --- a/chrome/browser/flags/android/chrome_feature_list.cc
 +++ b/chrome/browser/flags/android/chrome_feature_list.cc
-@@ -172,6 +172,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
+@@ -169,6 +169,7 @@ const base::Feature* const kFeaturesExposedToJava[] = {
      &kBackGestureActivityTabProvider,
      &kBackGestureMoveToBackDuringStartup,
      &kBackGestureRefactorAndroid,
 +    &kCloseAllTabsModalDialog,
      &kBackgroundThreadPool,
      &kBlockIntentsWhileLocked,
-     &kCacheActivityTaskID,
+     &kBrowserControlsEarlyResize,
 diff --git a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 --- a/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
 +++ b/chrome/browser/flags/android/java/src/org/chromium/chrome/browser/flags/ChromeFeatureList.java
-@@ -225,6 +225,7 @@ public abstract class ChromeFeatureList {
-             "CCTPageInsightsHubBetterScroll";
+@@ -224,6 +224,7 @@ public abstract class ChromeFeatureList {
+     public static final String CCT_GOOGLE_BOTTOM_BAR = "CCTGoogleBottomBar";
      public static final String CCT_REPORT_PARALLEL_REQUEST_STATUS =
              "CCTReportParallelRequestStatus";
 +    public static final String CLOSE_ALL_TABS_MODAL_DIALOG = "CloseAllTabsModalDialog";

@@ -4,14 +4,27 @@ Subject: Disable WebGPU
 
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
+ content/child/runtime_features.cc                | 2 ++
  gpu/config/gpu_finch_features.cc                 | 2 +-
  third_party/blink/renderer/modules/webgpu/gpu.cc | 1 +
- 2 files changed, 2 insertions(+), 1 deletion(-)
+ 3 files changed, 4 insertions(+), 1 deletion(-)
 
+diff --git a/content/child/runtime_features.cc b/content/child/runtime_features.cc
+--- a/content/child/runtime_features.cc
++++ b/content/child/runtime_features.cc
+@@ -588,6 +588,8 @@ void SetCustomizedRuntimeFeaturesFromCombinedArgs(
+     WebRuntimeFeatures::EnableV8IdleTasks(true);
+   }
+ 
++  WebRuntimeFeatures::EnableFeatureFromString("WebGpu", false);
++
+   WebRuntimeFeatures::EnableBackForwardCache(
+       content::IsBackForwardCacheEnabled());
+ 
 diff --git a/gpu/config/gpu_finch_features.cc b/gpu/config/gpu_finch_features.cc
 --- a/gpu/config/gpu_finch_features.cc
 +++ b/gpu/config/gpu_finch_features.cc
-@@ -295,7 +295,7 @@ BASE_FEATURE(kForceGpuMainThreadToNormalPriorityDrDc,
+@@ -280,7 +280,7 @@ BASE_FEATURE(kEnableDrDc,
  // enabled by default on supported platforms.
  #if BUILDFLAG(IS_MAC) || BUILDFLAG(IS_WIN) || BUILDFLAG(IS_CHROMEOS) || \
      BUILDFLAG(IS_ANDROID)
@@ -23,12 +36,12 @@ diff --git a/gpu/config/gpu_finch_features.cc b/gpu/config/gpu_finch_features.cc
 diff --git a/third_party/blink/renderer/modules/webgpu/gpu.cc b/third_party/blink/renderer/modules/webgpu/gpu.cc
 --- a/third_party/blink/renderer/modules/webgpu/gpu.cc
 +++ b/third_party/blink/renderer/modules/webgpu/gpu.cc
-@@ -368,6 +368,7 @@ ScriptPromise GPU::requestAdapter(ScriptState* script_state,
+@@ -380,6 +380,7 @@ ScriptPromiseTyped<IDLNullable<GPUAdapter>> GPU::requestAdapter(
          "WebGPU is experimental on this platform. See "
          "https://github.com/gpuweb/gpuweb/wiki/"
          "Implementation-Status#implementation-status"));
 +    //(UAZO) add site setting
    }
  
-   auto* resolver = MakeGarbageCollected<ScriptPromiseResolver>(script_state);
+   auto* resolver =
 --

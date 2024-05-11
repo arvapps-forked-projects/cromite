@@ -22,8 +22,6 @@ body:
           required: true
         - label: "I have searched the existing issues for my problem. This is a new ticket, NOT a duplicate or related to another open issue."
           required: true
-        - label: "I have read the [FAQs](https://github.com/uazo/cromite/blob/master/FAQ.md)."
-          required: true
         - label: "I have updated Cromite to the latest version. The bug is reproducible on this latest version."
           required: true
         - label: "This is a bug report about the Cromite browser; not the website nor F-Droid nor anything else."
@@ -46,6 +44,21 @@ body:
     validations:
       required: true
 
+  - type: dropdown
+    id: is_chromium2
+    attributes:
+      label: Are you sure?
+      description: |
+          Please check your answer above again, it is important information
+
+          If the bug is related to functionality that does not exist in Chromium then answer "No".
+      multiple: false
+      options:
+        - "Yes"
+        - "No"
+    validations:
+      required: true
+      
   - type: input
     id: cromite_version
     attributes:

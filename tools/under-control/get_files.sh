@@ -1,16 +1,36 @@
 #!/bin/bash
 
-FILE_LIST=~/cromite/tools/under-control/file_list.txt
-OUTPUT_DIR=~/cromite/tools/under-control/
+# FILE_LIST=/home/lg/working_dir/file_list.txt
+# OUTPUT_DIR=~/cromite/tools/under-control/src/
 
-cd ~/chromium/src
+if [ -z "$CHR_SOURCE_DIR" ]; then
+   echo "CHR_SOURCE_DIR is empty"
+    exit 1
+fi
 
-for current_file in $(cat $FILE_LIST); do
+if [ -z "$OUTPUT_DIR" ]; then
+   echo "OUTPUT_DIR is empty"
+    exit 1
+fi
 
-    if [ ! -z "$current_file" ]
-    then
+if [ -z "$FILE_LIST" ]; then
+   echo "FILE_LIST is empty"
+    exit 1
+fi
 
-        #echo $current_file
+mkdir -p $OUTPUT_DIR
+
+pushd $CHR_SOURCE_DIR > /dev/null
+
+echo Getting files
+cat $FILE_LIST
+
+cat $FILE_LIST | while read current_file
+do
+    if [[ $current_file =~ ^#.* ]]; then
+        : # skip comments
+
+    elif [ ! -z "$current_file" ]; then
         SPLITS=(${current_file//;/ })
         DIR_NAME=${SPLITS[1]}
 
@@ -18,19 +38,17 @@ for current_file in $(cat $FILE_LIST); do
         then
 
             echo Copy ${SPLITS[0]} of $DIR_NAME
-            #find $DIR_NAME -name ${SPLITS[0]} -exec install -D '{}' $OUTPUT_DIR{} \;
-
-            find $DIR_NAME -name ${SPLITS[0]} \
-                -exec grep -q '^CHECKED_VERSION=' $OUTPUT_DIR{} \; \
-                -exec sed 's/^CHECKED_VERSION=.*/CHECKED_VERSION=newvalue/' -i $OUTPUT_DIR{} \;
+            find $DIR_NAME -name ${SPLITS[0]} -exec install -D '{}' $OUTPUT_DIR{} \;
 
         else
 
             echo Copy $current_file
-            #install -D $current_file $OUTPUT_DIR/$current_file
+            install -D $current_file $OUTPUT_DIR/$current_file
 
         fi
 
     fi
 
 done
+
+popd > /dev/null

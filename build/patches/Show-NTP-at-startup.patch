@@ -9,16 +9,16 @@ Until the real tab is opened, no data is retrieved.
 License: GPL-2.0-or-later - https://spdx.org/licenses/GPL-2.0-or-later.html
 ---
  .../java/res/layout/single_tab_view_layout.xml      | 11 +++++++++--
- .../tasks/SingleTabSwitcherOnNtpMediator.java       |  8 ++++----
+ .../tasks/SingleTabSwitcherOnNtpMediator.java       | 10 ++++------
  .../android/java/res/xml/homepage_preferences.xml   |  6 ++++++
  .../chrome/browser/ChromeInactivityTracker.java     | 13 +++++++++++++
- .../chrome/browser/ChromeTabbedActivity.java        |  2 ++
- .../chrome/browser/tasks/ReturnToChromeUtil.java    |  6 ++++++
+ .../chrome/browser/ChromeTabbedActivity.java        |  4 +++-
+ .../chrome/browser/tasks/ReturnToChromeUtil.java    |  8 +++++++-
  .../browser/preferences/ChromePreferenceKeys.java   |  2 ++
  .../preferences/LegacyChromePreferenceKeys.java     |  1 +
  .../show-ntp-at-startup.grdp                        |  9 +++++++++
  .../chrome_feature_list_cc/show-ntp-at-startup.inc  |  2 ++
- 10 files changed, 54 insertions(+), 6 deletions(-)
+ 10 files changed, 56 insertions(+), 10 deletions(-)
  create mode 100644 chrome/browser/ui/android/strings/cromite_android_chrome_strings_grd/show-ntp-at-startup.grdp
  create mode 100644 cromite_flags/chrome/browser/flags/android/chrome_feature_list_cc/show-ntp-at-startup.inc
 
@@ -57,23 +57,25 @@ diff --git a/chrome/android/features/start_surface/java/res/layout/single_tab_vi
 diff --git a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
 --- a/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
 +++ b/chrome/android/features/start_surface/java/src/org/chromium/chrome/features/tasks/SingleTabSwitcherOnNtpMediator.java
-@@ -292,8 +292,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+@@ -293,9 +293,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
                          public void onPageLoadFinished(Tab tab, GURL url) {
                              super.onPageLoadFinished(tab, url);
                              mPropertyModel.set(TITLE, tab.getTitle());
 -                            if (mIsSurfacePolishEnabled) {
--                                mPropertyModel.set(URL, tab.getUrl().getHost());
+-                                mPropertyModel.set(
+-                                        URL, SingleTabSwitcherMediator.getDomainUrl(tab.getUrl()));
 +                            if ((true)) {
 +                                mPropertyModel.set(URL, tab.getUrl().getPossiblyInvalidSpec());
                              }
                              tab.removeObserver(this);
                          }
-@@ -301,8 +301,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
+@@ -303,9 +302,8 @@ public class SingleTabSwitcherOnNtpMediator implements ConfigurationChangedObser
              mMostRecentTab.addObserver(tabObserver);
          } else {
              mPropertyModel.set(TITLE, mMostRecentTab.getTitle());
 -            if (mIsSurfacePolishEnabled) {
--                mPropertyModel.set(URL, mMostRecentTab.getUrl().getHost());
+-                mPropertyModel.set(
+-                        URL, SingleTabSwitcherMediator.getDomainUrl(mMostRecentTab.getUrl()));
 +            if ((true)) {
 +                mPropertyModel.set(URL, mMostRecentTab.getUrl().getPossiblyInvalidSpec());
              }
@@ -128,7 +130,16 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeInactivit
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedActivity.java
-@@ -2269,6 +2269,8 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+@@ -1666,7 +1666,7 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
+                 Callback<String> onStandardActiveIndexRead = null;
+                 shouldShowNtpAsHomeSurfaceAtStartup = shouldShowNtpHomeSurfaceOnStartup();
+                 boolean skipSavingNonActiveNtps = skipSavingNonActiveNtps();
+-                if (skipSavingNonActiveNtps) {
++                if (skipSavingNonActiveNtps || shouldShowNtpAsHomeSurfaceAtStartup) {
+                     mHomeSurfaceTracker = new HomeSurfaceTracker();
+                 }
+                 if (shouldShowNtpAsHomeSurfaceAtStartup) {
+@@ -2359,6 +2359,8 @@ public class ChromeTabbedActivity extends ChromeActivity<ChromeActivityComponent
          mInactivityTracker =
                  new ChromeInactivityTracker(
                          ChromePreferenceKeys.TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF);
@@ -140,7 +151,7 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/ChromeTabbedAct
 diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 --- a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
 +++ b/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToChromeUtil.java
-@@ -649,6 +649,12 @@ public final class ReturnToChromeUtil {
+@@ -651,6 +651,12 @@ public final class ReturnToChromeUtil {
              }
          }
  
@@ -153,10 +164,19 @@ diff --git a/chrome/android/java/src/org/chromium/chrome/browser/tasks/ReturnToC
          // Checks whether to show the Start surface due to feature flag TAB_SWITCHER_ON_RETURN_MS.
          long lastVisibleTimeMs = inactivityTracker.getLastVisibleTimeMs();
          long lastBackgroundTimeMs = inactivityTracker.getLastBackgroundedTimeMs();
+@@ -794,7 +800,7 @@ public final class ReturnToChromeUtil {
+             TabModel currentTabModel,
+             TabCreator tabCreator,
+             HomeSurfaceTracker homeSurfaceTracker) {
+-        if (isIncognito || !shouldShowNtpHomeSurfaceOnStartup) {
++        if (isIncognito || !shouldShowNtpHomeSurfaceOnStartup || homeSurfaceTracker == null) {
+             return false;
+         }
+ 
 diff --git a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 --- a/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
 +++ b/chrome/browser/preferences/android/java/src/org/chromium/chrome/browser/preferences/ChromePreferenceKeys.java
-@@ -797,6 +797,8 @@ public final class ChromePreferenceKeys {
+@@ -785,6 +785,8 @@ public final class ChromePreferenceKeys {
  
      public static final String TABBED_ACTIVITY_LAST_BACKGROUNDED_TIME_MS_PREF =
              "ChromeTabbedActivity.BackgroundTimeMs";
